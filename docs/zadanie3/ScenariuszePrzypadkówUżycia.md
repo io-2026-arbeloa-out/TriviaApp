@@ -1,4 +1,4 @@
-# Przypadki użycia – Trivia App
+# Funkcjonalne przypadki użycia – Trivia App
 
 Główni aktorzy:
 - Użytkownik niezalogowany (Gość)
@@ -237,3 +237,102 @@ Główni aktorzy:
 **Odnośniki do innych scenariuszy:**  
 - PU3: Wybór quizu  
 - PU5: Wyświetlenie wyników quizu  
+
+---
+
+# Przypadki użycia – Trivia App
+
+Główni aktorzy (Persony z poprzedniego zadania):
+- Konrad Mazur
+- Anna Kowalska
+- Marek Nowak
+- Ewa Domańska
+
+---
+
+
+## UC1: "Szybkie zabicie czasu"
+
+**Nazwa:** "Szybkie zabicie czasu w komunikacji miejskiej"  
+
+**Aktorzy:**  
+- Główny: Konrad Mazur  
+
+**Warunki początkowe:**  
+- Użytkownik ma kilka minut wolnego czasu.  
+
+**Warunki końcowe:**  
+- Użytkownik kończy swoją podróż środkiem transportu.
+
+**Scenariusz:**  
+1. Użytkownik wsiada do komunikacji miejskiej.
+2. Po przejrzeniu kilku tiktoków decyduje zagrać w jakąś grę i wybiera Trivia App 
+3. Użytkownik włącza aplikację, wybiera tryb rankingowy i rozwiązuje quiz.
+4. Po zakończeniu rozgrywki sprawdza wynik.
+5. Użytkownik wyłącza aplikację i wysiada.
+
+**Odnośniki do wymagań:**  
+- [F-04] Jako użytkownik chcę rywalizować z innymi w czasie rzeczywistym, aby zwiększyć atrakcyjność gry.
+
+---
+
+## UC2: "Relaks w wolnym czasie"
+
+**Nazwa:** "Szybkie zabicie czasu w komunikacji miejskiej"  
+
+**Aktorzy:**  
+- Główny: Anna Kowalska
+
+**Warunki początkowe:**  
+- Użytkownik chcę zrelaksować się po ciężkim dniu.
+
+**Warunki końcowe:**  
+- Użytkownik jest zrelaksowany.
+
+**Scenariusz:**  
+1. Użytkownik siada na kanapie po męczącym dniu. 
+2. Użytkownik włącza aplikację, wybiera interesujący go quiz tematyczny.
+3. Po rozwiązaniu kilku pytań wybiera kolejny quiz.
+4. Użytkownik wyłącza aplikację dowiadując się nowych ciekawostek.
+
+---
+
+## UC3: "Spędzanie czasu z rodziną i przyjaciółmi"
+
+**Nazwa:** "Spędzanie czasu z rodziną i przyjaciółmi" 
+
+**Aktorzy:**  
+- Główny: Marek Nowak
+- Główny: Konrad Mazur
+
+**Warunki początkowe:**  
+- Użytkownik chcę spędzić czas z bliskimi.
+
+**Warunki końcowe:**  
+- Użytkownik miło spędził czas z bliskimi.
+
+**Scenariusz:**  
+1. Użytkownik namawia inne osoby na wspólną grę. 
+2. Użytkownik włącza aplikację, tworzy grę prywatną i zaprasza innych.
+3. Użytkownik wybiera gotowy quiz lub wcześniej przez siebie stworzony oraz inne ustawienia gry.
+4. Wszyscy uczestnicy udzielają odpowiedzi.
+
+---
+
+## UC4: "Nauka w przystępnym formacie"
+
+**Nazwa:** "Nauka w przystępnym formacie" 
+
+**Aktorzy:**  
+- Główny: Ewa Domańska
+
+**Warunki początkowe:**  
+- Użytkownik chcę się nauczyć czegoś lub utrwalić daną wiedzę.
+
+**Warunki końcowe:**  
+- Użytkownik czuje, że jego zasób wiedzy się poszerzył.
+
+**Scenariusz:**  
+1. Użytkownik chce powtórzyć materiał na sprawdzian lub poznać nowe ciekawostki. 
+2. Użytkownik włącza aplikację, wybiera konkretny quiz i rozwiązuje go.
+3. Po zakończeniu rozgrywki sprawdza wynik i porównuje go z poprzednimi próbami.
