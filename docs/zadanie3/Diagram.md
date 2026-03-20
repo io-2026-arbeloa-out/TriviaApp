@@ -28,10 +28,10 @@ flowchart LR
     PU4 --> |Wyjdź z gry| PU3
 
     subgraph Actors2[ ]
-        A1([Konrad Mazur])
-        A2([Anna Kowalska])
-        A3([Marek Nowak])
-        A4([Ewa Domańska])
+        B1([Konrad Mazur])
+        B2([Anna Kowalska])
+        B3([Marek Nowak])
+        B4([Ewa Domańska])
     end
     subgraph Przypadki użycia[Trivia App]
         direction TB
@@ -40,9 +40,9 @@ flowchart LR
 	UC3((UC3:<br/>Spędzanie czasu z <br/>rodziną i przyjaciółmi))
 	UC4((UC4:<br/>Nauka w przystępnym formacie))
     end
-    A1 --> UC1
-    A1 --> UC3
-    A2 --> UC2
-    A3 --> UC3
-    A4 --> UC4
+    B1 --> UC1
+    B1 --> UC3
+    B2 --> UC2
+    B3 --> UC3
+    B4 --> UC4
 ```

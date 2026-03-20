@@ -330,7 +330,7 @@ Główni aktorzy (Persony z poprzedniego zadania):
 - Użytkownik chcę się nauczyć czegoś lub utrwalić daną wiedzę.
 
 **Warunki końcowe:**  
-- Użytkownik czuje, że jego zasób wiedzy się poszerzył.
+- Użytkownik czuje, że jego wiedza się poszerzyła.
 
 **Scenariusz:**  
 1. Użytkownik chce powtórzyć materiał na sprawdzian lub poznać nowe ciekawostki. 
