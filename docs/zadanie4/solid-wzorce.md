@@ -56,7 +56,7 @@ Ekrany UI korzystają wyłącznie z typów interfejsowych, np.:
 
 ```dart
 class LoginScreen {
-  ILoginAuthService \_authService; // może to być AuthLoginService, MockAuthService, GoogleAuthLoginService...
+  ILoginAuthService \\\_authService; // może to być AuthLoginService, MockAuthService, GoogleAuthLoginService...
 }
 ```
 
@@ -141,79 +141,7 @@ DIP umożliwia swobodną podmianę szczegółów implementacyjnych (np. typu rep
 
 \---
 
-## Wzorce projektowe
-
-### Wzorzec Repozytorium (Repository Pattern)
-
-Zastosowanie: wszystkie klasy `Firebase\*Repository`, m.in.:
-
-* `FirebaseAuthRepository`
-* `FirebaseQuestionRepository`
-* `FirebaseQuizRepository`
-* `FirebaseProfileRepository`
-* `FirebaseLeaderboardRepository`
-* `FirebaseAchievementRepository`
-* `FirebaseSessionRepository`
-* `FirebaseOptionsRepository`
-
-Każde repozytorium enkapsuluje logikę dostępu do danych i jest jedynym punktem kontaktu z konkretną kolekcją/bazą (np. Firestore).
-Serwisy nie znają szczegółów przechowywania danych, komunikują się wyłącznie poprzez metody repozytorium.
-
-Korzyści:
-
-* Izolacja warstwy danych – zmiana struktury dokumentów lub kolekcji w Firebase wymaga modyfikacji jedynie w repozytoriach.
-* Lepsza testowalność – repozytoria można łatwo zamockować przy testowaniu serwisów.
-* Ułatwiona migracja backendu – wystarczy dostarczyć nowe implementacje repozytoriów, bez zmian w logice biznesowej.
-
-\---
-
-### Warstwa Serwisowa (Service Layer Pattern)
-
-Zastosowanie: wszystkie klasy serwisów, np. `AuthLoginService`, `SingleplayerGameService`, `MultiplayerGameService`, `LeaderboardService`, `ProfileDataService`.
-
-Architektura:
-
-```text
-UI  →  Interfejs Serwisu  →  Serwis (logika biznesowa)  →  Repozytorium (dane)
-```
-
-Serwisy stanowią warstwę pośrednią między UI a repozytoriami i zawierają logikę biznesową: walidację danych, zasady rozgrywki, zarządzanie sesją gry, liczenie punktów i rankingu.
-
-Korzyści:
-
-* Separacja logiki biznesowej od warstwy prezentacji.
-* Możliwość orkiestracji wielu repozytoriów w jednym serwisie (np. `LeaderboardService` korzysta z repozytorium rankingów i profili).
-* Reużywalność – te same serwisy mogą obsługiwać różne ekrany.
-
-\---
-
-### Wstrzykiwanie zależności (Dependency Injection)
-
-Zastosowanie: ekrany UI przechowują zależności jako prywatne pola typów interfejsowych, np.:
-
-```dart
-class ProfileScreen {
-  IProfileDataService \_profileDataService;
-  IAchievementService \_achievementService;
-}
-
-class PrivateLobbyScreen {
-  IPrivateGameCreationService \_privateGameCreationService;
-  IPrivateGameJoinService \_privateGameJoinService;
-}
-```
-
-Konkretne implementacje serwisów są dostarczane z zewnątrz (np. przez konstruktor lub kontener DI), zamiast być tworzone wewnątrz klas ekranów.
-
-Korzyści:
-
-* Luźne powiązania – ekrany nie znają konkretnych klas implementujących interfejsy.
-* Wysoka testowalność – w testach można wstrzykiwać mocki lub stuby.
-* Elastyczna konfiguracja – zmiana implementacji następuje w jednym miejscu (konfiguracja DI), a nie w wielu klasach.
-
-\---
-
-### Wzorzec Obserwatora (Observer Pattern)
+## Wzorce projektoweWzorzec Obserwatora (Observer Pattern)
 
 Zastosowanie: metody zwracające `Stream` w interfejsach serwisów i repozytoriach, np.:
 
@@ -285,41 +213,5 @@ Przykłady:
 
 Dzięki fasadzie warstwa UI jest prostsza, a złożoność pozostaje w serwisach.
 
-\---
 
-### Architektura warstwowa (Layered Architecture)
-
-Cały system jest podzielony na wyraźne warstwy:
-
-```text
-┌──────────────────────────────────────────────────┐
-│  WARSTWA PREZENTACJI (UI)                        │
-│  LoadingScreen, MainMenuScreen, LoginScreen,     │
-│  BottomNavigationBar, LoginRegister\_popup, ...   │
-├──────────────────────────────────────────────────┤
-│  WARSTWA ABSTRAKCJI (Interfejsy)                 │
-│  ILoginAuthService, IMultiplayerGameService,     │
-│  ILeaderboardService, IProfileDataService, ...   │
-├──────────────────────────────────────────────────┤
-│  WARSTWA LOGIKI BIZNESOWEJ (Serwisy)             │
-│  AuthLoginService, MultiplayerGameService,       │
-│  LeaderboardService, ProfileDataService, ...     │
-├──────────────────────────────────────────────────┤
-│  WARSTWA DOSTĘPU DO DANYCH (Repozytoria)         │
-│  FirebaseAuthRepository, FirebaseSession-        │
-│  Repository, FirebaseProfileRepository, ...      │
-├──────────────────────────────────────────────────┤
-│  WARSTWA MODELI DANYCH                           │
-│  Question, Player, SessionData, ProfileData,     │
-│  PrivateGameOptions, UIOptions, UserOptions, ... │
-└──────────────────────────────────────────────────┘
-```
-
-Zasady architektury:
-
-* Każda warstwa komunikuje się tylko z warstwą bezpośrednio niższą, i to przez abstrakcje (interfejsy).
-* Zależności przepływają z góry na dół – od UI do repozytoriów.
-* Modele danych są współdzielone i stanowią wspólny język pomiędzy warstwami.
-
-Taka organizacja ułatwia utrzymanie kodu, wymianę warstw (np. repozytoriów) oraz rozwój aplikacji bez nadmiernego sprzężenia między komponentami.
 
