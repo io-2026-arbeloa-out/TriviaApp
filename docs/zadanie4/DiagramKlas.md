@@ -64,8 +64,8 @@ class LoginData {
   -String _password
 }
 
-SessionData o-- Player
-SessionData o-- Question
+SessionData --> Player
+SessionData --> Question
 
 %% =====================
 %% UI – EKRANY
@@ -488,7 +488,7 @@ class FirebaseOptionsRepository {
 }
 
 %% =====================
-%% RELACJE – UI → INTERFEJSY
+%% RELACJE – UI -> INTERFEJSY
 %% =====================
 
 LoadingScreen --> ILoginAuthService
@@ -519,7 +519,7 @@ LeaderboardScreen --> BottomNavigationBar
 LoginScreen --> LoginRegister_popup
 RegistrationScreen --> LoginRegister_popup
 
-%% SERWISY → INTERFEJSY
+%% SERWISY -> INTERFEJSY
 
 AuthLoginService ..|> ILoginAuthService
 AuthRegisterService ..|> IRegisterAuthService
@@ -537,7 +537,7 @@ QuizListService ..|> IQuizListService
 ProfileDataService ..|> IProfileDataService
 ScoreTableService ..|> IScoreTableService
 
-%% SERWISY → REPOZYTORIA
+%% SERWISY -> REPOZYTORIA
 
 AuthLoginService --> FirebaseAuthRepository
 AuthRegisterService --> FirebaseAuthRepository
@@ -553,4 +553,19 @@ GameOptionsService --> FirebaseOptionsRepository
 UserOptionsService --> FirebaseOptionsRepository
 UIOptionsService --> FirebaseOptionsRepository
 ScoreTableService --> FirebaseSessionRepository
+
+%% SERWISY -> MODELE
+
+QuestionService -->  Question
+PrivateGameCreationService --> PrivateGameOptions 
+ProfileDataService --> ProfileData
+AuthRegisterService --> ProfileData
+UIOptionsService --> UIOptions
+MultiplayerGameService --> SessionData
+SingleplayerGameService --> SessionData
+AchievementService --> SessionData
+LeaderboardService --> SessionData
+UserOptionsService --> UserOptions
+AuthRegisterService --> LoginData
+AuthLoginService --> LoginData
 ```
