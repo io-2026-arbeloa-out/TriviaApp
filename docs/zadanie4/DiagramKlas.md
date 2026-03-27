@@ -1,3 +1,4 @@
+```mermaid
 classDiagram
 
 class Question {
@@ -551,3 +552,4 @@ GameOptionsService --> FirebaseOptionsRepository
 UserOptionsService --> FirebaseOptionsRepository
 UIOptionsService --> FirebaseOptionsRepository
 ScoreTableService --> FirebaseSessionRepository
+```
