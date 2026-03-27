@@ -88,7 +88,7 @@ class MainMenuScreen {
 class ProfileScreen {
   -IProfileDataService _profileDataService
   -IAchievementService _achievementService
-  ---
+
   -Future<void> _loadProfile()
   -void _onClickAchievements()
   +Widget build(BuildContext context)
@@ -96,7 +96,7 @@ class ProfileScreen {
 
 class QuizListScreen {
   -IQuizListService _quizListService
-  ---
+
   -Future<void> _loadQuizzes()
   -void _onClickQuiz(String quizId)
   +Widget build(BuildContext context)
@@ -104,7 +104,7 @@ class QuizListScreen {
 
 class GameOptionsScreen {
   -IGameOptionsService _gameOptionsService
-  ---
+
   -Future<void> _loadOptions()
   -Future<void> _onClickSave()
   -void _onClickClose()
@@ -113,7 +113,7 @@ class GameOptionsScreen {
 
 class UserOptionsScreen {
   -IUserOptionsService _userOptionsService
-  ---
+
   -Future<void> _loadUserOptions()
   -Future<void> _onClickSave()
   -void _onClickClose()
@@ -123,7 +123,7 @@ class UserOptionsScreen {
 class PrivateLobbyScreen {
   -IPrivateGameCreationService _privateGameCreationService
   -IPrivateGameJoinService _privateGameJoinService
-  ---
+
   -Future<void> _onClickCreate()
   -Future<void> _onClickJoin(int _code)
   -void _onClickLeave()
@@ -132,7 +132,7 @@ class PrivateLobbyScreen {
 
 class MultiplayerLobbyScreen {
   -IMultiplayerGameService _multiplayerGameService
-  ---
+
   -Future<void> _onClickReady()
   -void _onClickLeave()
   +Widget build(BuildContext context)
@@ -140,7 +140,7 @@ class MultiplayerLobbyScreen {
 
 class SingleplayerGameScreen {
   -ISingleplayerGameService _singleplayerGameService
-  ---
+
   -Future<void> _onStartGame()
   -void _onAnswerSubimtted(string answer)
   -Future<void> _onEndGame()
@@ -149,7 +149,7 @@ class SingleplayerGameScreen {
 
 class MultiplayerGameScreen {
   -IMultiplayerGameService _multiplayerGameService
-  ---
+
   -void _onAnswerSubimtted(string answer)
   -Future<void> _onEndGame()
   +Widget build(BuildContext context)
@@ -157,7 +157,7 @@ class MultiplayerGameScreen {
 
 class LeaderboardScreen {
   -ILeaderboardService _leaderboardService
-  ---
+
   -Future<void> _loadLeaderboard()
   -void _onClickClose()
   +Widget build(BuildContext context)
@@ -165,7 +165,7 @@ class LeaderboardScreen {
 
 class ScoreTableScreen {
   -IScoreTableService _scoreTableService
-  ---
+
   -void _onClickPlayAgain()
   -void _onClickMainMenu()
   -void _showTable()
@@ -174,7 +174,7 @@ class ScoreTableScreen {
 
 class LoginScreen {
   -ILoginAuthService _authService
-  ---
+
   -Future<void> _onClickLogin(string email, string password)
   -void _onClickOpenRegister()
   -void _showMessage()
@@ -183,7 +183,7 @@ class LoginScreen {
 
 class RegistrationScreen {
   -IRegisterAuthService _authService
-  ---
+
   -void _onClickClose()
   -Future<void> _onClickRegister(string email, string password, string username)
   -void _showMessage()
@@ -192,7 +192,7 @@ class RegistrationScreen {
 
 class AchievementScreen {
   -IAchievementService _achievementService
-  ---
+
   -void _onClickClose()
   -Future<void> _getAchievements(ProfileData profile)
   +Widget build(BuildContext context)
@@ -203,8 +203,8 @@ class AchievementScreen {
 %% =====================
 
 class BottomNavigationBar {
-  -int currentIndex
-  ---
+  -int _currentIndex
+
   -void _navigate(int index)
   -void _onClickProfile()
   -void _onClickCategories()
@@ -326,7 +326,7 @@ class IScoreTableService {
 
 class AuthLoginService {
   -FirebaseAuthRepository _authRepository
-  ---
+
   -Future<void> _signInWithEmail(String email, String password)
   -Future<void> _signOut()
   -Stream _authStateChanges()
@@ -335,7 +335,7 @@ class AuthLoginService {
 class AuthRegisterService {
   -FirebaseAuthRepository _authRepository
   -FirebaseProfileRepository _profileRepository
-  ---
+
   -Future<void> _register(String email, String password, String displayName)
   -Future<ProfileData> _generateProfile()
   -Stream _authStateChanges()
@@ -343,14 +343,14 @@ class AuthRegisterService {
 
 class QuestionService {
   -FirebaseQuestionRepository _questionRepository
-  ---
+
   -Future<List<Question>> _getQuestions(int limit, string category)
 }
 
 class SingleplayerGameService {
   -FirebaseSessionRepository _sessionRepository
   -FirebaseQuestionRepository _questionRepository
-  ---
+
   -Future<SessionData> _startGame(GameOptions options)
   -Future<void> _registerAnswer(Question question, String answer)
   -bool _checkAnswer(Question question, String answer)
@@ -370,14 +370,14 @@ class MultiplayerGameService {
 
 class PrivateGameCreationService {
   -FirebaseSessionRepository _sessionRepository
-  ---
+
   -Future<SessionData> _createPrivateGame(GameOptions options)
   -Future<void> _deleteGame(String sessionId)
 }
 
 class PrivateGameJoinService {
   -FirebaseSessionRepository _sessionRepository
-  ---
+
   -Future<SessionData> _joinPrivateGame(int code)
   -Future<void> _leaveGame(String sessionId, String playerId)
   -Stream<SessionData> _listenToLobby(String sessionId)
@@ -385,21 +385,21 @@ class PrivateGameJoinService {
 
 class GameOptionsService {
   -FirebaseOptionsRepository _optionsRepository
-  ---
+
   -Future<void> _saveOptions(UserOptions options)
   -Future<UserOptions> _getOptions()
 }
 
 class UserOptionsService {
   -FirebaseOptionsRepository _optionsRepository
-  ---
+
   -Future<void> _saveOptions(UserOptions options)
   -Future<UserOptions> _getOptions()
 }
 
 class UIOptionsService {
   -FirebaseOptionsRepository _optionsRepository
-  ---
+
   -Future<UIOptions> _loadUIOptions()
   -Future<void> _saveUIOptions(UIOptions options)
 }
@@ -407,34 +407,34 @@ class UIOptionsService {
 class LeaderboardService {
   -FirebaseLeaderboardRepository _leaderboardRepository
   -FirebaseProfileRepository _profileRepository
-  ---
+
   -Future<List<ProfileData>> _getLeaderboard()
   -Future<int> _getUserRank(String userId)
 }
 
 class AchievementService {
   -FirebaseAchievementRepository _achievementRepository
-  ---
+
   -Future<List<Achievement>> _getAchievements(ProfileData profile)
   -Future<void> _updateAchievements(ProfileData profile, SessionData result)
 }
 
 class QuizListService {
   -FirebaseQuizRepository _quizRepository
-  ---
+
   -Future<List<Quiz>> _getQuizList()
 }
 
 class ProfileDataService {
   -FirebaseProfileRepository _profileRepository
-  ---
+
   -Future<ProfileData> _getProfileData(String uid)
   -Future<void> _updateProfileData(ProfileData data)
 }
 
 class ScoreTableService {
   -FirebaseSessionRepository _sessionRepository
-  ---
+  
   -Future<SessionData> _getGameData(String sessionid)
 }
 
