@@ -1,5 +1,6 @@
 ```mermaid
 classDiagram
+direction TB
 
 class Question {
   -String _id
