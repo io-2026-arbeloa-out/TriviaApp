@@ -1,6 +1,6 @@
 ```mermaid
 classDiagram
-direction TB
+direction LR
 
 class Question {
   -String _id
