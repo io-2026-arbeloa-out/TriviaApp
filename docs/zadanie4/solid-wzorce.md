@@ -56,7 +56,7 @@ Ekrany UI korzystają wyłącznie z typów interfejsowych, np.:
 
 ```dart
 class LoginScreen {
-  ILoginAuthService \\\_authService; // może to być AuthLoginService, MockAuthService, GoogleAuthLoginService...
+  ILoginAuthService \\\\\\\_authService; // może to być AuthLoginService, MockAuthService, GoogleAuthLoginService...
 }
 ```
 
@@ -141,7 +141,9 @@ DIP umożliwia swobodną podmianę szczegółów implementacyjnych (np. typu rep
 
 \---
 
-## Wzorce projektoweWzorzec Obserwatora (Observer Pattern)
+## Wzorce projektowe
+
+## Wzorzec Obserwatora (Observer Pattern)
 
 Zastosowanie: metody zwracające `Stream` w interfejsach serwisów i repozytoriach, np.:
 
@@ -212,6 +214,4 @@ Przykłady:
 * `SingleplayerGameService.startGame()` pobiera pytania i zakłada sesję gry jako jedną, spójną operację.
 
 Dzięki fasadzie warstwa UI jest prostsza, a złożoność pozostaje w serwisach.
-
-
 
