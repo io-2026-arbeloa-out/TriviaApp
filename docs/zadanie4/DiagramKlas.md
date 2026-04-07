@@ -1,3 +1,5 @@
+```mermaid
+
 classDiagram
 direction LR
 
@@ -612,4 +614,6 @@ IAchievementService ..> ProfileData : uses
 IRegisterAuthService ..> ProfileData : uses
 IProfileDataService ..> ProfileData : uses
 IScoreTableService ..> SessionData : uses
+
+```
 
