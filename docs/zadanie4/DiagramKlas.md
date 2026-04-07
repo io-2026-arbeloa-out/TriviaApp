@@ -1,5 +1,4 @@
 ```mermaid
-
 classDiagram
 direction LR
 
@@ -239,7 +238,7 @@ class BottomNavigationBar {
 +Widget build(BuildContext context)
 }
 
-class LoginRegister\_popup {
+class LoginRegisterPopUp {
 -void \_onClickLogin()
 -void \_onClickRegister()
 -void \_onClickClose()
@@ -252,8 +251,8 @@ class LoginRegister\_popup {
 BottomNavigationBar --> ProfileScreen : navigates to
 BottomNavigationBar --> QuizListScreen : navigates to
 BottomNavigationBar --> MainMenuScreen : navigates to
-LoginRegister\_popup --> LoginScreen : opens
-LoginRegister\_popup --> RegistrationScreen : opens
+LoginRegisterPopUp --> LoginScreen : opens
+LoginRegisterPopUp --> RegistrationScreen : opens
 MainMenuScreen --> SingleplayerGameScreen : navigates to
 MainMenuScreen --> MultiplayerLobbyScreen : navigates to
 MainMenuScreen --> PrivateLobbyScreen : navigates to
