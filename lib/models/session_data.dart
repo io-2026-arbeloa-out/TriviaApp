@@ -1,3 +1,4 @@
+import 'package:triviaapp/models/game_mode.dart';
 import 'package:triviaapp/models/player.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/session_status.dart';
@@ -14,6 +15,8 @@ class SessionData {
   final List<Player> _players;
   final List<int> _placement;
   final List<Question> _questions;
+  final GameMode _gameMode;
+
 
   const SessionData({
     required String sessionId,
@@ -25,6 +28,7 @@ class SessionData {
     required List<Player> players,
     required List<int> placement,
     required List<Question> questions,
+    required GameMode gameMode,
   })  : _sessionId = sessionId,
         _numPlayers = numPlayers,
         _status = status,
@@ -33,29 +37,27 @@ class SessionData {
         _endTime = endTime,
         _players = players,
         _placement = placement,
-        _questions = questions;
+        _questions = questions,
+        _gameMode = gameMode;
 
   SessionData copyWith({
-    required String sessionId,
-    required int numPlayers,
     SessionStatus? status,
-    required sessionStartTime,
     DateTime? gameStartTime,
     DateTime? endTime,
     List<Player>? players,
     List<int>? placement,
-    required List<Question> questions,
   }) {
     return SessionData(
+      sessionId: sessionId,
+      numPlayers: numPlayers,
+      sessionStartTime: sessionStartTime,
+      questions: questions,
+      gameMode: gameMode,
       status: status ?? this.status,
-      sessionStartTime: this.sessionStartTime,
       gameStartTime: gameStartTime ?? this.gameStartTime,
       endTime: endTime ?? this.endTime,
       players: players ?? this.players,
-      sessionId: this.sessionId,
-      numPlayers: this.players.length,
       placement: placement ?? this.placement,
-      questions: this.questions,
     );
   }
 
@@ -77,6 +79,7 @@ class SessionData {
       questions: (json['questions'] as List<dynamic>)
           .map((e) => Question.fromJson(e as Map<String, dynamic>))
           .toList(),
+      gameMode: GameMode.fromJson(json['gameMode'] as String?),
     );
   }
 
@@ -91,6 +94,7 @@ class SessionData {
       'players': _players.map((p) => p.toJson()).toList(),
       'placement': _placement,
       'questions': _questions.map((q) => q.toJson()).toList(),
+      'gameMode': _gameMode.name,
     };
   }
 
@@ -103,4 +107,5 @@ class SessionData {
   List<Player> get players => _players;
   List<int> get placement => _placement;
   List<Question> get questions => _questions;
+  GameMode get gameMode => _gameMode;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:triviaapp/models/rank.dart';
 
 @immutable
 class ProfileData {
@@ -6,7 +7,7 @@ class ProfileData {
   final String _username;
   final int _totalQuestionsAnswered;
   final int _correctAnswers;
-  final String _rank;
+  final Rank _rank;
   final int _ratingPoints;
   final int _rankedGamesPlayed;
   final int _rankedGamesWon;
@@ -16,7 +17,7 @@ class ProfileData {
     required String username,
     int totalQuestionsAnswered = 0,
     int correctAnswers = 0,
-    String rank = 'Unranked',
+    Rank rank = Rank.unranked,
     int ratingPoints = 0,
     int rankedGamesPlayed = 0,
     int rankedGamesWon = 0,
@@ -30,18 +31,16 @@ class ProfileData {
         _rankedGamesWon = rankedGamesWon;
 
   ProfileData copyWith({
-    required String uid,
-    required String username,
     int? totalQuestionsAnswered,
     int? correctAnswers,
-    String? rank,
+    Rank? rank,
     int? ratingPoints,
     int? rankedGamesPlayed,
     int? rankedGamesWon,
   }) {
     return ProfileData(
-      uid: this.uid,
-      username: this.username,
+      uid: uid,
+      username: username,
       totalQuestionsAnswered: totalQuestionsAnswered ?? _totalQuestionsAnswered,
       correctAnswers: correctAnswers ?? _correctAnswers,
       rank: rank ?? _rank,
@@ -57,7 +56,7 @@ class ProfileData {
       username: json['username'] as String,
       totalQuestionsAnswered: json['totalQuestionsAnswered'] as int,
       correctAnswers: json['correctAnswers'] as int,
-      rank: json['rank'] as String,
+      rank: Rank.fromJson(json['rank'] as String?),
       ratingPoints: json['ratingPoints'] as int,
       rankedGamesPlayed: json['rankedGamesPlayed'] as int,
       rankedGamesWon: json['rankedGamesWon'] as int,
@@ -81,7 +80,7 @@ class ProfileData {
   String get username => _username;
   int get totalQuestionsAnswered => _totalQuestionsAnswered;
   int get correctAnswers => _correctAnswers;
-  String get rank => _rank;
+  Rank get rank => _rank;
   int get ratingPoints => _ratingPoints;
   int get rankedGamesPlayed => _rankedGamesPlayed;
   int get rankedGamesWon => _rankedGamesWon;

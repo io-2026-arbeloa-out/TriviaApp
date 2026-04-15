@@ -1,10 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:triviaapp/interfaces/i_singleplayer_game_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
-class SingleplayerGameScreen extends StatelessWidget {
-  SingleplayerGameScreen({super.key});
+class SingleplayerGameScreen extends StatefulWidget {
+  const SingleplayerGameScreen({
+    super.key,
+    required String category,
+    UIOptions options = const UIOptions(),
+    required ISingleplayerGameService singleplayerGameService,
+  }) :  _options = options,
+        _category = category,
+        _singleplayerGameService = singleplayerGameService;
 
-  final UIOptions options = UIOptions();
+  final UIOptions _options;
+  final String _category;
+  final ISingleplayerGameService _singleplayerGameService;
+
+  UIOptions get options => _options;
+  String get category => _category;
+  ISingleplayerGameService get singleplayerGameService => _singleplayerGameService;
+
+  @override
+  State<SingleplayerGameScreen> createState() => _SingleplayerGameScreenState();
+}
+
+class _SingleplayerGameScreenState extends State<SingleplayerGameScreen> {
+  final TextEditingController _answerController = TextEditingController();
+
+  @override
+  void dispose() {
+    _answerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +42,8 @@ class SingleplayerGameScreen extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              options.mainColor,
-              options.secondaryColor,
+              widget.options.mainColor,
+              widget.options.secondaryColor,
             ],
           ),
         ),
@@ -32,7 +59,7 @@ class SingleplayerGameScreen extends StatelessWidget {
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
                       icon: const Icon(Icons.close),
-                      color: options.textColor,
+                      color: widget.options.textColor,
                     ),
                     Text(
                       'Tryb singleplayer',
@@ -40,7 +67,7 @@ class SingleplayerGameScreen extends StatelessWidget {
                           .textTheme
                           .titleMedium
                           ?.copyWith(
-                        color: options.textColor,
+                        color: widget.options.textColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -51,36 +78,61 @@ class SingleplayerGameScreen extends StatelessWidget {
 
                 // Pytanie
                 Text(
-                  'Treść pytania będzie tutaj.',
+                  widget.singleplayerGameService.getQuestionText() as String,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: options.textColor,
+                    color: widget.options.textColor,
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // Odpowiedzi (placeholder)
-                for (int i = 0; i < 4; i++) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: options.mainButtonColor,
-                        foregroundColor: options.textColor,
-                        padding:
-                        const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {
-                        // TODO: obsługa odpowiedzi
-                      },
-                      child: Text('Odpowiedź ${i + 1}'),
+                // Pole do wpisania odpowiedzi
+                TextField(
+                  controller: _answerController,
+                  decoration: InputDecoration(
+                    hintText: 'Wpisz swoją odpowiedź...',
+                    hintStyle: TextStyle(
+                      color: widget.options.textColor.withOpacity(0.5),
+                    ),
+                    filled: true,
+                    fillColor: widget.options.textColor.withOpacity(0.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                ],
+                  style: TextStyle(color: widget.options.textColor),
+                  maxLines: 3,
+                  minLines: 1,
+                ),
+                const SizedBox(height: 12),
+
+                // Przycisk odpowiedz
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: widget.options.mainButtonColor,
+                      foregroundColor: widget.options.textColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      final answer = _answerController.text;
+                      if (answer.isNotEmpty) {
+                        widget.singleplayerGameService.registerAnswer(answer);
+                        _answerController.clear();
+                      }
+                    },
+                    child: const Text('Odpowiedz'),
+                  ),
+                ),
               ],
             ),
           ),

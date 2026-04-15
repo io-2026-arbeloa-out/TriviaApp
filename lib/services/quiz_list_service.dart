@@ -5,7 +5,9 @@ import 'package:triviaapp/repositories/firebase_quiz_repository.dart';
 class QuizListService implements IQuizListService {
   final FirebaseQuizRepository _quizRepository;
 
-  QuizListService(this._quizRepository);
+  QuizListService({
+    FirebaseQuizRepository? quizRepository,
+  }) :  _quizRepository = quizRepository ?? FirebaseQuizRepository();
 
   @override
   Future<List<Quiz>> getQuizList() {

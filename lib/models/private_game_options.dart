@@ -21,16 +21,14 @@ class PrivateGameOptions {
         _quizCategory = quizCategory;
 
   PrivateGameOptions copyWith({
-    required String quizId,
     int? maxPlayers,
-    required int entryCode,
     int? questionTimeLimit,
     String? quizCategory,
   }) {
     return PrivateGameOptions(
-      quizId: this.quizId,
+      quizId: quizId,
+      entryCode: entryCode,
       maxPlayers: maxPlayers ?? _maxPlayers,
-      entryCode: this.entryCode,
       questionTimeLimit: questionTimeLimit ?? _questionTimeLimit,
       quizCategory: quizCategory ?? _quizCategory,
     );

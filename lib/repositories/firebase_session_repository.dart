@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:triviaapp/models/game_mode.dart';
 import 'package:triviaapp/models/player.dart';
 import 'package:triviaapp/models/session_data.dart';
 import 'package:triviaapp/models/session_status.dart';
@@ -28,7 +29,8 @@ class FirebaseSessionRepository {
         Player(uid: docRef.id, username: playerName),
       ],
       placement: [],
-      questions: []
+      questions: [],
+      gameMode: GameMode.singleplayer,
     );
 
     await docRef.set(_toJson(session, categoryId: categoryId));
@@ -70,7 +72,8 @@ class FirebaseSessionRepository {
       endTime: session.endTime,
       players: updatedPlayers,
       placement: session.placement,
-      questions: session.questions
+      questions: session.questions,
+      gameMode: session.gameMode,
     );
 
     return updatedSession;

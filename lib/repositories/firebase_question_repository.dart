@@ -7,7 +7,7 @@ class FirebaseQuestionRepository {
   FirebaseQuestionRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
-  Future<List<Question>> getQuestions(int limit, int categoryID) async {
+  Future<List<Question>> getQuestions(int limit, String categoryID) async {
     final query = await _firestore
         .collection('questions')
         .where('categoryId', isEqualTo: categoryID)

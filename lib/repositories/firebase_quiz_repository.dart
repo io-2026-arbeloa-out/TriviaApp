@@ -1,20 +1,37 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:triviaapp/models/quiz.dart';
 
 class FirebaseQuizRepository {
-  final FirebaseFirestore _firestore;
+  final FirebaseDatabase _database;
 
-  FirebaseQuizRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseQuizRepository({
+    FirebaseDatabase? database,
+  }) : _database = database ?? FirebaseDatabase.instance;
 
   Future<List<Quiz>> getQuizList() async {
-    final query = await _firestore.collection('quizzes').get();
-    return query.docs.map((doc) {
-      final data = doc.data();
-      return Quiz.fromJson({
-        'id': doc.id,
-        ...data,
-      });
-    }).toList();
+    try {
+      final ref = _database.ref('quizzes');
+      final snapshot = await ref.get();
+
+      if (!snapshot.exists || snapshot.value == null) return [];
+
+      final rawData = snapshot.value;
+
+      if (rawData is! Map) return [];
+
+      final data = Map<String, dynamic>.from(rawData);
+
+      return data.entries.map((entry) {
+        final value = entry.value;
+
+        if (value is! Map) return null;
+
+        final quizData = Map<String, dynamic>.from(value);
+
+        return Quiz.fromJson(quizData);
+      }).whereType<Quiz>().toList();
+    } catch (e, stack) {
+      rethrow;
+    }
   }
 }

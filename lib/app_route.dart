@@ -4,6 +4,9 @@ import 'package:triviaapp/screens/leaderboard_screen.dart';
 import 'package:triviaapp/screens/main_menu_screen.dart';
 import 'package:triviaapp/screens/profile_screen.dart';
 import 'package:triviaapp/screens/quiz_list_screen.dart';
+import 'package:triviaapp/screens/singleplayer_game_screen.dart';
+import 'package:triviaapp/services/quiz_list_service.dart';
+import 'package:triviaapp/services/singleplayer_game_service.dart';
 
 class AppRoute {
   AppRoute._();
@@ -17,6 +20,7 @@ class AppRoute {
   static const String quizListScreen = '/quizList';
   static const String leaderboardScreen = '/leaderboard';
   static const String achievementScreen = '/achievement';
+  static const String singleplayer = '/singleplayer';
 
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -32,7 +36,7 @@ class AppRoute {
         );
       case quizListScreen:
         return MaterialPageRoute(
-          builder: (_) => QuizListScreen(),
+          builder: (_) => QuizListScreen(quizListService: QuizListService()),
           settings: settings,
         );
       case leaderboardScreen:
@@ -45,7 +49,16 @@ class AppRoute {
           builder: (_) => AchievementScreen(),
           settings: settings,
         );
-      default://Fallback
+      case singleplayer:
+        final category = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => SingleplayerGameScreen(
+            category: category,
+            singleplayerGameService: SingleplayerGameService(category: category),
+          ),
+          settings: settings,
+        );
+      default:
         return MaterialPageRoute(
           builder: (_) => MainMenuScreen(),
           settings: settings,
@@ -75,6 +88,13 @@ class AppRoute {
 
   void goToAchievements() {
     navigatorKey.currentState?.pushNamed(achievementScreen);
+  }
+
+  void goToSingleplayer(String quizId) {
+    navigatorKey.currentState?.pushNamed(
+      singleplayer,
+      arguments: quizId,
+    );
   }
 
   void goBack() {

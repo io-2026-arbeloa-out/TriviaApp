@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 
 class MainMenuScreen extends StatelessWidget {
   MainMenuScreen({super.key});
-  UIOptions options = UIOptions();
+  final UIOptions options = UIOptions();
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +86,7 @@ class MainMenuScreen extends StatelessWidget {
                           ),
                         ),
                         onPressed: () {
-                          // TODO: przejście do trybu singleplayer
+                          AppRoute.instance.goToSingleplayer('general');
                         },
                         child: const Text(
                           'Singleplayer',

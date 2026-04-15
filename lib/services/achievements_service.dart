@@ -6,6 +6,10 @@ import 'package:triviaapp/repositories/firebase_achievement_repository.dart';
 class AchievementService implements IAchievementService {
   final FirebaseAchievementRepository _achievementRepository;
 
+  AchievementService({
+    FirebaseAchievementRepository? achievementRepository,
+  }) :  _achievementRepository = achievementRepository ?? FirebaseAchievementRepository();
+
   @override
   Future<List<Achievement>> getAchievements(ProfileData profile) {
     return _achievementRepository.getAchievements(profile);

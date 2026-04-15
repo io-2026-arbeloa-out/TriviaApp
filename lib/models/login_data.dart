@@ -15,13 +15,11 @@ class LoginData {
         _password = password;
 
   LoginData copyWith({
-    required String uid,
-    required String email,
     String? password,
   }) {
     return LoginData(
-      uid: this.uid,
-      email: this.email,
+      uid: uid,
+      email: email,
       password: password ?? _password,
     );
   }

@@ -5,8 +5,56 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="Basic structure of project">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/models/difficulty.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/models/game_mode.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/models/question_type.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/models/rank.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/app/google-services.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/google-services.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/android/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/app_route.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/app_route.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/firebase_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/firebase_options.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_achievement_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_achievement_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_question_service.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_quiz_list_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_quiz_list_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_singleplayer_game_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_singleplayer_game_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/login_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/login_data.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/private_game_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/private_game_options.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/profile_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/profile_data.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/question.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/quiz.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/quiz.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/session_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/session_data.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_auth_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_auth_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_question_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_question_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_quiz_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_quiz_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/quiz_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/quiz_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/singleplayer_game_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/singleplayer_game_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/achievements_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/achievements_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/question_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/question_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/quiz_list_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/quiz_list_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/singleplayer_game_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/singleplayer_game_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/auth_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/auth_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/firebase_repositories_integration_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/firebase_repositories_integration_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/multiplayer_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/multiplayer_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/options_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/options_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/private_game_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/private_game_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/profile_leaderboard_achievements_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/profile_leaderboard_achievements_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/score_table_service_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/score_table_service_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/screens_widget_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/screens_widget_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/singleplayer_service_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/singleplayer_service_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/triviaapp.iml" beforeDir="false" afterPath="$PROJECT_DIR$/triviaapp.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/windows/runner/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/windows/runner/CMakeLists.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,14 +110,17 @@
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
     "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "main",
     "io.flutter.project.isFirstOpen": "true",
     "io.flutter.reload.alreadyRun": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/TriviaApp/android/app",
-    "settings.editor.selected.configurable": "configurable.group.other",
+    "settings.editor.selected.configurable": "dart.settings",
     "show.migrate.to.gradle.popup": "false"
   }
 }]]></component>

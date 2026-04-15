@@ -1,14 +1,14 @@
-import 'package:triviaapp/interfaces/i_question_service.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 
-class QuestionService implements IQuestionService {
+class QuestionService {
   final FirebaseQuestionRepository _questionRepository;
 
-  QuestionService(this._questionRepository);
+  QuestionService({
+    FirebaseQuestionRepository? questionRepository
+      })  : _questionRepository = questionRepository ?? FirebaseQuestionRepository();
 
-  @override
-  Future<List<Question>> getQuestions(int limit, int categoryID) {
+  Future<List<Question>> getQuestions(int limit, String categoryID) async {
     return _questionRepository.getQuestions(limit, categoryID);
   }
 }

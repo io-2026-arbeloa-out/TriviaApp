@@ -2,36 +2,29 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class Quiz {
-  final String _qid;
+  final String _category;
   final String _title;
-  final String _fileName;
 
   const Quiz({
-    required String qid,
+    required String category,
     required String title,
-    required String fileName,
-  })  : _qid = qid,
-        _title = title,
-        _fileName = fileName;
-
+  })  : _category = category,
+        _title = title;
 
   factory Quiz.fromJson(Map<String, dynamic> json) {
     return Quiz(
-      qid: json['qid'] as String,
+      category: json['category'] as String,
       title: json['title'] as String,
-      fileName: json['fileName'] as String,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'qid': _qid,
+      'category': _category,
       'title': _title,
-      'fileName': _fileName,
     };
   }
 
-  String get qid => _qid;
+  String get category => _category;
   String get title => _title;
-  String get fileName => _fileName;
 }

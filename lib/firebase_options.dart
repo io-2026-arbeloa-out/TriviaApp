@@ -71,5 +71,6 @@ class DefaultFirebaseOptions {
     authDomain: 'triviaapp-tt.firebaseapp.com',
     storageBucket: 'triviaapp-tt.firebasestorage.app',
     measurementId: 'G-ST3TG7TETT',
+    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
   );
 }

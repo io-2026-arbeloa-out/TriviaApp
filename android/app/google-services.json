@@ -2,7 +2,8 @@
   "project_info": {
     "project_number": "773298568818",
     "project_id": "triviaapp-tt",
-    "storage_bucket": "triviaapp-tt.firebasestorage.app"
+    "storage_bucket": "triviaapp-tt.firebasestorage.app",
+    "firebase_url": "https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app"
   },
   "client": [
     {

@@ -1,3 +1,5 @@
+import 'package:triviaapp/models/quiz.dart';
+
 abstract class IQuizListService {
-//  Future<List<Quiz>> getQuizList();
+  Future<List<Quiz>> getQuizList();
 }

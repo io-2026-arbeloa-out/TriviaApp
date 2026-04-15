@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:triviaapp/models/profile_data.dart';
+import 'package:triviaapp/models/rank.dart';
 
 class FirebaseAuthRepository {
   final FirebaseAuth _auth;
@@ -32,7 +33,7 @@ class FirebaseAuthRepository {
       username: displayName,
       totalQuestionsAnswered: 0,
       correctAnswers: 0,
-      rank: 'Newbie',
+      rank: Rank.unranked,
       ratingPoints: 0,
       rankedGamesPlayed: 0,
       rankedGamesWon: 0,
@@ -63,7 +64,7 @@ class FirebaseAuthRepository {
         username: user.displayName ?? '',
         totalQuestionsAnswered: 0,
         correctAnswers: 0,
-        rank: 'Newbie',
+        rank: Rank.unranked,
         ratingPoints: 0,
         rankedGamesPlayed: 0,
         rankedGamesWon: 0,
