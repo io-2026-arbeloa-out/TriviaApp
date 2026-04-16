@@ -4,26 +4,32 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="QuizListScreen + new models and cleaning code">
+    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników">
+      <change afterPath="$PROJECT_DIR$/test/auth_login_service_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/auth_register_service_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/fakes.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/login_screen_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/profile_data_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/registration_screen_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/google-services.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/google-services.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/app_route.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/app_route.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_login_auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_login_auth_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_register_auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_register_auth_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/quiz.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/quiz.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_user_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_user_options_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/profile_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/profile_data.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/question.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/session_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/session_data.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/models/ui_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/ui_options.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_auth_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_auth_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_options_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_options_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_profile_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_profile_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_quiz_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_quiz_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/login_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/login_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/quiz_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/quiz_list_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/registration_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/registration_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/auth_login_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/auth_login_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/auth_register_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/auth_register_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/ui_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/ui_options_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/triviaapp.iml" beforeDir="false" afterPath="$PROJECT_DIR$/triviaapp.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/user_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/user_options_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/auth_services_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/firebase_repositories_integration_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/multiplayer_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/multiplayer_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/options_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/options_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/private_game_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/private_game_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/profile_leaderboard_achievements_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/profile_leaderboard_achievements_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/score_table_service_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/score_table_service_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/screens_widget_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/screens_widget_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/singleplayer_service_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/singleplayer_service_test.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,6 +77,8 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Flutter Test.fromJson(toJson()) round-trip preserves all values.executor": "Debug",
+    "Flutter Test.navigates to MainMenuScreen on successful login.executor": "Run",
     "Flutter Test.tests in test.executor": "Run",
     "Flutter.main.dart.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
@@ -98,12 +106,24 @@
       <recent name="C:\TriviaApp\android\app" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\TriviaApp\test" />
       <recent name="C:\TriviaApp\src" />
       <recent name="C:\TriviaApp" />
-      <recent name="C:\TriviaApp\test" />
     </key>
   </component>
   <component name="RunManager" selected="Flutter.main.dart">
+    <configuration name="fromJson(toJson()) round-trip preserves all values" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
+      <option name="testName" value="fromJson(toJson()) round-trip preserves all values" />
+      <option name="testFile" value="$PROJECT_DIR$/test/profile_data_test.dart" />
+      <option name="useRegexp" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration name="navigates to MainMenuScreen on successful login" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
+      <option name="testName" value="navigates to MainMenuScreen on successful login" />
+      <option name="testFile" value="$PROJECT_DIR$/test/login_screen_test.dart" />
+      <option name="useRegexp" value="true" />
+      <method v="2" />
+    </configuration>
     <configuration name="tests in test" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
       <option name="testDir" value="$PROJECT_DIR$/test" />
       <option name="useRegexp" value="false" />
@@ -111,7 +131,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Flutter Test.navigates to MainMenuScreen on successful login" />
         <item itemvalue="Flutter Test.tests in test" />
+        <item itemvalue="Flutter Test.fromJson(toJson()) round-trip preserves all values" />
       </list>
     </recent_temporary>
   </component>
@@ -163,7 +185,23 @@
       <option name="project" value="LOCAL" />
       <updated>1776287583984</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="QuizListScreen + new models and cleaning code">
+      <option name="closed" value="true" />
+      <created>1776350603420</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1776350603420</updated>
+    </task>
+    <task id="LOCAL-00007" summary="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników">
+      <option name="closed" value="true" />
+      <created>1776350730049</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1776350730050</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -180,6 +218,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Basic structure of project" />
     <MESSAGE value="QuizListScreen + new models and cleaning code" />
-    <option name="LAST_COMMIT_MESSAGE" value="QuizListScreen + new models and cleaning code" />
+    <MESSAGE value="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników" />
+    <option name="LAST_COMMIT_MESSAGE" value="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników" />
   </component>
 </project>

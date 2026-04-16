@@ -11,7 +11,7 @@ class SessionData {
   final SessionStatus _status;
   final DateTime _sessionStartTime;
   final DateTime _gameStartTime;
-  final DateTime _endTime;
+  final DateTime? _endTime;
   final List<Player> _players;
   final List<int> _placement;
   final List<Question> _questions;
@@ -24,7 +24,7 @@ class SessionData {
     required SessionStatus status,
     required DateTime sessionStartTime,
     required DateTime gameStartTime,
-    required DateTime endTime,
+    required DateTime? endTime,
     required List<Player> players,
     required List<int> placement,
     required List<Question> questions,
@@ -90,7 +90,7 @@ class SessionData {
       'status': _status.name,
       'sessionStartTime': _sessionStartTime.toIso8601String(),
       'gameStartTime': _gameStartTime.toIso8601String(),
-      'endTime': _endTime.toIso8601String(),
+      'endTime': _endTime?.toIso8601String(),
       'players': _players.map((p) => p.toJson()).toList(),
       'placement': _placement,
       'questions': _questions.map((q) => q.toJson()).toList(),
@@ -103,7 +103,7 @@ class SessionData {
   SessionStatus get status => _status;
   DateTime get sessionStartTime => _sessionStartTime;
   DateTime get gameStartTime => _gameStartTime;
-  DateTime get endTime => _endTime;
+  DateTime? get endTime => _endTime;
   List<Player> get players => _players;
   List<int> get placement => _placement;
   List<Question> get questions => _questions;

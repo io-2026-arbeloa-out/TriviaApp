@@ -1,4 +1,3 @@
-/*
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -13,7 +12,7 @@ class MockFirebaseQuizRepository extends Mock implements FirebaseQuizRepository 
 void main() {
   test('QuestionService pobiera pytania z repozytorium', () async {
     final repo = MockFirebaseQuestionRepository();
-    final service = QuestionService(repo);
+    final service = QuestionService();
 
     when(() => repo.getQuestions(10, any())).thenAnswer((_) async => []);
 
@@ -25,7 +24,7 @@ void main() {
 
   test('QuizListService pobiera listę quizów', () async {
     final repo = MockFirebaseQuizRepository();
-    final service = QuizListService(repo);
+    final service = QuizListService();
 
     when(() => repo.getQuizList()).thenAnswer((_) async => []);
 
@@ -35,4 +34,5 @@ void main() {
     verify(() => repo.getQuizList()).called(1);
   });
 }
-*/
+
+

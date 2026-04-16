@@ -47,8 +47,8 @@ class Question {
       'category': category,
       'correctAnswers': correctAnswers.toList(),
       'wrongAnswers': wrongAnswers?.toList(),
-      'type': type.toString(),
-      'difficulty': difficulty.toString(),
+      'type': type.name,
+      'difficulty': difficulty.name,
     };
   }
 

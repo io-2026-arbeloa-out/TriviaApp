@@ -8,12 +8,12 @@ class UserOptionsService implements IUserOptionsService {
   UserOptionsService(this._optionsRepository);
 
   @override
-  Future<void> saveOptions(UserOptions options) {
+  Future<void> saveUserOptions(UserOptions options) {
     return _optionsRepository.saveUserOptions(options);
   }
 
   @override
-  Future<UserOptions> getOptions() {
+  Future<UserOptions> getUserOptions() {
     return _optionsRepository.getUserOptions();
   }
 }

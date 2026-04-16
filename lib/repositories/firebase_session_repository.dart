@@ -124,7 +124,7 @@ class FirebaseSessionRepository {
       'status': session.status.name,
       'sessionStartTime': session.sessionStartTime.toIso8601String(),
       'gameStartTime': session.gameStartTime.toIso8601String(),
-      'endTime': session.endTime.toIso8601String(),
+      'endTime': session.endTime?.toIso8601String(),
       'players': session.players
           .map((p) => {
         'uid': p.uid,

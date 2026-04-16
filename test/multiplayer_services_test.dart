@@ -1,10 +1,12 @@
 /*
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:triviaapp/models/game_mode.dart';
 
 import 'package:triviaapp/models/player.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 import 'package:triviaapp/services/multiplayer_connection_service.dart';
@@ -50,8 +52,18 @@ void main() {
 
   test('listenToSession emituje dane sesji', () {
     final sessionRepo = MockFirebaseSessionRepository();
+    final questionRepo = MockFirebaseQuestionRepository();
     final service = MultiplayerGameService(sessionRepo, questionRepo);
-    final sessionData = SessionData(id: 'session-1', players: []);
+    final sessionData = SessionData(sessionId: 's1',
+        numPlayers: 0,
+        status: SessionStatus.inProgress,
+        sessionStartTime: DateTime.now(),
+        gameStartTime: DateTime.now(),
+        endTime: null,
+        placement: [],
+        questions: [],
+        gameMode: GameMode.ranked,
+        players: []);
 
     when(() => sessionRepo.getSessionStream('session-1'))
         .thenAnswer((_) => Stream.value(sessionData));
@@ -61,4 +73,5 @@ void main() {
         emits(sessionData)
     );
   });
-*/
+}*/
+void main() {}

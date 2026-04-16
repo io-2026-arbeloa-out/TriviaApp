@@ -44,6 +44,15 @@ class UIOptions {
     return Color(int.parse(buffer.toString(), radix: 16));
   }
 
+  static String _hexFromColor(Color color) {
+    final hex = color.toARGB32()
+        .toRadixString(16)
+        .padLeft(8, '0')
+        .substring(2);
+
+    return '#$hex';
+  }
+
   factory UIOptions.fromJson(Map<String, dynamic> json) {
     return UIOptions(
       mainColor: _colorFromHex(json['mainColor'] as String),
@@ -56,11 +65,11 @@ class UIOptions {
 
   Map<String, dynamic> toJson() {
     return {
-      'mainColor': _mainColor,
-      'secondaryColor': _secondaryColor,
-      'mainButtonColor' : _mainButtonColor,
-      'secondaryButtonColor' : _secondaryButtonColor,
-      'textColor' : _textColor
+      'mainColor': _hexFromColor(_mainColor),
+      'secondaryColor': _hexFromColor(_secondaryColor),
+      'mainButtonColor' : _hexFromColor(_mainButtonColor),
+      'secondaryButtonColor' : _hexFromColor(_secondaryButtonColor),
+      'textColor' : _hexFromColor(_textColor)
     };
   }
 

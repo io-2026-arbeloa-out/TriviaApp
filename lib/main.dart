@@ -20,7 +20,7 @@ class TriviaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Trivia App',
       navigatorKey: AppRoute.instance.navigatorKey,
-      initialRoute: AppRoute.mainMenuScreen,
+      initialRoute: AppRoute.loginScreen,//mainMenuScreen,
       onGenerateRoute: AppRoute.instance.onGenerateRoute,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
