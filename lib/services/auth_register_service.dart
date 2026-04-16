@@ -7,28 +7,29 @@ class AuthRegisterService implements IRegisterAuthService {
   final FirebaseAuthRepository _authRepository;
   final FirebaseProfileRepository _profileRepository;
 
-  AuthRegisterService(
-      this._authRepository,
-      this._profileRepository,
-      );
+  AuthRegisterService({
+    required FirebaseAuthRepository authRepository,
+    required FirebaseProfileRepository profileRepository,
+  })  : _authRepository = authRepository,
+        _profileRepository = profileRepository;
 
   @override
-  Future<void> register(String email, String password, String displayName) async {
-    // Rejestracja w auth + utworzenie profilu
-    final profile =
-    await _authRepository.registerWithEmail(email, password, displayName);
-    await _profileRepository.updateProfileData(profile);
+  Future<ProfileData> register(
+      String email,
+      String password,
+      String username,
+      ) async {
+    final profileData = await _authRepository.registerWithEmail(
+      email,
+      password,
+      username,
+    );
+    await _profileRepository.updateProfileData(profileData);
+    return profileData;
   }
 
   @override
-  Future<ProfileData> generateProfile() async {
-    // Prosta implementacja – pobierz aktualny profil z repo
-    // Możesz tu dodać logikę defaultowych wartości.
-    throw UnimplementedError('generateProfile zależy od logiki aplikacji');
-  }
-
-  @override
-  Stream authStateChanges() {
+  Stream<ProfileData?> authStateChanges() {
     return _authRepository.authStateChanges();
   }
 }

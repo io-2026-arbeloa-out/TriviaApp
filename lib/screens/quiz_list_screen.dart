@@ -218,7 +218,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
                             options.mainButtonColor.withOpacity(0.2),
                           ),
                           child: Icon(
-                            Icons.quiz,
+                            quiz.getIcon(),
                             color: options.textColor,
                             size: 28,
                           ),

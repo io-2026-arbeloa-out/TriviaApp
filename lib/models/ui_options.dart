@@ -37,13 +37,20 @@ class UIOptions {
     );
   }
 
+  static Color _colorFromHex(String hex) {
+    final buffer = StringBuffer();
+    if (hex.length == 7) buffer.write('ff');
+    buffer.write(hex.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+
   factory UIOptions.fromJson(Map<String, dynamic> json) {
     return UIOptions(
-      mainColor: json['mainColor'] as Color,
-      secondaryColor: json['secondaryColor'] as Color,
-      mainButtonColor: json['mainButtonColor'] as Color,
-      secondaryButtonColor: json['secondaryButtonColor'] as Color,
-      textColor: json['textColor'] as Color,
+      mainColor: _colorFromHex(json['mainColor'] as String),
+      secondaryColor: _colorFromHex(json['secondaryColor'] as String),
+      mainButtonColor: _colorFromHex(json['mainButtonColor'] as String),
+      secondaryButtonColor: _colorFromHex(json['secondaryButtonColor'] as String),
+      textColor: _colorFromHex(json['textColor'] as String),
     );
   }
 

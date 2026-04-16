@@ -1,14 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/interfaces/i_ui_options_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
+import 'package:triviaapp/services/ui_options_service.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 
-class MainMenuScreen extends StatelessWidget {
-  MainMenuScreen({super.key});
-  final UIOptions options = UIOptions();
+class MainMenuScreen extends StatefulWidget {
+  MainMenuScreen({
+    super.key,
+    IUIOptionsService? service,
+  }) : _service = service ?? UIOptionsService();
+
+  final IUIOptionsService _service;
+
+  @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
+  late UIOptions _options;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    try {
+      final options = await widget._service.getUIOptions();
+      setState(() {
+        _options = options;
+        _loaded = true;
+      });
+    } catch (e) {
+      print('Error loading options: $e');
+      setState(() {
+        _options = UIOptions();
+        _loaded = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!_loaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -16,15 +58,14 @@ class MainMenuScreen extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              options.mainColor,
-              options.secondaryColor,
+              _options.mainColor,
+              _options.secondaryColor,
             ],
           ),
         ),
         child: SafeArea(
           child: Stack(
             children: [
-              // Prawy górny róg – przycisk ustawień (zębatka)
               Align(
                 alignment: Alignment.topRight,
                 child: Padding(
@@ -34,13 +75,11 @@ class MainMenuScreen extends StatelessWidget {
                       // TODO: przejście do ekranu ustawień
                     },
                     icon: const Icon(Icons.settings),
-                    color: options.secondaryButtonColor,
+                    color: _options.secondaryButtonColor,
                     tooltip: 'Ustawienia',
                   ),
                 ),
               ),
-
-              // Główna zawartość – logo, nazwa aplikacji, przyciski
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -51,12 +90,10 @@ class MainMenuScreen extends StatelessWidget {
                       color: Colors.white,
                     ),
                     const SizedBox(height: 30),
-
-                    // Nazwa aplikacji
                     Text(
                       'Trivia App',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: options.textColor,
+                        color: _options.textColor,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -65,22 +102,18 @@ class MainMenuScreen extends StatelessWidget {
                     Text(
                       'Sprawdź swoją wiedzę!',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: options.textColor,
+                        color: _options.textColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-
-                    // Przycisk Singleplayer
                     SizedBox(
                       width: 220,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: options.mainButtonColor,
-                          foregroundColor: options.textColor,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                          ),
+                          backgroundColor: _options.mainButtonColor,
+                          foregroundColor: _options.textColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -95,17 +128,13 @@ class MainMenuScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Przycisk Multiplayer
                     SizedBox(
                       width: 220,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: options.mainButtonColor,
-                          foregroundColor: options.textColor,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                          ),
+                          backgroundColor: _options.mainButtonColor,
+                          foregroundColor: _options.textColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -126,7 +155,7 @@ class MainMenuScreen extends StatelessWidget {
           ),
         ),
       ),
-        bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 1),
+      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 1),
     );
   }
 }

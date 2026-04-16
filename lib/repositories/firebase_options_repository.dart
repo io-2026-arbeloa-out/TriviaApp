@@ -48,12 +48,13 @@ class FirebaseOptionsRepository {
         .set(options.toJson(), SetOptions(merge: true));
   }
 
-  Future<UIOptions> loadUIOptions() async {
-    final snap =
-    await _firestore.collection('uiOptions').doc(_uid).get();
-    if (!snap.exists) {
+  Future<UIOptions> loadUIOptions(String preset) async {
+    try {
+      final snap = await _firestore.collection('ui_presets').doc(preset).get();
+      if (!snap.exists || snap.data() == null) return const UIOptions();
+      return UIOptions.fromJson(snap.data()!);
+    } catch (e) {
       return const UIOptions();
     }
-    return UIOptions.fromJson(snap.data()!);
   }
 }

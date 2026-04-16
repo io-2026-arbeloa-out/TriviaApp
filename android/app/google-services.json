@@ -24,7 +24,7 @@
           "other_platform_oauth_client": []
         }
       }
-    },
+    }/*,
     {
       "client_info": {
         "mobilesdk_app_id": "1:773298568818:android:9445ba77620ff472e0cceb",
@@ -43,7 +43,7 @@
           "other_platform_oauth_client": []
         }
       }
-    }
+    }*/
   ],
   "configuration_version": "1"
 }
