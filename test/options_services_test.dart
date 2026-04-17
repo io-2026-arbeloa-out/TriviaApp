@@ -4,12 +4,19 @@ import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/models/user_options.dart';
 
 import 'package:triviaapp/repositories/firebase_options_repository.dart';
+import 'package:triviaapp/repositories/firebase_profile_repository.dart';
 import 'package:triviaapp/services/ui_options_service.dart';
 import 'package:triviaapp/services/user_options_service.dart';
 
 class MockFirebaseOptionsRepository extends Mock implements FirebaseOptionsRepository {}
+class MockFirebaseProfileRepository extends Mock implements FirebaseProfileRepository {}
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(UserOptions());
+    registerFallbackValue(UIOptions());
+  });
+
   test('UserOptionsService zapisuje opcje uzytkownika', () async {
     final repo = MockFirebaseOptionsRepository();
     final service = UserOptionsService(repo);
@@ -29,19 +36,32 @@ void main() {
 
     final result = await service.getUserOptions();
 
-    expect(result, isA<Map>());
+    expect(result.soundVolume, 30);
+    expect(result.musicVolume, 80);
   });
 
   test('UIOptionsService zapisuje i ładuje ustawienia interfejsu', () async {
     final repo = MockFirebaseOptionsRepository();
-    final service = UIOptionsService(repo);
+    final profileRepo = MockFirebaseProfileRepository();
 
-    when(() => repo.saveUIOptions(any())).thenAnswer((_) async => Future.value());
+    final service = UIOptionsService(repo, profileRepo);
 
-    await service.saveUIOptions(UIOptions());
+    final options = UIOptions();
+
+    when(() => repo.saveUIOptions(any()))
+        .thenAnswer((_) async {});
+    when(() => repo.loadUIOptions(any()))
+        .thenAnswer((_) async => options);
+
+    when(() => profileRepo.getUIPreset(any()))
+        .thenAnswer((_) async => 'pr1');
+
+    await service.saveUIOptions(options);
     final result = await service.getUIOptions();
 
     verify(() => repo.saveUIOptions(any())).called(1);
-    expect(result, UIOptions());
+    verify(() => repo.loadUIOptions(any())).called(1);
+
+    expect(result, same(options));
   });
 }

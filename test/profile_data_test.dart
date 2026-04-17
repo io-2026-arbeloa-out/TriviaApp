@@ -117,7 +117,7 @@ void main() {
         expect(json['username'], 'Bob');
         expect(json['totalQuestionsAnswered'], 5);
         expect(json['correctAnswers'], 3);
-        expect(json['rank'], Rank.silver);
+        expect(json['rank'], 'silver');
         expect(json['ratingPoints'], 800);
         expect(json['rankedGamesPlayed'], 4);
         expect(json['rankedGamesWon'], 2);

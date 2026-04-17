@@ -12,7 +12,7 @@ class MockFirebaseQuizRepository extends Mock implements FirebaseQuizRepository 
 void main() {
   test('QuestionService pobiera pytania z repozytorium', () async {
     final repo = MockFirebaseQuestionRepository();
-    final service = QuestionService();
+    final service = QuestionService(questionRepository: repo);
 
     when(() => repo.getQuestions(10, any())).thenAnswer((_) async => []);
 
@@ -24,7 +24,7 @@ void main() {
 
   test('QuizListService pobiera listę quizów', () async {
     final repo = MockFirebaseQuizRepository();
-    final service = QuizListService();
+    final service = QuizListService(quizRepository: repo);
 
     when(() => repo.getQuizList()).thenAnswer((_) async => []);
 

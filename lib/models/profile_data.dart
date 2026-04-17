@@ -56,7 +56,7 @@ class ProfileData {
       username: json['username'] as String,
       totalQuestionsAnswered: json['totalQuestionsAnswered'] as int,
       correctAnswers: json['correctAnswers'] as int,
-      rank: Rank.fromJson(json['rank'] as String),
+      rank: Rank.fromJson(json['rank'] as String?),
       ratingPoints: json['ratingPoints'] as int,
       rankedGamesPlayed: json['rankedGamesPlayed'] as int,
       rankedGamesWon: json['rankedGamesWon'] as int,

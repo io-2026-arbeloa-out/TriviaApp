@@ -4,32 +4,13 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników">
-      <change afterPath="$PROJECT_DIR$/test/auth_login_service_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/auth_register_service_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/fakes.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/login_screen_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/profile_data_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/registration_screen_test.dart" afterDir="false" />
+    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="nowe testy do mechanizmu logowania/rejestracji">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_user_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_user_options_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/models/profile_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/profile_data.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/question.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/session_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/session_data.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/ui_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/ui_options.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/user_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/user_options_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/auth_services_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/firebase_repositories_integration_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/multiplayer_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/multiplayer_services_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/options_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/options_services_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/private_game_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/private_game_services_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/profile_leaderboard_achievements_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/profile_leaderboard_achievements_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/profile_data_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/profile_data_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/score_table_service_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/score_table_service_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/screens_widget_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/screens_widget_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/singleplayer_service_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/singleplayer_service_test.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,10 +58,17 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Flutter Test.QuestionService pobiera pytania z repozytorium.executor": "Run",
+    "Flutter Test.QuizListService pobiera listę quizów.executor": "Run",
+    "Flutter Test.UIOptionsService zapisuje i ładuje ustawienia interfejsu.executor": "Run",
+    "Flutter Test.UserOptionsService pobiera opcje użytkownika.executor": "Run",
+    "Flutter Test.UserOptionsService zapisuje opcje uzytkownika.executor": "Run",
     "Flutter Test.fromJson(toJson()) round-trip preserves all values.executor": "Debug",
+    "Flutter Test.handles null rank by defaulting to unranked.executor": "Debug",
     "Flutter Test.navigates to MainMenuScreen on successful login.executor": "Run",
+    "Flutter Test.returns JSON with all expected keys.executor": "Debug",
     "Flutter Test.tests in test.executor": "Run",
-    "Flutter.main.dart.executor": "Run",
+    "Flutter.main.dart.executor": "Debug",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
@@ -92,6 +80,7 @@
     "cidr.known.project.marker": "true",
     "com.google.services.firebase.aqiPopupShown": "true",
     "dart.analysis.tool.window.visible": "false",
+    "deletionFromPopupRequiresConfirmation": "false",
     "git-widget-placeholder": "main",
     "io.flutter.project.isFirstOpen": "true",
     "io.flutter.reload.alreadyRun": "true",
@@ -111,19 +100,7 @@
       <recent name="C:\TriviaApp" />
     </key>
   </component>
-  <component name="RunManager" selected="Flutter.main.dart">
-    <configuration name="fromJson(toJson()) round-trip preserves all values" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
-      <option name="testName" value="fromJson(toJson()) round-trip preserves all values" />
-      <option name="testFile" value="$PROJECT_DIR$/test/profile_data_test.dart" />
-      <option name="useRegexp" value="false" />
-      <method v="2" />
-    </configuration>
-    <configuration name="navigates to MainMenuScreen on successful login" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
-      <option name="testName" value="navigates to MainMenuScreen on successful login" />
-      <option name="testFile" value="$PROJECT_DIR$/test/login_screen_test.dart" />
-      <option name="useRegexp" value="true" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Flutter Test.tests in test">
     <configuration name="tests in test" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
       <option name="testDir" value="$PROJECT_DIR$/test" />
       <option name="useRegexp" value="false" />
@@ -131,9 +108,7 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Flutter Test.navigates to MainMenuScreen on successful login" />
         <item itemvalue="Flutter Test.tests in test" />
-        <item itemvalue="Flutter Test.fromJson(toJson()) round-trip preserves all values" />
       </list>
     </recent_temporary>
   </component>
@@ -201,7 +176,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776350730050</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="nowe testy do mechanizmu logowania/rejestracji">
+      <option name="closed" value="true" />
+      <created>1776364092448</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1776364092448</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -219,6 +202,7 @@
     <MESSAGE value="Basic structure of project" />
     <MESSAGE value="QuizListScreen + new models and cleaning code" />
     <MESSAGE value="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników" />
-    <option name="LAST_COMMIT_MESSAGE" value="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników" />
+    <MESSAGE value="nowe testy do mechanizmu logowania/rejestracji" />
+    <option name="LAST_COMMIT_MESSAGE" value="nowe testy do mechanizmu logowania/rejestracji" />
   </component>
 </project>
