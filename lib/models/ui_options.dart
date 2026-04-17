@@ -12,7 +12,7 @@ class UIOptions {
   const UIOptions({
     Color mainColor = const Color(0xFF0D47A1),
     Color secondaryColor = const Color(0xFF4A148C),
-    Color mainButtonColor = Colors.green,
+    Color mainButtonColor = const Color(0xFF16AC12),
     Color secondaryButtonColor = Colors.white,
     Color textColor = Colors.white,
   })  : _mainColor = mainColor,

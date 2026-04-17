@@ -2,16 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
+import 'package:triviaapp/screens/login_screen.dart';
+import 'package:triviaapp/screens/registration_screen.dart';
 import 'package:triviaapp/services/ui_options_service.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
+import 'package:triviaapp/widgets/login_register_pop_up.dart';
 
 class MainMenuScreen extends StatefulWidget {
   MainMenuScreen({
     super.key,
+    bool? isLoggedIn,
     IUIOptionsService? service,
-  }) : _service = service ?? UIOptionsService();
+  }) : _service = service ?? UIOptionsService(),
+       _isLoggedIn = isLoggedIn ?? false;
 
+  final bool _isLoggedIn;
   final IUIOptionsService _service;
+
+  bool get isLoggedIn => _isLoggedIn;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -20,6 +28,10 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> {
   late UIOptions _options;
   bool _loaded = false;
+
+  bool _popupDismissed = false;
+
+  bool get _showPopup => !widget.isLoggedIn && !_popupDismissed;
 
   @override
   void initState() {
@@ -35,12 +47,27 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         _loaded = true;
       });
     } catch (e) {
-      print('Error loading options: $e');
       setState(() {
         _options = UIOptions();
         _loaded = true;
       });
     }
+  }
+
+  void _onLoginPressed() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => LoginScreen()),
+    );
+  }
+
+  void _onRegisterPressed() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RegistrationScreen()),
+    );
+  }
+
+  void _onPopupClose() {
+    setState(() => _popupDismissed = true);
   }
 
   @override
@@ -57,10 +84,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              _options.mainColor,
-              _options.secondaryColor,
-            ],
+            colors: [_options.mainColor, _options.secondaryColor],
           ),
         ),
         child: SafeArea(
@@ -84,15 +108,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.quiz,
-                      size: 100,
-                      color: Colors.white,
-                    ),
+                    Icon(Icons.quiz, size: 100, color: Colors.white),
                     const SizedBox(height: 30),
                     Text(
                       'Trivia App',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(
                         color: _options.textColor,
                         fontWeight: FontWeight.bold,
                       ),
@@ -155,7 +178,25 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 1),
+        bottomNavigationBar: Container(
+          color: _options.secondaryColor,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_showPopup)
+                LoginRegisterPopUp(
+                  options: _options,
+                  onLogin: _onLoginPressed,
+                  onRegister: _onRegisterPressed,
+                  onClose: _onPopupClose,
+                ),
+              AppBottomNavigationBar(
+                currentIndex: 1,
+                options: _options,
+              ),
+            ],
+          ),
+        ),
     );
   }
 }

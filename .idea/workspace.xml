@@ -4,13 +4,15 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="nowe testy do mechanizmu logowania/rejestracji">
+    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="refacoring">
+      <change afterPath="$PROJECT_DIR$/lib/widgets/login_register_pop_up.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/profile_data.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/profile_data.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/options_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/options_services_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/profile_data_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/profile_data_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/quiz_and_question_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/ui_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/ui_options.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/profile_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/profile_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/quiz_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/quiz_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/services/ui_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/ui_options_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/widgets/bottom_nav_bar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/bottom_nav_bar.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,7 +70,7 @@
     "Flutter Test.navigates to MainMenuScreen on successful login.executor": "Run",
     "Flutter Test.returns JSON with all expected keys.executor": "Debug",
     "Flutter Test.tests in test.executor": "Run",
-    "Flutter.main.dart.executor": "Debug",
+    "Flutter.main.dart.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
@@ -100,7 +102,7 @@
       <recent name="C:\TriviaApp" />
     </key>
   </component>
-  <component name="RunManager" selected="Flutter Test.tests in test">
+  <component name="RunManager" selected="Flutter.main.dart">
     <configuration name="tests in test" type="FlutterTestConfigType" factoryName="Flutter Test" temporary="true" nameIsGenerated="true">
       <option name="testDir" value="$PROJECT_DIR$/test" />
       <option name="useRegexp" value="false" />
@@ -184,7 +186,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776364092448</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="refacoring">
+      <option name="closed" value="true" />
+      <created>1776418549080</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1776418549080</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -203,6 +213,7 @@
     <MESSAGE value="QuizListScreen + new models and cleaning code" />
     <MESSAGE value="UIOptions i połączenie z bazą danych + AppRoute + wstęp do logowania i rejestracji użytkowników" />
     <MESSAGE value="nowe testy do mechanizmu logowania/rejestracji" />
-    <option name="LAST_COMMIT_MESSAGE" value="nowe testy do mechanizmu logowania/rejestracji" />
+    <MESSAGE value="refacoring" />
+    <option name="LAST_COMMIT_MESSAGE" value="refacoring" />
   </component>
 </project>

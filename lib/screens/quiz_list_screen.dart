@@ -91,7 +91,10 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 1),
+      bottomNavigationBar: AppBottomNavigationBar(
+        currentIndex: 0,
+        options: options,
+      ),
     );
   }
 

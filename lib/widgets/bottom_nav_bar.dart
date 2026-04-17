@@ -1,41 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/models/ui_options.dart';
 
 class AppBottomNavigationBar extends StatelessWidget {
+  const AppBottomNavigationBar({
+    super.key,
+    required this.currentIndex,
+    required this.options,
+  });
+
   final int currentIndex;
+  final UIOptions options;
+
   /// currentIndex:
   /// 0 - Quizy
   /// 1 - Main menu
   /// 2 - Profil
 
-  const AppBottomNavigationBar({
-    super.key,
-    required this.currentIndex,
-  });
-
-  void _onClickMainMenu() {
-    AppRoute.instance.goToMainMenu();
-  }
-
-  void _onClickQuizes() {
-    AppRoute.instance.goToQuizList();
-  }
-
-  void _onClickProfile() {
-    AppRoute.instance.goToProfile();
-  }
-
   void _onItemTapped(int index) {
     switch (index) {
       case 0:
-        _onClickQuizes();
-        break;
+        AppRoute.instance.goToQuizList();
       case 1:
-        _onClickMainMenu();
-        break;
+        AppRoute.instance.goToMainMenu();
       case 2:
-        _onClickProfile();
-        break;
+        AppRoute.instance.goToProfile();
     }
   }
 
@@ -44,19 +33,13 @@ class AppBottomNavigationBar extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: _onItemTapped,
+      backgroundColor: options.textColor,
+      selectedItemColor: options.mainColor,
+      unselectedItemColor: options.secondaryColor,
       items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.quiz),
-          label: 'Quizy',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Menu',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profil',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quizy'),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Menu'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
       ],
     );
   }
