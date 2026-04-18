@@ -1,4 +1,3 @@
-
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/session_data.dart';
 

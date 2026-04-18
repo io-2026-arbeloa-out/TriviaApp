@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
 class MultiplayerGameScreen extends StatelessWidget {
-  MultiplayerGameScreen({super.key});
+  MultiplayerGameScreen({
+    super.key,
+    UIOptions? options,
+  }) : _options = options ?? UIOptions();
 
-  final UIOptions options = UIOptions();
+  final UIOptions _options;
+
+  UIOptions get options => _options;
 
   @override
   Widget build(BuildContext context) {

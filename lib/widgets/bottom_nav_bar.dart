@@ -20,11 +20,11 @@ class AppBottomNavigationBar extends StatelessWidget {
   void _onItemTapped(int index) {
     switch (index) {
       case 0:
-        AppRoute.instance.goToQuizList();
+        AppRoute.instance.goToQuizList(options);
       case 1:
-        AppRoute.instance.goToMainMenu();
+        AppRoute.instance.goToMainMenu(false, options);
       case 2:
-        AppRoute.instance.goToProfile();
+        AppRoute.instance.goToProfile(options);
     }
   }
 

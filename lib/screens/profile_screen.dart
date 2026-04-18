@@ -3,9 +3,13 @@ import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 
 class ProfileScreen extends StatelessWidget {
-  ProfileScreen({super.key});
+  ProfileScreen({
+    super.key,
+    UIOptions? options,
+  }) : _options = options ?? UIOptions();
 
-  final UIOptions options = UIOptions();
+  final UIOptions _options;
+  UIOptions get options => _options;
 
   @override
   Widget build(BuildContext context) {

@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
 class LoginRegisterPopUp extends StatelessWidget {
-  const LoginRegisterPopUp({
+  LoginRegisterPopUp({
     super.key,
-    required this.options,
-    required this.onLogin,
-    required this.onRegister,
+    UIOptions? options,
     required this.onClose,
-  });
+  }) : _options = options ?? UIOptions();
 
-  final UIOptions options;
-  final VoidCallback onLogin;
-  final VoidCallback onRegister;
-  final VoidCallback onClose;
+  final void Function() onClose;
+  final UIOptions _options;
+  UIOptions get options => _options;
+
+  void _onLoginPressed() {
+    AppRoute.instance.goToLogin(options);
+  }
+
+  void _onRegisterPressed() {
+    AppRoute.instance.goToRegistration(options);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +81,7 @@ class LoginRegisterPopUp extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  onPressed: onLogin,
+                  onPressed: _onLoginPressed,
                   child: const Text('Zaloguj się'),
                 ),
               ),
@@ -91,7 +97,7 @@ class LoginRegisterPopUp extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  onPressed: onRegister,
+                  onPressed: _onRegisterPressed,
                   child: const Text('Zarejestruj się'),
                 ),
               ),

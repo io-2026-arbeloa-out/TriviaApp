@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:triviaapp/screens/main_menu_screen.dart';
 import 'package:triviaapp/app_route.dart';
 
 void main() async {
@@ -20,14 +19,9 @@ class TriviaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Trivia App',
       navigatorKey: AppRoute.instance.navigatorKey,
-      initialRoute: AppRoute.mainMenuScreen,
+      initialRoute: AppRoute.loadingScreen,
       onGenerateRoute: AppRoute.instance.onGenerateRoute,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: MainMenuScreen(),
     );
   }
 }

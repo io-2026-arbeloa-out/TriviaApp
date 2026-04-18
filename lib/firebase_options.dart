@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,10 +25,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         return windows;
       case TargetPlatform.linux:
@@ -51,6 +45,7 @@ class DefaultFirebaseOptions {
     appId: '1:773298568818:android:b65fce45fbe81151e0cceb',
     messagingSenderId: '773298568818',
     projectId: 'triviaapp-tt',
+    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'triviaapp-tt.firebasestorage.app',
   );
 
@@ -59,6 +54,7 @@ class DefaultFirebaseOptions {
     appId: '1:773298568818:ios:c76902bf550cdd10e0cceb',
     messagingSenderId: '773298568818',
     projectId: 'triviaapp-tt',
+    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'triviaapp-tt.firebasestorage.app',
     iosBundleId: 'TriviaApp.com.triviaapp',
   );
@@ -69,8 +65,30 @@ class DefaultFirebaseOptions {
     messagingSenderId: '773298568818',
     projectId: 'triviaapp-tt',
     authDomain: 'triviaapp-tt.firebaseapp.com',
+    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'triviaapp-tt.firebasestorage.app',
     measurementId: 'G-ST3TG7TETT',
-    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDBn8AG7Zgu6zl-k6we1wqeBC6yYcB9_Qs',
+    appId: '1:773298568818:web:59be015e3f2da9cde0cceb',
+    messagingSenderId: '773298568818',
+    projectId: 'triviaapp-tt',
+    authDomain: 'triviaapp-tt.firebaseapp.com',
+    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
+    storageBucket: 'triviaapp-tt.firebasestorage.app',
+    measurementId: 'G-ST3TG7TETT',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyCo747R3vYayt7r4zd0tt5JNqM94RyFuIc',
+    appId: '1:773298568818:ios:c76902bf550cdd10e0cceb',
+    messagingSenderId: '773298568818',
+    projectId: 'triviaapp-tt',
+    databaseURL: 'https://triviaapp-tt-default-rtdb.europe-west1.firebasedatabase.app',
+    storageBucket: 'triviaapp-tt.firebasestorage.app',
+    iosBundleId: 'TriviaApp.com.triviaapp',
+  );
+
 }

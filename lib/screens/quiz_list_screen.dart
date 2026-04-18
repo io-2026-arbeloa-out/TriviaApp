@@ -3,18 +3,19 @@ import 'package:triviaapp/interfaces/i_quiz_list_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/models/quiz.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/services/quiz_list_service.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 
 class QuizListScreen extends StatefulWidget {
   final IQuizListService _quizListService;
   final UIOptions _options;
 
-  const QuizListScreen({
+  QuizListScreen({
     super.key,
-    UIOptions options = const UIOptions(),
-    required IQuizListService quizListService,
-  }) :  _options = options,
-        _quizListService = quizListService;
+    UIOptions? options,
+    IQuizListService? quizListService,
+  }) :  _options = options ?? UIOptions(),
+        _quizListService = quizListService ?? QuizListService();
 
   @override
   State<QuizListScreen> createState() => QuizListScreenState();
@@ -67,7 +68,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
   }
 
   void _onQuizTap(Quiz quiz) {
-    AppRoute.instance.goToSingleplayer(quiz.category);
+    AppRoute.instance.goToSingleplayer(quiz.category, options);
   }
 
   @override

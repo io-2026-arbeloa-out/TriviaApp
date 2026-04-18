@@ -24,7 +24,7 @@ class UIOptionsService implements IUIOptionsService {
 
     final String preset = await _profileRepository.getUIPreset(uid);
     if (preset == 'default') return UIOptions();
-    return _optionsRepository.loadUIOptions("default");
+    return _optionsRepository.loadUIOptions("pr1");
   }
 
   @override

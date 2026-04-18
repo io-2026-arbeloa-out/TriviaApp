@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await widget.authService.signInWithEmail(email, password);
       if (!mounted) return;
-      AppRoute.instance.goToMainMenu();
+      AppRoute.instance.goToMainMenu(false, widget.options);
     } on FirebaseAuthException catch (e) {
       _showMessage(_mapFirebaseError(e.code));
     } catch (_) {

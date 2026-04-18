@@ -3,6 +3,7 @@ import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/screens/achievement_screen.dart';
 import 'package:triviaapp/screens/game_options_screen.dart';
 import 'package:triviaapp/screens/leaderboard_screen.dart';
+import 'package:triviaapp/screens/loading_screen.dart';
 import 'package:triviaapp/screens/login_screen.dart';
 import 'package:triviaapp/screens/main_menu_screen.dart';
 import 'package:triviaapp/screens/multiplayer_game_screen.dart';
@@ -40,118 +41,183 @@ class AppRoute {
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case mainMenuScreen:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final bool isLoggedIn = args?['isLoggedIn'] ?? false;
+        final UIOptions options = args?['options'] ?? const UIOptions();
         return MaterialPageRoute(
-          builder: (_) => MainMenuScreen(),
+          builder: (_) =>
+              MainMenuScreen(isLoggedIn: isLoggedIn, options: options),
           settings: settings,
         );
+
       case profileScreen:
+        final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => ProfileScreen(),
+          builder: (_) => ProfileScreen(options: options),
           settings: settings,
         );
+
       case quizListScreen:
+        final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => QuizListScreen(quizListService: QuizListService()),
-          settings: settings,
-        );
-      case leaderboardScreen:
-        return MaterialPageRoute(
-          builder: (_) => LeaderboardScreen(),
-          settings: settings,
-        );
-      case achievementScreen:
-        return MaterialPageRoute(
-          builder: (_) => AchievementScreen(),
-          settings: settings,
-        );
-      case singleplayerScreen:
-        final category = settings.arguments as String;
-        return MaterialPageRoute(
-          builder: (_) => SingleplayerGameScreen(
-            category: category,
-            singleplayerGameService: SingleplayerGameService(category: category),
-          ),
-          settings: settings,
-        );
-      case multiplayerScreen:
-        return MaterialPageRoute(
-          builder: (_) => MultiplayerGameScreen(),
-          settings: settings,
-        );
-      case loginScreen:
-        return MaterialPageRoute(
-          builder: (_) => LoginScreen(),
-          settings: settings,
-        );
-      case registrationScreen:
-        final options = settings.arguments as UIOptions;
-        return MaterialPageRoute(
-          builder: (_) => RegistrationScreen(
+          builder: (_) => QuizListScreen(
+            quizListService: QuizListService(),
             options: options,
           ),
           settings: settings,
         );
+
+      case loadingScreen:
+        return MaterialPageRoute(
+          builder: (_) => LoadingScreen(
+            isLoggedIn: false,
+          ),
+          settings: settings,
+        );
+
+      case leaderboardScreen:
+        final UIOptions options = settings.arguments as UIOptions;
+        return MaterialPageRoute(
+          builder: (_) => LeaderboardScreen(options: options),
+          settings: settings,
+        );
+
+      case achievementScreen:
+        final UIOptions options = settings.arguments as UIOptions;
+        return MaterialPageRoute(
+          builder: (_) => AchievementScreen(options: options),
+          settings: settings,
+        );
+
+      case singleplayerScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        final String category = args['category'];
+        final UIOptions options = args['options'];
+        return MaterialPageRoute(
+          builder: (_) => SingleplayerGameScreen(
+            category: category,
+            singleplayerGameService:
+            SingleplayerGameService(category: category),
+            options: options,
+          ),
+          settings: settings,
+        );
+
+      case multiplayerScreen:
+        final UIOptions options = settings.arguments as UIOptions;
+        return MaterialPageRoute(
+          builder: (_) => MultiplayerGameScreen(options: options),
+          settings: settings,
+        );
+
+      case loginScreen:
+        final UIOptions options = settings.arguments as UIOptions;
+        return MaterialPageRoute(
+          builder: (_) => LoginScreen(options: options),
+          settings: settings,
+        );
+
+      case registrationScreen:
+        final UIOptions options = settings.arguments as UIOptions;
+        return MaterialPageRoute(
+          builder: (_) => RegistrationScreen(options: options),
+          settings: settings,
+        );
+
       case gameOptionsScreen:
+        final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => GameOptionsScreen(),
+          builder: (_) => GameOptionsScreen(options: options),
           settings: settings,
         );
+
       case userOptionsScreen:
+        final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => UserOptionsScreen(),
+          builder: (_) => UserOptionsScreen(options: options),
           settings: settings,
         );
+
       case scoreTableScreen:
+        final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => ScoreTableScreen(),
+          builder: (_) => ScoreTableScreen(options: options),
           settings: settings,
         );
+
       case privateLobbyScreen:
+        final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => PrivateLobbyScreen(),
+          builder: (_) => PrivateLobbyScreen(options: options),
           settings: settings,
         );
+
       default:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final bool isLoggedIn = args?['isLoggedIn'] ?? false;
+        final UIOptions options = args?['options'] ?? const UIOptions();
         return MaterialPageRoute(
-          builder: (_) => MainMenuScreen(),
+          builder: (_) =>
+              MainMenuScreen(isLoggedIn: isLoggedIn, options: options),
           settings: settings,
         );
     }
   }
 
-
-  void goToProfile() {
-    navigatorKey.currentState?.pushNamed(profileScreen);
+  void goToProfile(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      profileScreen,
+      arguments: options,
+    );
   }
 
-  void goToQuizList() {
-    navigatorKey.currentState?.pushNamed(quizListScreen);
+  void goToQuizList(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      quizListScreen,
+      arguments: options,
+    );
   }
 
-  void goToMainMenu() {
+  void goToMainMenu(bool isLoggedIn, UIOptions options) {
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
       mainMenuScreen,
+      arguments: {
+        'isLoggedIn': isLoggedIn,
+        'options': options,
+      },
           (route) => false,
     );
   }
 
-  void goToLeaderboard() {
-    navigatorKey.currentState?.pushNamed(leaderboardScreen);
-  }
-
-  void goToAchievements() {
-    navigatorKey.currentState?.pushNamed(achievementScreen);
-  }
-
-  void goToSingleplayer(String quizId) {
+  void goToLeaderboard(UIOptions options) {
     navigatorKey.currentState?.pushNamed(
-      singleplayerScreen,
-      arguments: quizId,
+      leaderboardScreen,
+      arguments: options,
     );
   }
 
-  void goToMultiplayer() {
-    navigatorKey.currentState?.pushNamed(multiplayerScreen);
+  void goToAchievements(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      achievementScreen,
+      arguments: options,
+    );
+  }
+
+  void goToSingleplayer(String quizId, UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      singleplayerScreen,
+      arguments: {
+        'category': quizId,
+        'options': options,
+      },
+    );
+  }
+
+  void goToMultiplayer(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      multiplayerScreen,
+      arguments: options,
+    );
   }
 
   void goToRegistration(UIOptions options) {
@@ -161,24 +227,39 @@ class AppRoute {
     );
   }
 
-  void goToLogin() {
-    navigatorKey.currentState?.pushNamed(loginScreen);
+  void goToLogin(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      loginScreen,
+      arguments: options,
+    );
   }
 
-  void goToUserOptions() {
-    navigatorKey.currentState?.pushNamed(userOptionsScreen);
+  void goToUserOptions(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      userOptionsScreen,
+      arguments: options,
+    );
   }
 
-  void goToGameOptions() {
-    navigatorKey.currentState?.pushNamed(gameOptionsScreen);
+  void goToGameOptions(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      gameOptionsScreen,
+      arguments: options,
+    );
   }
 
-  void goToScoreTable() {
-    navigatorKey.currentState?.pushNamed(scoreTableScreen);
+  void goToScoreTable(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      scoreTableScreen,
+      arguments: options,
+    );
   }
 
-  void goToPrivateLobby() {
-    navigatorKey.currentState?.pushNamed(privateLobbyScreen);
+  void goToPrivateLobby(UIOptions options) {
+    navigatorKey.currentState?.pushNamed(
+      privateLobbyScreen,
+      arguments: options,
+    );
   }
 
   void goBack() {

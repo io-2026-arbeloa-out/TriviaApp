@@ -11,11 +11,11 @@ class FirebaseQuizRepository {
   Future<List<Quiz>> getQuizList() async {
     try {
       final snapshot = await _firestore.collection('quizzes').get();
-
       return snapshot.docs.map((doc) {
         return Quiz.fromJson(doc.data());
       }).toList();
-    } catch (e, stack) {
+    } catch (e) {
+      print(e);
       rethrow;
     }
   }

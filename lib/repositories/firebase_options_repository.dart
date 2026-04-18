@@ -21,7 +21,7 @@ class FirebaseOptionsRepository {
     return user.uid;
   }
 
-  // ==== UserOptions (dźwięk / muzyka) ====
+  // ==== UserOptions ====
 
   Future<void> saveUserOptions(UserOptions options) {
     return _firestore
@@ -39,7 +39,7 @@ class FirebaseOptionsRepository {
     return UserOptions.fromJson(snap.data()!);
   }
 
-  // ==== UIOptions (kolory UI) ====
+  // ==== UIOptions ====
 
   Future<void> saveUIOptions(UIOptions options) {
     return _firestore

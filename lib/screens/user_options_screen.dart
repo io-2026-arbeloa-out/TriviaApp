@@ -2,17 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
 class UserOptionsScreen extends StatefulWidget {
-  const UserOptionsScreen({super.key});
+  UserOptionsScreen({
+    super.key,
+    UIOptions? options,
+  }) : _options = options ?? UIOptions();
+
+  final UIOptions _options;
+  double _soundVolume = 50;
+  double _musicVolume = 50;
 
   @override
   State<UserOptionsScreen> createState() => _UserOptionsScreenState();
 }
 
 class _UserOptionsScreenState extends State<UserOptionsScreen> {
-  final UIOptions options = UIOptions();
-
-  double soundVolume = 50;
-  double musicVolume = 50;
+  UIOptions get options => widget._options;
+  double get soundVolume => widget._soundVolume;
+  double get musicVolume => widget._musicVolume;
+  set soundVolume(double v) => widget._soundVolume = v;
+  set musicVolume(double v) => widget._musicVolume = v;
 
   @override
   Widget build(BuildContext context) {
