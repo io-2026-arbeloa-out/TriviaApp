@@ -35,6 +35,18 @@ class UserOptions {
     };
   }
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is UserOptions &&
+        other.soundVolume == soundVolume &&
+        other.musicVolume == musicVolume;
+  }
+
+  @override
+  int get hashCode => Object.hash(soundVolume, musicVolume);
+
   int get soundVolume => _soundVolume;
   int get musicVolume => _musicVolume;
 }

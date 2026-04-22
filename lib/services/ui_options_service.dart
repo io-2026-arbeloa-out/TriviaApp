@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/repositories/firebase_options_repository.dart';
@@ -8,27 +7,31 @@ class UIOptionsService implements IUIOptionsService {
   final FirebaseOptionsRepository _optionsRepository;
   final FirebaseProfileRepository _profileRepository;
 
-
   UIOptionsService([
     FirebaseOptionsRepository? optionsRepository,
     FirebaseProfileRepository? profileRepository,
-  ]) : _optionsRepository = optionsRepository ?? FirebaseOptionsRepository(),
+  ])  : _optionsRepository = optionsRepository ?? FirebaseOptionsRepository(),
         _profileRepository = profileRepository ?? FirebaseProfileRepository();
 
   @override
   Future<UIOptions> getUIOptions() async {
-    //TODO: Firebase Auth
-    //final uid = FirebaseAuth.instance.currentUser?.uid;
-    final String uid = 'uid1';
-    //if (uid == null) return UIOptions();
-
-    final String preset = await _profileRepository.getUIPreset(uid);
+    final preset = await this.getCurrentPreset();
     if (preset == 'default') return UIOptions();
-    return _optionsRepository.loadUIOptions("pr1");
+    return _optionsRepository.getUIOptions(preset);
   }
 
   @override
-  Future<void> saveUIOptions(UIOptions options) {
-    return _optionsRepository.saveUIOptions(options);
+  Future<void> saveUIOptions(String preset) {
+    return _optionsRepository.saveUIOptions(preset);
+  }
+
+  @override
+  Future<Map<String, UIOptions>> getUIPresets() {
+    return _optionsRepository.getUIPresets();
+  }
+
+  @override
+  Future<String> getCurrentPreset() {
+    return _profileRepository.getUIPreset();
   }
 }

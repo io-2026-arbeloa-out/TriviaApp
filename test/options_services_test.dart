@@ -50,17 +50,17 @@ void main() {
 
     when(() => repo.saveUIOptions(any()))
         .thenAnswer((_) async {});
-    when(() => repo.loadUIOptions(any()))
+    when(() => repo.getUIOptions(any()))
         .thenAnswer((_) async => options);
 
-    when(() => profileRepo.getUIPreset(any()))
-        .thenAnswer((_) async => 'pr1');
+    when(() => profileRepo.getUIPreset())
+        .thenAnswer((_) async => 'default');
 
-    await service.saveUIOptions(options);
+    await service.saveUIOptions('default');
     final result = await service.getUIOptions();
 
     verify(() => repo.saveUIOptions(any())).called(1);
-    verify(() => repo.loadUIOptions(any())).called(1);
+    verify(() => repo.getUIOptions(any())).called(1);
 
     expect(result, same(options));
   });

@@ -178,7 +178,7 @@ class AppRoute {
     );
   }
 
-  void goToMainMenu(bool isLoggedIn, UIOptions options) {
+  void goToMainMenu({bool isLoggedIn = false, required UIOptions options}) {
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
       mainMenuScreen,
       arguments: {

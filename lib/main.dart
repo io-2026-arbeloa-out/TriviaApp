@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:triviaapp/repositories/firebase_options_repository.dart';
 import 'firebase_options.dart';
 import 'package:triviaapp/app_route.dart';
 

@@ -5,7 +5,9 @@ import 'package:triviaapp/repositories/firebase_profile_repository.dart';
 class ProfileDataService implements IProfileDataService {
   final FirebaseProfileRepository _profileRepository;
 
-  ProfileDataService(this._profileRepository);
+  ProfileDataService(
+      FirebaseProfileRepository? profileRepository,
+      ) : _profileRepository = profileRepository ?? FirebaseProfileRepository();
 
   @override
   Future<ProfileData> getProfileData(String uid) {

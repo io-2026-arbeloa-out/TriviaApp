@@ -73,6 +73,27 @@ class UIOptions {
     };
   }
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is UIOptions &&
+        other.mainColor == mainColor &&
+        other.secondaryColor == secondaryColor &&
+        other.mainButtonColor == mainButtonColor &&
+        other.secondaryButtonColor == secondaryButtonColor &&
+        other.textColor == textColor;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    mainColor,
+    secondaryColor,
+    mainButtonColor,
+    secondaryButtonColor,
+    textColor,
+  );
+
   Color get mainColor => _mainColor;
   Color get secondaryColor => _secondaryColor;
   Color get mainButtonColor => _mainButtonColor;

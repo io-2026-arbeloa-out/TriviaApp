@@ -37,7 +37,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Future<void> _init() async {
     await _loadAssets();
     if (!mounted) return;
-    AppRoute.instance.goToMainMenu(widget.isLoggedIn, _options);
+    AppRoute.instance.goToMainMenu(isLoggedIn: widget.isLoggedIn, options: _options);
   }
 
   Future<void> _loadAssets() async {

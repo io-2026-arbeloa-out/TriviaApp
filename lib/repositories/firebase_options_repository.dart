@@ -15,9 +15,7 @@ class FirebaseOptionsRepository {
 
   String get _uid {
     final user = _auth.currentUser;
-    if (user == null) {
-      throw StateError('User not logged in');
-    }
+    if (user == null) throw StateError('User not logged in');
     return user.uid;
   }
 
@@ -25,36 +23,48 @@ class FirebaseOptionsRepository {
 
   Future<void> saveUserOptions(UserOptions options) {
     return _firestore
-        .collection('userOptions')
-        .doc(_uid)
-        .set(options.toJson(), SetOptions(merge: true));
+        .collection('users')
+        .doc('uid1')///TODO change to _uid
+        .set({'user_options': options.toJson()}, SetOptions(merge: true));
   }
 
   Future<UserOptions> getUserOptions() async {
-    final snap =
-    await _firestore.collection('userOptions').doc(_uid).get();
-    if (!snap.exists) {
-      return const UserOptions(soundVolume: 50, musicVolume: 50);
-    }
-    return UserOptions.fromJson(snap.data()!);
+    final snap = await _firestore.collection('users').doc('uid1').get();///TODO change to _uid
+    if (!snap.exists) return UserOptions();
+    return UserOptions.fromJson(snap.data()!['user_options']);
   }
 
   // ==== UIOptions ====
 
-  Future<void> saveUIOptions(UIOptions options) {
-    return _firestore
-        .collection('uiOptions')
-        .doc(_uid)
-        .set(options.toJson(), SetOptions(merge: true));
+  Future<void> saveUIOptions(String preset) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc('uid1') // TODO: change to _uid
+          .set({'ui_options': preset}, SetOptions(merge: true));
+    } catch (e) {
+      return Future.error('Failed to save UI options: $e');
+    }
   }
 
-  Future<UIOptions> loadUIOptions(String preset) async {
+  Future<UIOptions> getUIOptions(String preset) async {
     try {
       final snap = await _firestore.collection('ui_presets').doc(preset).get();
-      if (!snap.exists || snap.data() == null) return const UIOptions();
+      if (!snap.exists || snap.data() == null) return UIOptions();
       return UIOptions.fromJson(snap.data()!);
     } catch (e) {
-      return const UIOptions();
+      return UIOptions();
     }
+  }
+
+  Future<Map<String, UIOptions>> getUIPresets() async {
+    final snap = await _firestore.collection('ui_presets').get();
+    final result = <String, UIOptions>{};
+    for (final doc in snap.docs) {
+      try {
+        result[doc.id] = UIOptions.fromJson(doc.data());
+      } catch (_) {}
+    }
+    return result;
   }
 }

@@ -59,10 +59,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: IconButton(
                     onPressed: () {
-                      // TODO: przejście do ekranu ustawień
+                      AppRoute.instance.goToUserOptions(widget.options);
                     },
                     icon: const Icon(Icons.settings),
-                    color: widget.options.secondaryButtonColor,
+                    color: widget.options.textColor,
                     tooltip: 'Ustawienia',
                   ),
                 ),

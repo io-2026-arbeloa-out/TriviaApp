@@ -5,7 +5,8 @@ import 'package:triviaapp/repositories/firebase_options_repository.dart';
 class UserOptionsService implements IUserOptionsService {
   final FirebaseOptionsRepository _optionsRepository;
 
-  UserOptionsService(this._optionsRepository);
+  UserOptionsService([FirebaseOptionsRepository? optionsRepository])
+      : _optionsRepository = optionsRepository ?? FirebaseOptionsRepository();
 
   @override
   Future<void> saveUserOptions(UserOptions options) {

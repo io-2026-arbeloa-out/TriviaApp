@@ -9,15 +9,9 @@ class FirebaseProfileRepository {
 
   Future<ProfileData> getProfileData(String uid) async {
     final doc = await _firestore.collection('users').doc(uid).get();
-
-    if (!doc.exists) {
-      throw Exception('Profile not found for uid: $uid');
-    }
-
+    if (!doc.exists) throw Exception('Profile not found for uid: $uid');
     final data = doc.data()!;
-
     data['uid'] = uid;
-
     return ProfileData.fromJson(data);
   }
 
@@ -25,15 +19,12 @@ class FirebaseProfileRepository {
     await _firestore
         .collection('users')
         .doc(profileData.uid)
-        .set(
-      profileData.toJson(),
-      SetOptions(merge: true),
-    );
+        .set(profileData.toJson(), SetOptions(merge: true));
   }
 
-  Future<String> getUIPreset(String uid) async {
+  Future<String> getUIPreset() async {
     try {
-      final doc = await _firestore.collection('users').doc(uid).get();
+      final doc = await _firestore.collection('users').doc('uid1').get();//TODO change to _uid
       if (!doc.exists || doc.data() == null) return 'default';
       return doc.data()!['ui_options'] as String? ?? 'default';
     } catch (e) {
