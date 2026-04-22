@@ -16,48 +16,104 @@ class RegistrationScreen extends StatefulWidget {
     UIOptions? options,
     IRegisterAuthService? authService,
   })  : _options = options ?? UIOptions(),
-        _authService = authService ?? AuthRegisterService(
-          authRepository: FirebaseAuthRepository(),
-          profileRepository: FirebaseProfileRepository(),
-        );
-
-  IRegisterAuthService get authService => _authService;
-  UIOptions get options => _options;
+        _authService = authService ??
+            AuthRegisterService(
+              authRepository: FirebaseAuthRepository(),
+              profileRepository: FirebaseProfileRepository(),
+            );
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
+class _RegistrationScreenState extends State<RegistrationScreen>
+    with SingleTickerProviderStateMixin {
+  IRegisterAuthService get authService => widget._authService;
+  UIOptions get options => widget._options;
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _usernameController = TextEditingController();
+
   bool _isLoading = false;
+  bool _passwordVisible = false;
+  bool _confirmPasswordVisible = false;
+  String? _errorMessage;
+
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(_fade);
+
+    _ctrl.forward();
+  }
 
   @override
   void dispose() {
+    _ctrl.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _usernameController.dispose();
     super.dispose();
   }
 
+  Widget _animated({required Widget child}) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: child,
+      ),
+    );
+  }
+
+  // ── Functionality ──────────────────────────────────────────────────────────
+
   Future<void> _onClickRegister() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
     final username = _usernameController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || username.isEmpty) {
+    if (email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty ||
+        username.isEmpty) {
       _showMessage('Wypelnij wszystkie pola.');
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (password != confirmPassword) {
+      _showMessage('Hasla nie sa takie same.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
-      await widget.authService.register(email, password, username);
+      await authService.register(email, password, username);
       if (!mounted) return;
-      AppRoute.instance.goToMainMenu(isLoggedIn: false, options: widget.options);
+      AppRoute.instance.goToMainMenu(isLoggedIn: true, options: options);
     } on FirebaseAuthException catch (e) {
       _showMessage(_mapFirebaseError(e.code));
     } catch (_) {
@@ -69,87 +125,330 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   void _onClickClose() => AppRoute.instance.goBack();
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
+  void _showMessage(String message) =>
+      setState(() => _errorMessage = message);
 
   String _mapFirebaseError(String code) {
     switch (code) {
       case 'email-already-in-use':
-        return 'Ten adres email jest juz zajety.';
+        return 'Ten adres email jest już zajęty.';
       case 'weak-password':
-        return 'Haslo jest za slabe (min. 6 znakow).';
+        return 'Hasło jest za słabe (min. 8 znaków).';
       case 'invalid-email':
-        return 'Nieprawidlowy adres email.';
+        return 'Nieprawidłowy adres email.';
       default:
-        return 'Blad rejestracji: $code';
+        return 'Błąd rejestracji: $code';
     }
   }
 
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final options = widget.options;
-
     return Scaffold(
-      backgroundColor: options.secondaryColor,
-      appBar: AppBar(
-        backgroundColor: options.mainColor,
-        title: Text(
-          'Rejestracja',
-          style: TextStyle(color: options.textColor),
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomRight,
+            end: Alignment.topLeft,
+            colors: [
+              options.mainButtonColor.withOpacity(0.7),
+              options.secondaryColor.withOpacity(0.7),
+            ],
+          ),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.close, color: options.textColor),
-          onPressed: _onClickClose,
+        child: SingleChildScrollView(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Column(
+              children: [
+                _buildHeader(),
+                _animated(child: _buildErrorBanner()),
+                Expanded(child: _animated(child: _buildForm())),
+              ],
+            ),
+          ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    );
+  }
+
+  Widget _buildHeader() {
+    return SizedBox(
+      height: 300,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    options.mainButtonColor.withOpacity(0.85),
+                    options.secondaryColor,
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(48),
+                  bottomRight: Radius.circular(48),
+                ),
+              ),
+            ),
+          ),
+
+          Positioned(
+            top: 40,
+            left: 8,
+            child: SafeArea(
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: options.textColor),
+                onPressed: _onClickClose,
+              ),
+            ),
+          ),
+
+          Positioned(
+            left: -24,
+            bottom: 20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: options.textColor.withOpacity(0.07),
+              ),
+            ),
+          ),
+
+          Positioned(
+            right: 30,
+            top: 48,
+            child: Icon(
+              Icons.person_add,
+              size: 72,
+              color: options.textColor.withOpacity(0.2),
+            ),
+          ),
+
+          Positioned(
+            bottom: 44,
+            left: 0,
+            right: 0,
+            child: Text(
+              'Rejestracja',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: options.textColor,
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      child: _errorMessage == null
+          ? const SizedBox(width: double.infinity)
+          : Container(
+        width: double.infinity,
+        margin: const EdgeInsets.fromLTRB(28, 20, 28, 0),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade800.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
           children: [
-            TextField(
-              controller: _usernameController,
-              style: TextStyle(color: options.textColor),
-              decoration: InputDecoration(
-                labelText: 'Nazwa uzytkownika',
-                labelStyle: TextStyle(color: options.textColor),
+            const Icon(Icons.error_outline,
+                color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.white),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              style: TextStyle(color: options.textColor),
-              decoration: InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(color: options.textColor),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              style: TextStyle(color: options.textColor),
-              decoration: InputDecoration(
-                labelText: 'Haslo',
-                labelStyle: TextStyle(color: options.textColor),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 32),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: options.mainButtonColor,
-                foregroundColor: options.textColor,
-              ),
-              onPressed: _onClickRegister,
-              child: const Text('Zarejestruj'),
+            GestureDetector(
+              onTap: () => setState(() => _errorMessage = null),
+              child: const Icon(Icons.close,
+                  color: Colors.white, size: 18),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide:
+      BorderSide(color: options.mainButtonColor.withOpacity(0.4)),
+    );
+    final focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide:
+      BorderSide(color: options.mainButtonColor, width: 2),
+    );
+    final labelStyle =
+    TextStyle(color: options.textColor.withOpacity(0.7));
+    final inputStyle = TextStyle(color: options.textColor);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: options.secondaryColor.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: options.mainButtonColor.withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 0),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _usernameController,
+                  style: inputStyle,
+                  decoration: InputDecoration(
+                    labelText: 'Nazwa użytkownika',
+                    labelStyle: labelStyle,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusedBorder,
+                    filled: true,
+                    fillColor: Colors.transparent,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _emailController,
+                  style: inputStyle,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: labelStyle,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusedBorder,
+                    filled: true,
+                    fillColor: Colors.transparent,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: !_passwordVisible,
+                  style: inputStyle,
+                  decoration: InputDecoration(
+                    labelText: 'Hasło',
+                    labelStyle: labelStyle,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusedBorder,
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _passwordVisible
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: options.textColor.withOpacity(0.6),
+                      ),
+                      onPressed: () => setState(() =>
+                      _passwordVisible = !_passwordVisible),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _confirmPasswordController,
+                  obscureText: !_confirmPasswordVisible,
+                  style: inputStyle,
+                  decoration: InputDecoration(
+                    labelText: 'Potwierdź hasło',
+                    labelStyle: labelStyle,
+                    border: inputBorder,
+                    enabledBorder: inputBorder,
+                    focusedBorder: focusedBorder,
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _confirmPasswordVisible
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: options.textColor.withOpacity(0.6),
+                      ),
+                      onPressed: () => setState(() =>
+                      _confirmPasswordVisible =
+                      !_confirmPasswordVisible),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: _isLoading
+                ? Center(
+                child: CircularProgressIndicator(
+                    color: options.mainButtonColor))
+                : DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    options.mainButtonColor,
+                    options.mainButtonColor.withOpacity(0.6),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: options.mainButtonColor.withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _onClickRegister,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: options.textColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Zarejestruj',
+                  style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
