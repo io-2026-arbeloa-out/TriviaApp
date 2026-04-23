@@ -13,7 +13,8 @@ class FirebaseOptionsRepository {
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance;
 
-  String get _uid {
+  String get uid {
+    //return 'uid1';
     final user = _auth.currentUser;
     if (user == null) throw StateError('User not logged in');
     return user.uid;
@@ -24,12 +25,12 @@ class FirebaseOptionsRepository {
   Future<void> saveUserOptions(UserOptions options) {
     return _firestore
         .collection('users')
-        .doc('uid1')///TODO change to _uid
+        .doc(uid)
         .set({'user_options': options.toJson()}, SetOptions(merge: true));
   }
 
   Future<UserOptions> getUserOptions() async {
-    final snap = await _firestore.collection('users').doc('uid1').get();///TODO change to _uid
+    final snap = await _firestore.collection('users').doc(uid).get();
     if (!snap.exists) return UserOptions();
     return UserOptions.fromJson(snap.data()!['user_options']);
   }
@@ -40,7 +41,7 @@ class FirebaseOptionsRepository {
     try {
       await _firestore
           .collection('users')
-          .doc('uid1') // TODO: change to _uid
+          .doc(uid)
           .set({'ui_options': preset}, SetOptions(merge: true));
     } catch (e) {
       return Future.error('Failed to save UI options: $e');

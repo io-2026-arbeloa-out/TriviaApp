@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
+import 'package:triviaapp/interfaces/i_user_options_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/screens/main_menu_screen.dart';
+import 'package:triviaapp/models/user_options.dart';
 import 'package:triviaapp/services/ui_options_service.dart';
+import 'package:triviaapp/services/user_options_service.dart';
 
 class LoadingScreen extends StatefulWidget {
   LoadingScreen({
     super.key,
     bool? isLoggedIn,
-    IUIOptionsService? service,
+    IUIOptionsService? uiService,
+    IUserOptionsService? userService,
   })  : _isLoggedIn = isLoggedIn ?? false,
-        _service = service ?? UIOptionsService();
+        _uiService = uiService ?? UIOptionsService(),
+        _userService = userService ?? UserOptionsService();
 
   final bool _isLoggedIn;
-  final IUIOptionsService _service;
+  final IUIOptionsService _uiService;
+  final IUserOptionsService _userService;
 
   bool get isLoggedIn => _isLoggedIn;
-  IUIOptionsService get service => _service;
+  IUIOptionsService get uiService => _uiService;
+  IUserOptionsService get userService => _userService;
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
-  late UIOptions _options;
+  late UIOptions _uiOptions;
+  late UserOptions _userOptions;
   final UIOptions _defaultOptions = const UIOptions();
 
 
@@ -37,7 +45,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Future<void> _init() async {
     await _loadAssets();
     if (!mounted) return;
-    AppRoute.instance.goToMainMenu(isLoggedIn: widget.isLoggedIn, options: _options);
+    await AudioManager.instance.init(_userOptions);
+    AppRoute.instance.goToMainMenu(isLoggedIn: widget.isLoggedIn, options: _uiOptions);
   }
 
   Future<void> _loadAssets() async {
@@ -46,9 +55,14 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   Future<void> _loadOptions() async {
     try {
-      _options = await widget.service.getUIOptions();
+      _uiOptions = await widget.uiService.getUIOptions();
     } catch (e) {
-      _options = const UIOptions();
+      _uiOptions = const UIOptions();
+    }
+    try {
+      _userOptions = await widget.userService.getUserOptions();
+    } catch (e) {
+      _userOptions = const UserOptions();
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:triviaapp/models/rank.dart';
+import 'package:triviaapp/models/user_options.dart';
 
 @immutable
 class ProfileData {
@@ -11,6 +12,8 @@ class ProfileData {
   final int _ratingPoints;
   final int _rankedGamesPlayed;
   final int _rankedGamesWon;
+  final UserOptions _userOptions;
+  final String _uiPreset;
 
   const ProfileData({
     required String uid,
@@ -21,6 +24,8 @@ class ProfileData {
     int ratingPoints = 0,
     int rankedGamesPlayed = 0,
     int rankedGamesWon = 0,
+    UserOptions userOptions = const UserOptions(),
+    String uiPreset = 'default',
   })  : _uid = uid,
         _username = username,
         _totalQuestionsAnswered = totalQuestionsAnswered,
@@ -28,7 +33,9 @@ class ProfileData {
         _rank = rank,
         _ratingPoints = ratingPoints,
         _rankedGamesPlayed = rankedGamesPlayed,
-        _rankedGamesWon = rankedGamesWon;
+        _rankedGamesWon = rankedGamesWon,
+        _userOptions = userOptions,
+        _uiPreset = uiPreset;
 
   ProfileData copyWith({
     int? totalQuestionsAnswered,
@@ -37,35 +44,45 @@ class ProfileData {
     int? ratingPoints,
     int? rankedGamesPlayed,
     int? rankedGamesWon,
+    UserOptions? userOptions,
+    String? uiPreset,
   }) {
     return ProfileData(
-      uid: uid,
-      username: username,
+      uid: _uid,
+      username: _username,
       totalQuestionsAnswered: totalQuestionsAnswered ?? _totalQuestionsAnswered,
       correctAnswers: correctAnswers ?? _correctAnswers,
       rank: rank ?? _rank,
       ratingPoints: ratingPoints ?? _ratingPoints,
       rankedGamesPlayed: rankedGamesPlayed ?? _rankedGamesPlayed,
       rankedGamesWon: rankedGamesWon ?? _rankedGamesWon,
+      userOptions: userOptions ?? _userOptions,
+      uiPreset: uiPreset ?? _uiPreset,
     );
   }
 
-  factory ProfileData.fromJson(Map<String, dynamic> json) {
+  factory ProfileData.fromJson(String uid, Map<String, dynamic> json) {
+    final rawUserOptions = json['user_options'];
+    final userOptions = rawUserOptions is Map<String, dynamic>
+        ? UserOptions.fromJson(rawUserOptions)
+        : const UserOptions();
+
     return ProfileData(
-      uid: json['uid'] as String,
+      uid: uid,
       username: json['username'] as String,
-      totalQuestionsAnswered: json['totalQuestionsAnswered'] as int,
-      correctAnswers: json['correctAnswers'] as int,
+      totalQuestionsAnswered: (json['totalQuestionsAnswered'] as int?) ?? 0,
+      correctAnswers: (json['correctAnswers'] as int?) ?? 0,
       rank: Rank.fromJson(json['rank'] as String?),
-      ratingPoints: json['ratingPoints'] as int,
-      rankedGamesPlayed: json['rankedGamesPlayed'] as int,
-      rankedGamesWon: json['rankedGamesWon'] as int,
+      ratingPoints: (json['ratingPoints'] as int?) ?? 0,
+      rankedGamesPlayed: (json['rankedGamesPlayed'] as int?) ?? 0,
+      rankedGamesWon: (json['rankedGamesWon'] as int?) ?? 0,
+      userOptions: userOptions,
+      uiPreset: (json['ui_options'] as String?) ?? 'default',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'uid': _uid,
       'username': _username,
       'totalQuestionsAnswered': _totalQuestionsAnswered,
       'correctAnswers': _correctAnswers,
@@ -73,6 +90,8 @@ class ProfileData {
       'ratingPoints': _ratingPoints,
       'rankedGamesPlayed': _rankedGamesPlayed,
       'rankedGamesWon': _rankedGamesWon,
+      'user_options': _userOptions.toJson(),
+      'ui_options': _uiPreset,
     };
   }
 
@@ -84,4 +103,6 @@ class ProfileData {
   int get ratingPoints => _ratingPoints;
   int get rankedGamesPlayed => _rankedGamesPlayed;
   int get rankedGamesWon => _rankedGamesWon;
+  UserOptions get userOptions => _userOptions;
+  String get uiPreset => _uiPreset;
 }

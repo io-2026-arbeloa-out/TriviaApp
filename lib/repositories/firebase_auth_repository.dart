@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:triviaapp/models/profile_data.dart';
 
 class FirebaseAuthRepository {
@@ -12,12 +13,24 @@ class FirebaseAuthRepository {
       String password,
       String username,
       ) async {
-    final credential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    await credential.user!.updateDisplayName(username);
-    return ProfileData(uid: credential.user!.uid, username: username);
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await credential.user!.updateDisplayName(username);
+
+      return ProfileData(
+        uid: credential.user!.uid,
+        username: username
+      );
+    } on FirebaseAuthException catch (e) {
+      debugPrint('CODE: ${e.code}');
+      debugPrint('MESSAGE: ${e.message}');
+      debugPrint('EMAIL: ${e.email}');
+      debugPrint('CREDENTIAL: ${e.credential}');
+      rethrow;
+    }
   }
 
   Future<ProfileData> signInWithEmail(String email, String password) async {

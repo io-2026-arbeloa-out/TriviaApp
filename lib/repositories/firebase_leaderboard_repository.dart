@@ -18,7 +18,7 @@ class FirebaseLeaderboardRepository {
         .get();
 
     return query.docs
-        .map((doc) => ProfileData.fromJson(doc.data()))
+        .map((doc) => ProfileData.fromJson('uid1', doc.data()))
         .toList();
   }
 }

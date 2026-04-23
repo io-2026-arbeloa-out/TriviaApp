@@ -18,14 +18,14 @@ class AudioManager {
   // Screens not listed here will silence the music.
   // ---------------------------------------------------------------------------
   static const Map<String, String> _screenMusic = {
-    AppRoute.mainMenuScreen:    'audio/music/main_menu.mp3',
-    AppRoute.profileScreen:     'audio/music/ambient.mp3',
-    AppRoute.quizListScreen:    'audio/music/ambient.mp3',
-    AppRoute.leaderboardScreen: 'audio/music/ambient.mp3',
-    AppRoute.achievementScreen: 'audio/music/ambient.mp3',
-    AppRoute.privateLobbyScreen:'audio/music/lobby.mp3',
-    AppRoute.singleplayerScreen:'audio/music/game.mp3',
-    AppRoute.multiplayerScreen: 'audio/music/game.mp3',
+    AppRoute.mainMenuScreen:    'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.profileScreen:     'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.quizListScreen:    'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.leaderboardScreen: 'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.achievementScreen: 'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.privateLobbyScreen:'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.singleplayerScreen:'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.multiplayerScreen: 'audio/music/DzienDobryInstrumental.mp3',
   };
 
   // ---------------------------------------------------------------------------
@@ -40,13 +40,13 @@ class AudioManager {
   static const String sfxLose       = 'lose';
 
   static const Map<String, String> _sfxPaths = {
-    sfxClick:     'audio/sfx/click.mp3',
-    sfxCorrect:   'audio/sfx/correct.mp3',
-    sfxWrong:     'audio/sfx/wrong.mp3',
-    sfxGameStart: 'audio/sfx/game_start.mp3',
-    sfxCountdown: 'audio/sfx/countdown.mp3',
-    sfxWin:       'audio/sfx/win.mp3',
-    sfxLose:      'audio/sfx/lose.mp3',
+    sfxClick:     'audio/sfx/DzienDobry.mp3',
+    sfxCorrect:   'audio/sfx/DzienDobry.mp3',
+    sfxWrong:     'audio/sfx/DzienDobry.mp3',
+    sfxGameStart: 'audio/sfx/DzienDobry.mp3',
+    sfxCountdown: 'audio/sfx/DzienDobry.mp3',
+    sfxWin:       'audio/sfx/DzienDobry.mp3',
+    sfxLose:      'audio/sfx/DzienDobry.mp3',
   };
 
   // ---------------------------------------------------------------------------

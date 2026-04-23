@@ -132,8 +132,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     switch (code) {
       case 'email-already-in-use':
         return 'Ten adres email jest już zajęty.';
-      case 'weak-password':
-        return 'Hasło jest za słabe (min. 8 znaków).';
+      case 'invalid-display-name':
+        return 'Nieprawidłowa nazwa użytkownika';
+      case 'invalid-password':
+        return 'Hasło jest za słabe (min. 6 znaków).';
       case 'invalid-email':
         return 'Nieprawidłowy adres email.';
       default:

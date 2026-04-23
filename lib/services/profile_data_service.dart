@@ -10,8 +10,8 @@ class ProfileDataService implements IProfileDataService {
       ) : _profileRepository = profileRepository ?? FirebaseProfileRepository();
 
   @override
-  Future<ProfileData> getProfileData(String uid) {
-    return _profileRepository.getProfileData(uid);
+  Future<ProfileData> getProfileData() {
+    return _profileRepository.getProfileData();
   }
 
   @override

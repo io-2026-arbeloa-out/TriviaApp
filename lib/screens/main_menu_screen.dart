@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/screens/login_screen.dart';
-import 'package:triviaapp/screens/registration_screen.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 import 'package:triviaapp/widgets/login_register_pop_up.dart';
 
@@ -28,11 +27,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   bool _popupDismissed = false;
 
-  bool get _showPopup => !widget.isLoggedIn && !_popupDismissed;
+  bool get _showPopup => !widget.isLoggedIn || !_popupDismissed;
 
   @override
   void initState() {
     super.initState();
+    //AudioManager.instance.playMusicForScreen(AppRoute.mainMenuScreen); //todo jedna z opcji ale szkoda gadac
   }
 
   void _onPopupClose() {
@@ -71,7 +71,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.quiz, size: 100, color: Colors.white),
+                    Icon(Icons.quiz, size: 100, color: widget.options.textColor),
                     const SizedBox(height: 30),
                     Text(
                       'Trivia App',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/ui_options.dart';
+import 'package:triviaapp/widgets/sfx_button.dart';
 
 class LoginRegisterPopUp extends StatelessWidget {
   LoginRegisterPopUp({
@@ -71,7 +72,7 @@ class LoginRegisterPopUp extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton(
+                child: SfxButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: options.mainButtonColor,
                     foregroundColor: options.textColor,
@@ -87,7 +88,7 @@ class LoginRegisterPopUp extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: ElevatedButton(
+                child: SfxButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: options.mainButtonColor,
                     foregroundColor: options.textColor,
