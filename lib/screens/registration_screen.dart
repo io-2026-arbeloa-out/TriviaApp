@@ -113,7 +113,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     try {
       await authService.register(email, password, username);
       if (!mounted) return;
-      AppRoute.instance.goToMainMenu(isLoggedIn: true, options: options);
+      AppRoute.instance.goToMainMenu(options);
     } on FirebaseAuthException catch (e) {
       _showMessage(_mapFirebaseError(e.code));
     } catch (_) {

@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/screens/login_screen.dart';
 import 'package:triviaapp/screens/main_menu_screen.dart';
 import 'package:triviaapp/models/profile_data.dart';
-import 'fakes.dart';
+import '../fakes.dart';
 
 // FirebaseAuthException cannot be constructed directly in tests without
 // Firebase initialization, so we use a plain exception for error-path tests

@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/profile_data.dart';
 import 'package:triviaapp/screens/registration_screen.dart';
 import 'package:triviaapp/screens/main_menu_screen.dart';
-import 'fakes.dart';
+import '../fakes.dart';
 
 class _FakeFirebaseAuthException extends FirebaseAuthException {
   _FakeFirebaseAuthException(String code) : super(code: code);

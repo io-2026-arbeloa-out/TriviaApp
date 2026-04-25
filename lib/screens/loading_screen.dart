@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/audio_manager.dart';
@@ -11,18 +12,14 @@ import 'package:triviaapp/services/user_options_service.dart';
 class LoadingScreen extends StatefulWidget {
   LoadingScreen({
     super.key,
-    bool? isLoggedIn,
     IUIOptionsService? uiService,
     IUserOptionsService? userService,
-  })  : _isLoggedIn = isLoggedIn ?? false,
-        _uiService = uiService ?? UIOptionsService(),
+  })  : _uiService = uiService ?? UIOptionsService(),
         _userService = userService ?? UserOptionsService();
 
-  final bool _isLoggedIn;
   final IUIOptionsService _uiService;
   final IUserOptionsService _userService;
 
-  bool get isLoggedIn => _isLoggedIn;
   IUIOptionsService get uiService => _uiService;
   IUserOptionsService get userService => _userService;
 
@@ -46,7 +43,12 @@ class _LoadingScreenState extends State<LoadingScreen> {
     await _loadAssets();
     if (!mounted) return;
     await AudioManager.instance.init(_userOptions);
-    AppRoute.instance.goToMainMenu(isLoggedIn: widget.isLoggedIn, options: _uiOptions);
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      AppRoute.instance.goToMainMenu(_uiOptions);
+      return;
+    }
+    AppRoute.instance.goToMainMenu(_uiOptions);
   }
 
   Future<void> _loadAssets() async {

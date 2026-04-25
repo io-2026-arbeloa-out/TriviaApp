@@ -4,20 +4,25 @@ import 'package:flutter/foundation.dart';
 class UserOptions {
   final int _soundVolume;
   final int _musicVolume;
+  final int _sfxVolume;
 
   const UserOptions({
     int soundVolume = 50,
     int musicVolume = 50,
+    int sfxVolume = 50,
   }) :  _soundVolume = soundVolume,
-        _musicVolume = musicVolume;
+        _musicVolume = musicVolume,
+        _sfxVolume = sfxVolume;
 
   UserOptions copyWith({
     int? soundVolume,
     int? musicVolume,
+    int? sfxVolume,
   }) {
     return UserOptions(
       soundVolume: soundVolume ?? this.soundVolume,
       musicVolume: musicVolume ?? this.musicVolume,
+      sfxVolume: sfxVolume ?? this.sfxVolume,
     );
   }
 
@@ -25,6 +30,7 @@ class UserOptions {
     return UserOptions(
       soundVolume: json['soundVolume'] as int,
       musicVolume: json['musicVolume'] as int,
+      sfxVolume: json['sfxVolume'] as int,
     );
   }
 
@@ -32,6 +38,7 @@ class UserOptions {
     return {
       'soundVolume': _soundVolume,
       'musicVolume': _musicVolume,
+      'sfxVolume': _sfxVolume,
     };
   }
 
@@ -41,7 +48,8 @@ class UserOptions {
 
     return other is UserOptions &&
         other.soundVolume == soundVolume &&
-        other.musicVolume == musicVolume;
+        other.musicVolume == musicVolume &&
+        other.sfxVolume == sfxVolume;
   }
 
   @override
@@ -49,4 +57,5 @@ class UserOptions {
 
   int get soundVolume => _soundVolume;
   int get musicVolume => _musicVolume;
+  int get sfxVolume => _sfxVolume;
 }

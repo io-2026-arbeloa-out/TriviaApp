@@ -42,11 +42,10 @@ class AppRoute {
     switch (settings.name) {
       case mainMenuScreen:
         final args = settings.arguments as Map<String, dynamic>?;
-        final bool isLoggedIn = args?['isLoggedIn'] ?? false;
         final UIOptions options = args?['options'] ?? const UIOptions();
         return MaterialPageRoute(
           builder: (_) =>
-              MainMenuScreen(isLoggedIn: isLoggedIn, options: options),
+              MainMenuScreen(options: options),
           settings: settings,
         );
 
@@ -69,9 +68,7 @@ class AppRoute {
 
       case loadingScreen:
         return MaterialPageRoute(
-          builder: (_) => LoadingScreen(
-            isLoggedIn: false,
-          ),
+          builder: (_) => LoadingScreen(),
           settings: settings,
         );
 
@@ -158,7 +155,7 @@ class AppRoute {
         final UIOptions options = args?['options'] ?? const UIOptions();
         return MaterialPageRoute(
           builder: (_) =>
-              MainMenuScreen(isLoggedIn: isLoggedIn, options: options),
+              MainMenuScreen(options: options),
           settings: settings,
         );
     }
@@ -178,11 +175,10 @@ class AppRoute {
     );
   }
 
-  void goToMainMenu({bool isLoggedIn = false, required UIOptions options}) {
+  void goToMainMenu(UIOptions options) {
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
       mainMenuScreen,
       arguments: {
-        'isLoggedIn': isLoggedIn,
         'options': options,
       },
           (route) => false,

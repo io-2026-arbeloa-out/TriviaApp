@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/audio_manager.dart';
@@ -8,16 +9,16 @@ import 'package:triviaapp/widgets/login_register_pop_up.dart';
 class MainMenuScreen extends StatefulWidget {
   MainMenuScreen({
     super.key,
-    bool? isLoggedIn,
     UIOptions? options,
-  }) : _isLoggedIn = isLoggedIn ?? false,
+    bool Function()? authChecker,
+  }) : _authChecker = authChecker ?? (() => FirebaseAuth.instance.currentUser != null),
        _options = options ?? UIOptions();
 
-  final bool _isLoggedIn;
   final UIOptions _options;
+  final bool Function() _authChecker;
 
   UIOptions get options => _options;
-  bool get isLoggedIn => _isLoggedIn;
+  Function() get authChecker => _authChecker;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -27,7 +28,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   bool _popupDismissed = false;
 
-  bool get _showPopup => !widget.isLoggedIn || !_popupDismissed;
+  bool get _showPopup => !widget.authChecker() && !_popupDismissed;
 
   @override
   void initState() {

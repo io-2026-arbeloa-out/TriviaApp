@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
@@ -95,11 +94,12 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
         userOptionsService.saveUserOptions(UserOptions(
           soundVolume: _userOptions.soundVolume,
           musicVolume: _userOptions.musicVolume,
+          sfxVolume: _userOptions.sfxVolume,
         )),
         uiOptionsService.saveUIOptions(_selectedPreset),
       ]);
       if (!mounted) return;
-      AppRoute.instance.goToMainMenu(options: _displayOptions);
+      AppRoute.instance.goToMainMenu(_displayOptions);
     } catch (e) {
       setState(() => _isSaving = false);
       _showError('Nie udało się zapisać ustawień.');
@@ -115,7 +115,7 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
 
   Future<void> _onBackPressed(BuildContext context) async {
     if (_savedUserOptions == _userOptions && options == savedOptions){
-      AppRoute.instance.goBack();
+      AppRoute.instance.goBack();//todo go to main menu??
       return;
     }
 
@@ -262,6 +262,15 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
               _userOptions = _userOptions.copyWith(musicVolume: v.floor());
             }),
           ),
+          const SizedBox(height: 8),
+          _buildSlider(
+            context,
+            label: 'SFX',
+            value: _userOptions.sfxVolume.toDouble(),
+            onChanged: (v) => setState(() {
+              _userOptions = _userOptions.copyWith(sfxVolume: v.floor());
+            }),
+          ),
           const SizedBox(height: 24),
           _buildSectionLabel(context, 'Motyw kolorystyczny'),
           const SizedBox(height: 12),
@@ -374,17 +383,6 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
             ),
             child: Row(
               children: [
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    presetId,
-                    style: TextStyle(
-                      color: preset.textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Container(

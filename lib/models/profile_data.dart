@@ -14,6 +14,7 @@ class ProfileData {
   final int _rankedGamesWon;
   final UserOptions _userOptions;
   final String _uiPreset;
+  final String _profilePicture;
 
   const ProfileData({
     required String uid,
@@ -26,6 +27,7 @@ class ProfileData {
     int rankedGamesWon = 0,
     UserOptions userOptions = const UserOptions(),
     String uiPreset = 'default',
+    String profilePicture = '',
   })  : _uid = uid,
         _username = username,
         _totalQuestionsAnswered = totalQuestionsAnswered,
@@ -35,7 +37,8 @@ class ProfileData {
         _rankedGamesPlayed = rankedGamesPlayed,
         _rankedGamesWon = rankedGamesWon,
         _userOptions = userOptions,
-        _uiPreset = uiPreset;
+        _uiPreset = uiPreset,
+        _profilePicture = profilePicture;
 
   ProfileData copyWith({
     int? totalQuestionsAnswered,
@@ -46,6 +49,7 @@ class ProfileData {
     int? rankedGamesWon,
     UserOptions? userOptions,
     String? uiPreset,
+    String? profilePicture,
   }) {
     return ProfileData(
       uid: _uid,
@@ -58,6 +62,7 @@ class ProfileData {
       rankedGamesWon: rankedGamesWon ?? _rankedGamesWon,
       userOptions: userOptions ?? _userOptions,
       uiPreset: uiPreset ?? _uiPreset,
+      profilePicture: profilePicture ?? _profilePicture,
     );
   }
 
@@ -78,6 +83,7 @@ class ProfileData {
       rankedGamesWon: (json['rankedGamesWon'] as int?) ?? 0,
       userOptions: userOptions,
       uiPreset: (json['ui_options'] as String?) ?? 'default',
+      profilePicture: (json['profilePicture'] as String?) ?? '',
     );
   }
 
@@ -92,6 +98,7 @@ class ProfileData {
       'rankedGamesWon': _rankedGamesWon,
       'user_options': _userOptions.toJson(),
       'ui_options': _uiPreset,
+      'profilePicture': _profilePicture,
     };
   }
 
@@ -105,4 +112,5 @@ class ProfileData {
   int get rankedGamesWon => _rankedGamesWon;
   UserOptions get userOptions => _userOptions;
   String get uiPreset => _uiPreset;
+  String get profilePicture => _profilePicture;
 }

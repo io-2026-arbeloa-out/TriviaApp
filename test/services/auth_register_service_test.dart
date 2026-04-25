@@ -1,7 +1,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/services/auth_register_service.dart';
-import 'fakes.dart';
+import '../fakes.dart';
 
 void main() {
   late FakeFirebaseAuthRepository fakeAuthRepo;

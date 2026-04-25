@@ -22,7 +22,7 @@ class AppBottomNavigationBar extends StatelessWidget {
       case 0:
         AppRoute.instance.goToQuizList(options);
       case 1:
-        AppRoute.instance.goToMainMenu(isLoggedIn: false, options: options);
+        AppRoute.instance.goToMainMenu(options);
       case 2:
         AppRoute.instance.goToProfile(options);
     }

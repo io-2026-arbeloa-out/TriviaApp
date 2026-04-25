@@ -20,6 +20,11 @@ void main() {
         expect(profile.rank, Rank.unranked);
       });
 
+      test('sets profilePicture to empty string when not provided', () {
+        final profile = ProfileData(uid: 'u1', username: 'Alice');
+        expect(profile.profilePicture, '');
+      });
+
       test('stores uid and username exactly as provided', () {
         final profile = ProfileData(uid: 'abc-123', username: 'Bob');
         expect(profile.uid, 'abc-123');
@@ -28,9 +33,9 @@ void main() {
     });
 
     group('fromJson', () {
+      // uid is passed as a separate argument — not part of the json map
       test('maps all fields correctly from a complete JSON', () {
         final json = {
-          'uid': 'uid-42',
           'username': 'Alice',
           'totalQuestionsAnswered': 50,
           'correctAnswers': 30,
@@ -38,9 +43,10 @@ void main() {
           'ratingPoints': 1200,
           'rankedGamesPlayed': 10,
           'rankedGamesWon': 6,
+          'profilePicture': 'assets/avatars/avatar2.png',
         };
 
-        final profile = ProfileData.fromJson(json);
+        final profile = ProfileData.fromJson('uid-42', json);
 
         expect(profile.uid, 'uid-42');
         expect(profile.username, 'Alice');
@@ -50,11 +56,11 @@ void main() {
         expect(profile.ratingPoints, 1200);
         expect(profile.rankedGamesPlayed, 10);
         expect(profile.rankedGamesWon, 6);
+        expect(profile.profilePicture, 'assets/avatars/avatar2.png');
       });
 
       test('handles null rank by defaulting to unranked', () {
         final json = {
-          'uid': 'uid-1',
           'username': 'Test',
           'totalQuestionsAnswered': 0,
           'correctAnswers': 0,
@@ -64,25 +70,28 @@ void main() {
           'rankedGamesWon': 0,
         };
 
-        final profile = ProfileData.fromJson(json);
+        final profile = ProfileData.fromJson('uid-1', json);
         expect(profile.rank, Rank.unranked);
       });
 
+      test('defaults profilePicture to empty string when field is missing', () {
+        final json = {'username': 'Test'};
+
+        final profile = ProfileData.fromJson('uid-1', json);
+        expect(profile.profilePicture, '');
+      });
+
       test('parses different rank values correctly', () {
-        final ranks = ['unranked', 'bronze', 'silver', 'gold', 'diamond', 'master', 'champion'];
+        final ranks = [
+          'unranked', 'bronze', 'silver', 'gold', 'diamond', 'master', 'champion'
+        ];
         final expectedRanks = [
-          Rank.unranked,
-          Rank.bronze,
-          Rank.silver,
-          Rank.gold,
-          Rank.diamond,
-          Rank.master,
-          Rank.champion,
+          Rank.unranked, Rank.bronze, Rank.silver, Rank.gold,
+          Rank.diamond, Rank.master, Rank.champion,
         ];
 
         for (var i = 0; i < ranks.length; i++) {
           final json = {
-            'uid': 'uid-$i',
             'username': 'User$i',
             'totalQuestionsAnswered': 0,
             'correctAnswers': 0,
@@ -92,7 +101,7 @@ void main() {
             'rankedGamesWon': 0,
           };
 
-          final profile = ProfileData.fromJson(json);
+          final profile = ProfileData.fromJson('uid-$i', json);
           expect(profile.rank, expectedRanks[i]);
         }
       });
@@ -109,11 +118,11 @@ void main() {
           ratingPoints: 800,
           rankedGamesPlayed: 4,
           rankedGamesWon: 2,
+          profilePicture: 'assets/avatars/avatar1.png',
         );
 
         final json = profile.toJson();
 
-        expect(json['uid'], 'u1');
         expect(json['username'], 'Bob');
         expect(json['totalQuestionsAnswered'], 5);
         expect(json['correctAnswers'], 3);
@@ -121,12 +130,13 @@ void main() {
         expect(json['ratingPoints'], 800);
         expect(json['rankedGamesPlayed'], 4);
         expect(json['rankedGamesWon'], 2);
+        expect(json['profilePicture'], 'assets/avatars/avatar1.png');
       });
 
-      test('includes uid in the JSON', () {
+      test('does not include uid as a key', () {
+        // uid is the Firestore document id — not stored as a field
         final profile = ProfileData(uid: 'u1', username: 'Bob');
-        expect(profile.toJson().containsKey('uid'), isTrue);
-        expect(profile.toJson()['uid'], 'u1');
+        expect(profile.toJson().containsKey('uid'), isFalse);
       });
 
       test('fromJson(toJson()) round-trip preserves all values', () {
@@ -139,9 +149,10 @@ void main() {
           ratingPoints: 2000,
           rankedGamesPlayed: 20,
           rankedGamesWon: 15,
+          profilePicture: 'assets/avatars/avatar4.png',
         );
 
-        final restored = ProfileData.fromJson(original.toJson());
+        final restored = ProfileData.fromJson('u1', original.toJson());
 
         expect(restored.uid, original.uid);
         expect(restored.username, original.username);
@@ -151,6 +162,7 @@ void main() {
         expect(restored.ratingPoints, original.ratingPoints);
         expect(restored.rankedGamesPlayed, original.rankedGamesPlayed);
         expect(restored.rankedGamesWon, original.rankedGamesWon);
+        expect(restored.profilePicture, original.profilePicture);
       });
     });
 
@@ -189,6 +201,7 @@ void main() {
           username: 'Bob',
           totalQuestionsAnswered: 10,
           correctAnswers: 5,
+          profilePicture: 'assets/avatars/avatar3.png',
         );
 
         final copy = original.copyWith();
@@ -197,6 +210,23 @@ void main() {
         expect(copy.username, original.username);
         expect(copy.totalQuestionsAnswered, original.totalQuestionsAnswered);
         expect(copy.correctAnswers, original.correctAnswers);
+        expect(copy.profilePicture, original.profilePicture);
+      });
+
+      test('updates profilePicture while preserving other fields', () {
+        final original = ProfileData(
+          uid: 'u1',
+          username: 'Alice',
+          profilePicture: 'assets/avatars/avatar1.png',
+        );
+
+        final updated = original.copyWith(
+          profilePicture: 'assets/avatars/avatar5.png',
+        );
+
+        expect(updated.profilePicture, 'assets/avatars/avatar5.png');
+        expect(updated.uid, 'u1');
+        expect(updated.username, 'Alice');
       });
     });
   });

@@ -57,7 +57,7 @@ class FakeFirebaseProfileRepository extends Fake
   Exception? updateError;
 
   @override
-  Future<ProfileData> getProfileData(String uid) async {
+  Future<ProfileData> getProfileData() async {
     if (getError != null) throw getError!;
     return getResult!;
   }
