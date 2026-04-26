@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen>
             right: 30,
             top: 48,
             child: Icon(
-              Icons.person,//todo zmiana ikony
+              Icons.person,
               size: 72,
               color: options.textColor.withOpacity(0.2),
             ),
@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildErrorBanner() {//todo change to uioptions colors
+  Widget _buildErrorBanner() {
     return AnimatedSize(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,

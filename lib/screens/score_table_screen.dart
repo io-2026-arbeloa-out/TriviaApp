@@ -5,9 +5,12 @@ class ScoreTableScreen extends StatelessWidget {
   ScoreTableScreen({
     super.key,
     UIOptions? options,
-  }) : _options = options ?? UIOptions();
+    required List<bool> results,
+  }) : _options = options ?? UIOptions(),
+       _results = results;
 
   final UIOptions _options;
+  final List<bool> _results;
 
   UIOptions get options => _options;
 

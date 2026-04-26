@@ -24,8 +24,8 @@ class AudioManager {
     AppRoute.leaderboardScreen: 'audio/music/DzienDobryInstrumental.mp3',
     AppRoute.achievementScreen: 'audio/music/DzienDobryInstrumental.mp3',
     AppRoute.privateLobbyScreen:'audio/music/DzienDobryInstrumental.mp3',
-    AppRoute.singleplayerScreen:'audio/music/DzienDobryInstrumental.mp3',
-    AppRoute.multiplayerScreen: 'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.singleplayerGameScreen:'audio/music/DzienDobryInstrumental.mp3',
+    AppRoute.multiplayerGameScreen: 'audio/music/DzienDobryInstrumental.mp3',
   };
 
   // ---------------------------------------------------------------------------

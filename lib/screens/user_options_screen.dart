@@ -115,7 +115,7 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
 
   Future<void> _onBackPressed(BuildContext context) async {
     if (_savedUserOptions == _userOptions && options == savedOptions){
-      AppRoute.instance.goBack();//todo go to main menu??
+      AppRoute.instance.goBack();
       return;
     }
 

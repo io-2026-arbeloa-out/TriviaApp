@@ -106,10 +106,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           ),
                         ),
                         onPressed: () {
-                          AppRoute.instance.goToSingleplayer(
+                          /*AppRoute.instance.goToSingleplayer(
                               'general',
                               widget.options
-                          );
+                          );*///todo zmiana na private game
                         },
                         child: const Text(
                           'Singleplayer',

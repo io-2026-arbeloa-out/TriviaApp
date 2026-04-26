@@ -248,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: AppRoute.instance.goBack,
           icon: const Icon(Icons.arrow_back),
           color: options.textColor,
         ),

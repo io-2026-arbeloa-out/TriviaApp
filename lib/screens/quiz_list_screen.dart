@@ -68,7 +68,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
   }
 
   void _onQuizTap(Quiz quiz) {
-    AppRoute.instance.goToSingleplayer(quiz.category, options);
+    AppRoute.instance.goToSingleplayerOptions(quiz.category, options);
   }
 
   @override
