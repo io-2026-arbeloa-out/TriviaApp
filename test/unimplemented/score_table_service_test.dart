@@ -4,7 +4,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:triviaapp/models/session_data.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
-import 'package:triviaapp/services/score_table_service.dart';
+import 'package:triviaapp/services/singleplayer_score_table_service.dart';
 
 class MockFirebaseSessionRepository extends Mock implements FirebaseSessionRepository {}
 class FakeSessionData extends Fake implements SessionData {}

@@ -1,14 +1,7 @@
+import 'dart:math';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/question_type.dart';
-
-///     {category}/
-///       {questionId}/
-///         text: "..."
-///         correctAnswers: [...]
-///         wrongAnswers: [...]
-///         difficulty: "easy"
-///         type: "open4"
 
 class FirebaseQuestionRepository {
   final FirebaseDatabase _database;
@@ -21,34 +14,54 @@ class FirebaseQuestionRepository {
     required String category,
     required List<QuestionType> questionTypes,
   }) async {
-    final ref = _database.ref('$category');
+    final ref = _database.ref('$category/questions');
     final snapshot = await ref.get();
 
     if (!snapshot.exists || snapshot.value == null) return [];
 
-    final raw = Map<String, dynamic>.from(snapshot.value as Map);
-    final List<Question> questions = [];
-    final seenIds = <String>{};
+    final List raw = snapshot.value as List;
+    final random = Random();
 
-    for (final entry in raw.entries) {
-      final id = entry.key;
-      final value = Map<String, dynamic>.from(entry.value as Map);
+    // zbierz indeksy pasujących pytań (bez pełnego mapowania na obiekty)
+    final List<int> validIndexes = [];
+
+    for (int i = 0; i < raw.length; i++) {
+      final item = raw[i];
+      if (item == null || item is! Map) continue;
+
+      final value = Map<String, dynamic>.from(item);
+
+      // szybki filtr po typie bez tworzenia obiektu Question
+      final type = QuestionType.values.firstWhere(
+            (e) => e.name == value['type'],
+        orElse: () => QuestionType.values.first,
+      );
+
+      if (questionTypes.contains(type)) {
+        validIndexes.add(i);
+      }
+    }
+
+    if (validIndexes.isEmpty) return [];
+
+    // losuj indeksy bez powtórzeń
+    validIndexes.shuffle(random);
+    final selectedIndexes = validIndexes.take(limit);
+
+    final List<Question> questions = [];
+
+    for (final i in selectedIndexes) {
+      final value = Map<String, dynamic>.from(raw[i]);
 
       final question = Question.fromJson({
-        'id': id,
+        'id': i.toString(),
         'category': category,
         ...value,
       });
 
-      if (questionTypes.contains(question.type) &&
-          !seenIds.contains(id)) {
-        seenIds.add(id);
-        questions.add(question);
-        if(questions.length >= limit) return questions;
-      }
+      questions.add(question);
     }
-    //do tej linii nigdy nie powinno dojść
-    questions.shuffle();
-    return questions.take(limit).toList();
+
+    return questions;
   }
 }

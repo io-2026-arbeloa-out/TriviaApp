@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
-class GameOptionsScreen extends StatelessWidget {
-  GameOptionsScreen({
+class PrivateGameOptionsScreen extends StatelessWidget {
+  PrivateGameOptionsScreen({
     super.key,
     UIOptions? options,
   }) : _options = options ?? UIOptions();

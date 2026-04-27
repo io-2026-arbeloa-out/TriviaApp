@@ -28,7 +28,7 @@ class _SingleplayerOptionsScreenState
   SingleplayerGameOptions _gameOptions = const SingleplayerGameOptions();
 
   static const List<int> _numQuestionChoices = [10, 15, 20];
-  static const List<int> _timeChoices = [15, 30, 60, 0]; // 0 = brak limitu
+  static const List<int> _timeChoices = [0, 15, 20, 30]; // 0 = brak limitu
   static const List<GameQuestionType> _gameQuestionTypes = GameQuestionType.values;
 
   String _timeLabel(int seconds) {
@@ -42,9 +42,9 @@ class _SingleplayerOptionsScreenState
       case GameQuestionType.boolean:
         return 'Prawda / Fałsz';
       case GameQuestionType.closed4:
-        return '4 opcje';
+        return 'Zamknięte, 4 opcje';
       case GameQuestionType.closed6:
-        return '6 opcji';
+        return 'Zamknięte, 6 opcji';
       case GameQuestionType.open:
         return 'Otwarte';
       case GameQuestionType.mixed:

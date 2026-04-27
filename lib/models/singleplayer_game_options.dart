@@ -7,7 +7,7 @@ class SingleplayerGameOptions {
 
   const SingleplayerGameOptions({
     int numQuestions = 10,
-    int timePerQuestion = 20,
+    int timePerQuestion = 0,
     GameQuestionType gameQuestionType = GameQuestionType.mixed,
   }) : _numQuestions = numQuestions,
        _gameQuestionType = gameQuestionType,
