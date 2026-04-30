@@ -1,6 +1,6 @@
 import 'package:triviaapp/models/player.dart';
 import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 
 abstract class IMultiplayerGameService {
   Future<void> registerAnswer(
@@ -11,7 +11,7 @@ abstract class IMultiplayerGameService {
 
   bool checkAnswer(Question question, String answer);
 
-  Future<void> endGame(SessionData session);
+  Future<void> endGame(MultiplayerSessionData session);
 
-  Stream<SessionData> listenToSession(String sessionId);
+  Stream<MultiplayerSessionData> listenToSession(String sessionId);
 }

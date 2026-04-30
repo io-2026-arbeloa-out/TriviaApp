@@ -5,7 +5,7 @@ import 'package:triviaapp/models/session_status.dart';
 import 'package:flutter/foundation.dart';
 
 @immutable
-class SessionData {
+class MultiplayerSessionData {
   final String _sessionId;
   final int _numPlayers;
   final SessionStatus _status;
@@ -18,7 +18,7 @@ class SessionData {
   final GameMode _gameMode;
 
 
-  const SessionData({
+  const MultiplayerSessionData({
     required String sessionId,
     required int numPlayers,
     required SessionStatus status,
@@ -40,14 +40,14 @@ class SessionData {
         _questions = questions,
         _gameMode = gameMode;
 
-  SessionData copyWith({
+  MultiplayerSessionData copyWith({
     SessionStatus? status,
     DateTime? gameStartTime,
     DateTime? endTime,
     List<Player>? players,
     List<int>? placement,
   }) {
-    return SessionData(
+    return MultiplayerSessionData(
       sessionId: sessionId,
       numPlayers: numPlayers,
       sessionStartTime: sessionStartTime,
@@ -61,8 +61,8 @@ class SessionData {
     );
   }
 
-  factory SessionData.fromJson(Map<String, dynamic> json) {
-    return SessionData(
+  factory MultiplayerSessionData.fromJson(Map<String, dynamic> json) {
+    return MultiplayerSessionData(
       sessionId: json['sessionId'] as String,
       numPlayers: json['numPlayers'] as int,
       status: SessionStatus.values.firstWhere(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/game_question_type.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
+import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
 class SingleplayerOptionsScreen extends StatefulWidget {
@@ -53,7 +54,10 @@ class _SingleplayerOptionsScreenState
   }
 
   void _startGame() {
-    AppRoute.instance.goToSingleplayerGame(category, options, _gameOptions);
+    AppRoute.instance.goToSingleplayerGame(
+        options,
+        SingleplayerSessionData(category: category, options: _gameOptions)
+    );
   }
 
   @override

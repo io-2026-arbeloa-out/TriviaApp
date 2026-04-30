@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:triviaapp/models/achievement.dart';
 import 'package:triviaapp/models/profile_data.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 
 class FirebaseAchievementRepository {
   final FirebaseFirestore _firestore;
@@ -28,7 +28,7 @@ class FirebaseAchievementRepository {
   /// Konkretne reguły odblokowania zależą od logiki – tu szkic.
   Future<void> updateAchievements(
       ProfileData profileData,
-      SessionData gameResult,
+      MultiplayerSessionData gameResult,
       ) async {
     final ref = _firestore
         .collection('profiles')

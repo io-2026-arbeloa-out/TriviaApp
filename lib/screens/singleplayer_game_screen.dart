@@ -4,6 +4,7 @@ import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_singleplayer_game_service.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
+import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/services/singleplayer_game_service.dart';
 
@@ -34,20 +35,17 @@ class _QuestionState {
 }
 
 class SingleplayerGameScreen extends StatefulWidget {
-  final String _category;
   final UIOptions _options;
-  final SingleplayerGameOptions _gameOptions;
+  final SingleplayerSessionData _sessionData;
   final ISingleplayerGameService _gameService;
 
   SingleplayerGameScreen({
     super.key,
-    required String category,
     UIOptions? options,
-    required SingleplayerGameOptions gameOptions,
+    required SingleplayerSessionData sessionData,
     ISingleplayerGameService? gameService,
   })  : _options = options ?? UIOptions(),
-        _category = category,
-        _gameOptions = gameOptions,
+        _sessionData = sessionData,
         _gameService = gameService ?? SingleplayerGameService();
 
   @override
@@ -57,18 +55,20 @@ class SingleplayerGameScreen extends StatefulWidget {
 class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
     with TickerProviderStateMixin {
   UIOptions get options => widget._options;
-  SingleplayerGameOptions get gameOptions => widget._gameOptions;
+  SingleplayerGameOptions get gameOptions => widget._sessionData.options;
   ISingleplayerGameService get gameService => widget._gameService;
-  String get category => widget._category;
+  String get category => widget._sessionData.category;
+  SingleplayerSessionData get sessionData => widget._sessionData;
+  List<bool> get results => widget._sessionData.results;
 
   _Phase _phase = _Phase.loading;
   String _errorMessage = '';
 
   List<Question> _questions = [];
   int _currentIndex = 0;
+  int _answeredQuestions = 0;
 
   late _QuestionState _questionState;
-  final List<bool> _results = [];
 
   AnimationController? _timerController;
 
@@ -112,6 +112,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
     _timerController?.dispose();
     _timerController = null;
 
+    _currentIndex++;
     final question = _questions[_currentIndex];
 
     setState(() {
@@ -148,7 +149,8 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   void _registerAnswer(String answer, Question question) {
     final isCorrect =
         answer.isNotEmpty && gameService.checkAnswer(question, answer);
-    _results.add(isCorrect);
+    _answeredQuestions++;
+    results.add(isCorrect);
 
     setState(() {
       _questionState = _questionState.copyWith(
@@ -161,14 +163,64 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
 
   void _nextQuestion() {
     if (_currentIndex + 1 >= _questions.length) {
-      AppRoute.instance.goToSingleplayerScoreTable(options, _results, category, gameOptions);
+      AppRoute.instance.goToSingleplayerScoreTable(options, sessionData);
       return;
     }
-    _currentIndex++;
     _startQuestion();
   }
 
-  int _correctAnswers() => _results.where((e) => e).length;
+  int _correctAnswers() => results.where((e) => e).length;
+
+  Future<void> _onClosePressed() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: options.mainColor,
+        title: Text(
+          'Opuszczenie rozgrywki',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              color: options.textColor, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Czy na pewno chcesz opuścić rozgrywkę?',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: options.textColor),
+        ),
+        actionsPadding:
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: options.mainButtonColor,
+                  foregroundColor: options.textColor,
+                ),
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Menu główne'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: options.mainButtonColor,
+                  foregroundColor: options.textColor,
+                ),
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Wróć do pytania'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    AppRoute.instance.goToMainMenu(options);
+  }
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
@@ -265,20 +317,20 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _onClosePressed,
           icon: const Icon(Icons.close),
           color: options.textColor,
         ),
         Column(
           children: [
             Text(
-              'Pytanie ${_currentIndex + 1} / ${_questions.length}',
+              'Pytanie $_currentIndex / ${_questions.length}',
               style: TextStyle(
                   color: options.textColor, fontWeight: FontWeight.bold),
             ),
-            if (_currentIndex > 0)
+            if (_answeredQuestions > 0)
               Text(
-                'Wynik: ${_correctAnswers()} / $_currentIndex',
+                'Wynik: ${_correctAnswers()} / $_answeredQuestions',
                 style: TextStyle(
                   color: options.textColor.withOpacity(0.7),
                   fontSize: 12,

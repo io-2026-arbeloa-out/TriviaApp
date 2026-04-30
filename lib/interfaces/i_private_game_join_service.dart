@@ -1,11 +1,11 @@
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 
 abstract class IPrivateGameJoinService {
-  Future<SessionData> joinPrivateGame(int code);
+  Future<MultiplayerSessionData> joinPrivateGame(int code);
 
   Future<void> leaveGame(String sessionId, String playerId);
 
-  Stream<SessionData> listenToLobby(String sessionId);
+  Stream<MultiplayerSessionData> listenToLobby(String sessionId);
 
   void ready();
 }

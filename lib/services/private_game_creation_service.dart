@@ -1,6 +1,6 @@
 import 'package:triviaapp/interfaces/i_private_game_creation_service.dart';
 import 'package:triviaapp/models/private_game_options.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 
 class PrivateGameCreationService implements IPrivateGameCreationService {
@@ -9,7 +9,7 @@ class PrivateGameCreationService implements IPrivateGameCreationService {
   PrivateGameCreationService(this._sessionRepository);
 
   @override
-  Future<SessionData> createPrivateGame(PrivateGameOptions options) {
+  Future<MultiplayerSessionData> createPrivateGame(PrivateGameOptions options) {
     // Użyj createMultiplayerSession z kodem / kategorią z options
     return _sessionRepository.createMultiplayerSession(
       options.quizId,

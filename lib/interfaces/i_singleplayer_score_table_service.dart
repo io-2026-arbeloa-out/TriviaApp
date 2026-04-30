@@ -1,5 +1,5 @@
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 
 abstract class ISingleplayerScoreTableService {
-  Future<SessionData> getGameData(String sessionId);
+  Future<MultiplayerSessionData> getGameData(String sessionId);
 }

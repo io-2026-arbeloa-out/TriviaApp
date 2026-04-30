@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:triviaapp/models/game_mode.dart';
 import 'package:triviaapp/models/player.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/session_status.dart';
 
 class FirebaseSessionRepository {
@@ -12,13 +12,13 @@ class FirebaseSessionRepository {
 
   /// Tworzy nową sesję multiplayer.
   /// Zakładam kolekcję 'sessions'.
-  Future<SessionData> createMultiplayerSession(
+  Future<MultiplayerSessionData> createMultiplayerSession(
       String categoryId,
       String playerName,
       ) async {
     final docRef = _firestore.collection('sessions').doc();
 
-    final session = SessionData(
+    final session = MultiplayerSessionData(
       sessionId: docRef.id,
       numPlayers: 1,
       status: SessionStatus.inProgress,
@@ -37,7 +37,7 @@ class FirebaseSessionRepository {
     return session;
   }
 
-  Future<SessionData> joinMultiplayerSession(
+  Future<MultiplayerSessionData> joinMultiplayerSession(
       String sessionId,
       String playerName,
       ) async {
@@ -48,7 +48,7 @@ class FirebaseSessionRepository {
     }
 
     final data = snap.data()!;
-    final session = SessionData.fromJson(data);
+    final session = MultiplayerSessionData.fromJson(data);
 
     final updatedPlayers = [
       ...session.players,
@@ -63,7 +63,7 @@ class FirebaseSessionRepository {
       }),
     });
 
-    final updatedSession = SessionData(
+    final updatedSession = MultiplayerSessionData(
       sessionId: session.sessionId,
       numPlayers: updatedPlayers.length,
       status: session.status,
@@ -79,12 +79,12 @@ class FirebaseSessionRepository {
     return updatedSession;
   }
 
-  Stream<SessionData> getSessionStream(String sessionId) {
+  Stream<MultiplayerSessionData> getSessionStream(String sessionId) {
     return _firestore
         .collection('sessions')
         .doc(sessionId)
         .snapshots()
-        .map((snap) => SessionData.fromJson(snap.data()!));
+        .map((snap) => MultiplayerSessionData.fromJson(snap.data()!));
   }
 
   Future<void> updatePlayerScore(
@@ -105,17 +105,17 @@ class FirebaseSessionRepository {
   }
 
   /// Opcjonalna pomocnicza metoda dla ScoreTableService.
-  Future<SessionData> getGameData(String sessionId) async {
+  Future<MultiplayerSessionData> getGameData(String sessionId) async {
     final snap =
     await _firestore.collection('sessions').doc(sessionId).get();
     if (!snap.exists) {
       throw StateError('Session not found: $sessionId');
     }
-    return SessionData.fromJson(snap.data()!);
+    return MultiplayerSessionData.fromJson(snap.data()!);
   }
 
   Map<String, dynamic> _toJson(
-      SessionData session, {
+      MultiplayerSessionData session, {
         required String categoryId,
       }) {
     return {

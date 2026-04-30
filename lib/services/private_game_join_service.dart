@@ -1,5 +1,5 @@
 import 'package:triviaapp/interfaces/i_private_game_join_service.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 
 class PrivateGameJoinService implements IPrivateGameJoinService {
@@ -8,7 +8,7 @@ class PrivateGameJoinService implements IPrivateGameJoinService {
   PrivateGameJoinService(this._sessionRepository);
 
   @override
-  Future<SessionData> joinPrivateGame(int code) {
+  Future<MultiplayerSessionData> joinPrivateGame(int code) {
     // Wymaga metody wyszukującej sesję po kodzie w repo.
     // Na razie traktujemy code jako sessionId-string.
     return _sessionRepository.joinMultiplayerSession(code.toString(), 'player');
@@ -21,10 +21,10 @@ class PrivateGameJoinService implements IPrivateGameJoinService {
   }
 
   @override
-  Stream<SessionData> listenToLobby(String sessionId) {
+  Stream<MultiplayerSessionData> listenToLobby(String sessionId) {
     return _sessionRepository
         .getSessionStream(sessionId)
-        .cast<SessionData>(); // dopasuj typ
+        .cast<MultiplayerSessionData>(); // dopasuj typ
   }
 
   @override

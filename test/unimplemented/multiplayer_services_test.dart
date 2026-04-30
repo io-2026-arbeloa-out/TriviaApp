@@ -5,7 +5,7 @@ import 'package:triviaapp/models/game_mode.dart';
 
 import 'package:triviaapp/models/player.dart';
 import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';

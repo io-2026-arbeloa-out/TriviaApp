@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
+import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
 class SingleplayerScoreTableScreen extends StatelessWidget {
   const SingleplayerScoreTableScreen({
     super.key,
     required UIOptions options,
-    required List<bool> results,
-    required String category,
-    required SingleplayerGameOptions gameOptions,
+    required SingleplayerSessionData sessionData,
   })  : _options = options,
-        _results = results,
-        _category = category,
-        _gameOptions = gameOptions;
+        _sessionData = sessionData;
 
   final UIOptions _options;
-  final List<bool> _results;
-  final String _category;
-  final SingleplayerGameOptions _gameOptions;
+  final SingleplayerSessionData _sessionData;
 
   UIOptions get options => _options;
+  SingleplayerSessionData get sessionData => _sessionData;
 
-  int get _score => _results.where((e) => e).length;
-  int get _total => _results.length;
+  int get _score => sessionData.results.where((e) => e).length;
+  int get _total => sessionData.results.length;
   double get _accuracy => _total == 0 ? 0 : _score / _total;
 
   @override
@@ -114,10 +110,10 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
 
   Widget _buildResultList(BuildContext context) {
     return ListView.separated(
-      itemCount: _results.length,
+      itemCount: sessionData.results.length,
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
-        final isCorrect = _results[index];
+        final isCorrect = sessionData.results[index];
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
@@ -171,9 +167,8 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12)),
           ),
           onPressed: () => AppRoute.instance.goToSingleplayerGame(
-            _category,
             options,
-            _gameOptions,
+            sessionData,
           ),
           child: const Text('Zagraj ponownie', style: TextStyle(fontSize: 16)),
         ),

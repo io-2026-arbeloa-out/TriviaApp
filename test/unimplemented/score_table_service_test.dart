@@ -2,7 +2,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 import 'package:triviaapp/services/singleplayer_score_table_service.dart';
 

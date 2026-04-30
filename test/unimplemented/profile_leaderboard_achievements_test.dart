@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:triviaapp/models/profile_data.dart';
-import 'package:triviaapp/models/session_data.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/repositories/firebase_achievement_repository.dart';
 import 'package:triviaapp/repositories/firebase_leaderboard_repository.dart';
 import 'package:triviaapp/repositories/firebase_profile_repository.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
+import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/screens/achievement_screen.dart';
 import 'package:triviaapp/screens/private_game_options_screen.dart';
@@ -89,14 +90,12 @@ class AppRoute {
 
       case singleplayerGameScreen:
         final args = settings.arguments as Map<String, dynamic>;
-        final String category = args['category'];
         final UIOptions options = args['options'];
-        final SingleplayerGameOptions gameOptions = args['gameOptions'];
+        final SingleplayerSessionData sessionData = args['sessionData'];
         return MaterialPageRoute(
           builder: (_) => SingleplayerGameScreen(
-            category: category,
             options: options,
-            gameOptions: gameOptions,
+            sessionData: sessionData,
           ),
           settings: settings,
         );
@@ -147,16 +146,12 @@ class AppRoute {
 
       case singleplayerScoreTableScreen:
         final args = settings.arguments as Map<String, dynamic>;
-        final List<bool> results = args['results'];
         final UIOptions options = args['options'];
-        final String category = args['category'];
-        final SingleplayerGameOptions gameOptions = args['gameOptions'];
+        final SingleplayerSessionData sessionData = args['sessionData'];
         return MaterialPageRoute(
           builder: (_) => SingleplayerScoreTableScreen(
             options: options,
-            results: results,
-            category: category,
-            gameOptions: gameOptions,
+            sessionData: sessionData,
           ),
           settings: settings,
         );
@@ -214,13 +209,12 @@ class AppRoute {
     );
   }
 
-  void goToSingleplayerGame(String quizId, UIOptions options, SingleplayerGameOptions gameOptions) {
+  void goToSingleplayerGame(UIOptions options, SingleplayerSessionData sessionData) {
     navigatorKey.currentState?.pushNamed(
       singleplayerGameScreen,
       arguments: {
-        'category': quizId,
         'options': options,
-        'gameOptions': gameOptions,
+        'sessionData': sessionData,
       },
     );
   }
@@ -272,17 +266,13 @@ class AppRoute {
 
   void goToSingleplayerScoreTable(
       UIOptions options,
-      List<bool> results,
-      String category,
-      SingleplayerGameOptions gameOptions,
+      SingleplayerSessionData sessionData,
       ) {
     navigatorKey.currentState?.pushNamed(
       singleplayerScoreTableScreen,
       arguments: {
         'options': options,
-        'results': results,
-        'category': category,
-        'gameOptions': gameOptions,
+        'sessionData': sessionData,
       },
     );
   }
