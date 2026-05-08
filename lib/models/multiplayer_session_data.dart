@@ -1,111 +1,211 @@
-import 'package:triviaapp/models/game_mode.dart';
-import 'package:triviaapp/models/player.dart';
-import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/models/session_status.dart';
 import 'package:flutter/foundation.dart';
+import 'package:triviaapp/models/game_mode.dart';
 
+export 'package:triviaapp/models/game_mode.dart';
+
+/// Final session record fetched from `sessions_archive/{sessionId}` after
+/// the Cloud Function writes it on game completion.
+/// Not used during live gameplay — use [LiveGameState] for that.
 @immutable
 class MultiplayerSessionData {
   final String _sessionId;
-  final int _numPlayers;
-  final SessionStatus _status;
+  final String _categoryId;
+  final GameMode _gameMode;
   final DateTime _sessionStartTime;
   final DateTime _gameStartTime;
-  final DateTime? _endTime;
-  final List<Player> _players;
-  final List<int> _placement;
-  final List<Question> _questions;
-  final GameMode _gameMode;
+  final DateTime _endTime;
 
+  /// Sorted by placement ascending (index 0 = winner).
+  final List<PlayerResult> _playerResults;
+
+  final List<RoundRecord> _rounds;
 
   const MultiplayerSessionData({
     required String sessionId,
-    required int numPlayers,
-    required SessionStatus status,
+    required String categoryId,
+    required GameMode gameMode,
     required DateTime sessionStartTime,
     required DateTime gameStartTime,
-    required DateTime? endTime,
-    required List<Player> players,
-    required List<int> placement,
-    required List<Question> questions,
-    required GameMode gameMode,
+    required DateTime endTime,
+    required List<PlayerResult> playerResults,
+    required List<RoundRecord> rounds,
   })  : _sessionId = sessionId,
-        _numPlayers = numPlayers,
-        _status = status,
+        _categoryId = categoryId,
+        _gameMode = gameMode,
         _sessionStartTime = sessionStartTime,
         _gameStartTime = gameStartTime,
         _endTime = endTime,
-        _players = players,
-        _placement = placement,
-        _questions = questions,
-        _gameMode = gameMode;
+        _playerResults = playerResults,
+        _rounds = rounds;
 
-  MultiplayerSessionData copyWith({
-    SessionStatus? status,
-    DateTime? gameStartTime,
-    DateTime? endTime,
-    List<Player>? players,
-    List<int>? placement,
-  }) {
-    return MultiplayerSessionData(
-      sessionId: sessionId,
-      numPlayers: numPlayers,
-      sessionStartTime: sessionStartTime,
-      questions: questions,
-      gameMode: gameMode,
-      status: status ?? this.status,
-      gameStartTime: gameStartTime ?? this.gameStartTime,
-      endTime: endTime ?? this.endTime,
-      players: players ?? this.players,
-      placement: placement ?? this.placement,
-    );
-  }
+  String get sessionId => _sessionId;
+  String get categoryId => _categoryId;
+  GameMode get gameMode => _gameMode;
+  DateTime get sessionStartTime => _sessionStartTime;
+  DateTime get gameStartTime => _gameStartTime;
+  DateTime get endTime => _endTime;
+  List<PlayerResult> get playerResults => _playerResults;
+  List<RoundRecord> get rounds => _rounds;
+
+  /// Convenience: winner is the player with placement == 1.
+  PlayerResult? get winner =>
+      _playerResults.where((r) => r.placement == 1).firstOrNull;
+
+  /// Find a single [PlayerResult] by uid. Returns null if not found.
+  PlayerResult? playerByUid(String uid) =>
+      _playerResults.where((r) => r.uid == uid).firstOrNull;
 
   factory MultiplayerSessionData.fromJson(Map<String, dynamic> json) {
     return MultiplayerSessionData(
       sessionId: json['sessionId'] as String,
-      numPlayers: json['numPlayers'] as int,
-      status: SessionStatus.values.firstWhere(
-            (e) => e.name == (json['status'] as String),
-        orElse: () => SessionStatus.inProgress,
-      ),
+      categoryId: json['categoryId'] as String,
+      gameMode: GameMode.fromJson(json['gameMode'] as String?),
       sessionStartTime: DateTime.parse(json['sessionStartTime'] as String),
       gameStartTime: DateTime.parse(json['gameStartTime'] as String),
       endTime: DateTime.parse(json['endTime'] as String),
-      players: (json['players'] as List<dynamic>)
-          .map((e) => Player.fromJson(e as Map<String, dynamic>))
+      playerResults: (json['playerResults'] as List<dynamic>)
+          .map((e) => PlayerResult.fromJson(e as Map<String, dynamic>))
           .toList(),
-      placement: List<int>.from(json['placement'] as List<dynamic>),
-      questions: (json['questions'] as List<dynamic>)
-          .map((e) => Question.fromJson(e as Map<String, dynamic>))
+      rounds: (json['rounds'] as List<dynamic>)
+          .map((e) => RoundRecord.fromJson(e as Map<String, dynamic>))
           .toList(),
-      gameMode: GameMode.fromJson(json['gameMode'] as String?),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'sessionId': _sessionId,
-      'numPlayers': _numPlayers,
-      'status': _status.name,
-      'sessionStartTime': _sessionStartTime.toIso8601String(),
-      'gameStartTime': _gameStartTime.toIso8601String(),
-      'endTime': _endTime?.toIso8601String(),
-      'players': _players.map((p) => p.toJson()).toList(),
-      'placement': _placement,
-      'questions': _questions.map((q) => q.toJson()).toList(),
-      'gameMode': _gameMode.name,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'sessionId': _sessionId,
+    'categoryId': _categoryId,
+    'gameMode': _gameMode.name,
+    'sessionStartTime': _sessionStartTime.toIso8601String(),
+    'gameStartTime': _gameStartTime.toIso8601String(),
+    'endTime': _endTime.toIso8601String(),
+    'playerResults': _playerResults.map((r) => r.toJson()).toList(),
+    'rounds': _rounds.map((r) => r.toJson()).toList(),
+  };
+}
 
-  String get sessionId => _sessionId;
-  int get numPlayers => _numPlayers;
-  SessionStatus get status => _status;
-  DateTime get sessionStartTime => _sessionStartTime;
-  DateTime get gameStartTime => _gameStartTime;
-  DateTime? get endTime => _endTime;
-  List<Player> get players => _players;
-  List<int> get placement => _placement;
-  List<Question> get questions => _questions;
-  GameMode get gameMode => _gameMode;
+@immutable
+class PlayerResult {
+  final String _uid;
+  final String _username;
+
+  /// 1 = winner.
+  final int _placement;
+
+  final int _correctAnswers;
+  final int _totalAnswers;
+
+  /// null for the winner.
+  final int? _eliminationRound;
+
+  /// How many times this player was in a lottery draw.
+  final int _lotteryTimesIn;
+
+  const PlayerResult({
+    required String uid,
+    required String username,
+    required int placement,
+    required int correctAnswers,
+    required int totalAnswers,
+    int? eliminationRound,
+    required int lotteryTimesIn,
+  })  : _uid = uid,
+        _username = username,
+        _placement = placement,
+        _correctAnswers = correctAnswers,
+        _totalAnswers = totalAnswers,
+        _eliminationRound = eliminationRound,
+        _lotteryTimesIn = lotteryTimesIn;
+
+  String get uid => _uid;
+  String get username => _username;
+  int get placement => _placement;
+  int get correctAnswers => _correctAnswers;
+  int get totalAnswers => _totalAnswers;
+  int? get eliminationRound => _eliminationRound;
+  int get lotteryTimesIn => _lotteryTimesIn;
+
+  factory PlayerResult.fromJson(Map<String, dynamic> json) => PlayerResult(
+    uid: json['uid'] as String,
+    username: json['username'] as String,
+    placement: json['placement'] as int,
+    correctAnswers: json['correctAnswers'] as int,
+    totalAnswers: json['totalAnswers'] as int,
+    eliminationRound: json['eliminationRound'] as int?,
+    lotteryTimesIn: json['lotteryTimesIn'] as int? ?? 0,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'uid': _uid,
+    'username': _username,
+    'placement': _placement,
+    'correctAnswers': _correctAnswers,
+    'totalAnswers': _totalAnswers,
+    'eliminationRound': _eliminationRound,
+    'lotteryTimesIn': _lotteryTimesIn,
+  };
+}
+
+@immutable
+class RoundRecord {
+  final int _roundIndex;
+  final String _questionId;
+
+  /// uid → answer text submitted by that player.
+  final Map<String, String> _playerAnswers;
+
+  /// uid → whether the answer was correct (set by Cloud Function).
+  final Map<String, bool> _isCorrect;
+
+  final bool _lotteryOccurred;
+  final List<String> _lotteryPool;
+
+  /// null when nobody was eliminated (all answered correctly).
+  final String? _eliminatedUid;
+
+  const RoundRecord({
+    required int roundIndex,
+    required String questionId,
+    required Map<String, String> playerAnswers,
+    required Map<String, bool> isCorrect,
+    required bool lotteryOccurred,
+    required List<String> lotteryPool,
+    String? eliminatedUid,
+  })  : _roundIndex = roundIndex,
+        _questionId = questionId,
+        _playerAnswers = playerAnswers,
+        _isCorrect = isCorrect,
+        _lotteryOccurred = lotteryOccurred,
+        _lotteryPool = lotteryPool,
+        _eliminatedUid = eliminatedUid;
+
+  int get roundIndex => _roundIndex;
+  String get questionId => _questionId;
+  Map<String, String> get playerAnswers => _playerAnswers;
+  Map<String, bool> get isCorrect => _isCorrect;
+  bool get lotteryOccurred => _lotteryOccurred;
+  List<String> get lotteryPool => _lotteryPool;
+  String? get eliminatedUid => _eliminatedUid;
+
+  factory RoundRecord.fromJson(Map<String, dynamic> json) => RoundRecord(
+    roundIndex: json['roundIndex'] as int,
+    questionId: json['questionId'] as String,
+    playerAnswers: Map<String, String>.from(
+        json['playerAnswers'] as Map<dynamic, dynamic>),
+    isCorrect:
+    Map<String, bool>.from(json['isCorrect'] as Map<dynamic, dynamic>),
+    lotteryOccurred: json['lotteryOccurred'] as bool,
+    lotteryPool: List<String>.from(json['lotteryPool'] as List<dynamic>),
+    eliminatedUid: json['eliminatedUid'] as String?,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'roundIndex': _roundIndex,
+    'questionId': _questionId,
+    'playerAnswers': _playerAnswers,
+    'isCorrect': _isCorrect,
+    'lotteryOccurred': _lotteryOccurred,
+    'lotteryPool': _lotteryPool,
+    'eliminatedUid': _eliminatedUid,
+  };
 }

@@ -1,7 +1,10 @@
 abstract class IMultiplayerConnectionService {
-  void connectPlayer();
-
-  Future<void> connectPlayers();
-
-  Future<void> startMultiplayerGame();
+  /// Finds an existing waiting session for [categoryId]/[maxPlayers] or
+  /// creates a new one (including fetching questions). Returns the sessionId.
+  Future<String> connectPlayer({
+    required String uid,
+    required String username,
+    required String categoryId,
+    required int maxPlayers,
+  });
 }

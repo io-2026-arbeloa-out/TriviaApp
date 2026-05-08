@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/models/ui_options.dart';
+import 'package:triviaapp/screens/multiplayer_lobby_screen.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 import 'package:triviaapp/widgets/login_register_pop_up.dart';
 
@@ -130,6 +131,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           ),
                         ),
                         onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => MultiplayerLobbyScreen(
+                                uid: FirebaseAuth.instance.currentUser?.uid ?? 'uid1',
+                                username: FirebaseAuth.instance.currentUser?.displayName ?? 'test',
+                                categoryId: 'general',
+                                maxPlayers: 2,
+                                options: widget.options,
+                              ),
+                            ),
+                          );
                           // TODO: przejście do trybu multiplayer
                         },
                         child: const Text(

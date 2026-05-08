@@ -1,3 +1,4 @@
+/*
 import 'package:triviaapp/interfaces/i_private_game_join_service.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
@@ -32,4 +33,4 @@ class PrivateGameJoinService implements IPrivateGameJoinService {
     // Możesz tu np. ustawiać flagę „ready” w session/player w repo.
     // Placeholder.
   }
-}
+}*/

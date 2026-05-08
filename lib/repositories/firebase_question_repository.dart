@@ -22,7 +22,6 @@ class FirebaseQuestionRepository {
     final List raw = snapshot.value as List;
     final random = Random();
 
-    // zbierz indeksy pasujących pytań (bez pełnego mapowania na obiekty)
     final List<int> validIndexes = [];
 
     for (int i = 0; i < raw.length; i++) {
@@ -31,7 +30,6 @@ class FirebaseQuestionRepository {
 
       final value = Map<String, dynamic>.from(item);
 
-      // szybki filtr po typie bez tworzenia obiektu Question
       final type = QuestionType.values.firstWhere(
             (e) => e.name == value['type'],
         orElse: () => QuestionType.values.first,
@@ -44,7 +42,6 @@ class FirebaseQuestionRepository {
 
     if (validIndexes.isEmpty) return [];
 
-    // losuj indeksy bez powtórzeń
     validIndexes.shuffle(random);
     final selectedIndexes = validIndexes.take(limit);
 
@@ -52,14 +49,46 @@ class FirebaseQuestionRepository {
 
     for (final i in selectedIndexes) {
       final value = Map<String, dynamic>.from(raw[i]);
-
-      final question = Question.fromJson({
+      questions.add(Question.fromJson({
         'id': i.toString(),
         'category': category,
         ...value,
-      });
+      }));
+    }
 
-      questions.add(question);
+    return questions;
+  }
+
+  /// Fetches specific questions by their index-based IDs.
+  /// IDs are the string-encoded array indices stored in the session's
+  /// [questionIds] field. Preserves the original [ids] ordering.
+  Future<List<Question>> getQuestionsByIds({
+    required String category,
+    required List<String> ids,
+  }) async {
+    if (ids.isEmpty) return [];
+
+    final ref = _database.ref('$category/questions');
+    final snapshot = await ref.get();
+
+    if (!snapshot.exists || snapshot.value == null) return [];
+
+    final List raw = snapshot.value as List;
+    final questions = <Question>[];
+
+    for (final id in ids) {
+      final index = int.tryParse(id);
+      if (index == null || index >= raw.length || raw[index] == null) continue;
+
+      final item = raw[index];
+      if (item is! Map) continue;
+
+      final value = Map<String, dynamic>.from(item);
+      questions.add(Question.fromJson({
+        'id': id,
+        'category': category,
+        ...value,
+      }));
     }
 
     return questions;

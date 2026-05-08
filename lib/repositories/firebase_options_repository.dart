@@ -14,7 +14,6 @@ class FirebaseOptionsRepository {
         _auth = auth ?? FirebaseAuth.instance;
 
   String get uid {
-    //return 'uid1';
     final user = _auth.currentUser;
     if (user == null) throw StateError('User not logged in');
     return user.uid;

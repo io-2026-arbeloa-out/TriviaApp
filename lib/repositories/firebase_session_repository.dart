@@ -1,8 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:triviaapp/models/game_mode.dart';
-import 'package:triviaapp/models/player.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
-import 'package:triviaapp/models/session_status.dart';
 
 class FirebaseSessionRepository {
   final FirebaseFirestore _firestore;
@@ -10,130 +7,183 @@ class FirebaseSessionRepository {
   FirebaseSessionRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
-  /// Tworzy nową sesję multiplayer.
-  /// Zakładam kolekcję 'sessions'.
-  Future<MultiplayerSessionData> createMultiplayerSession(
-      String categoryId,
-      String playerName,
-      ) async {
-    final docRef = _firestore.collection('sessions').doc();
+  CollectionReference<Map<String, dynamic>> get _sessions =>
+      _firestore.collection('sessions');
 
-    final session = MultiplayerSessionData(
-      sessionId: docRef.id,
-      numPlayers: 1,
-      status: SessionStatus.inProgress,
-      sessionStartTime: DateTime.now(),
-      gameStartTime: DateTime.now(),
-      endTime: DateTime.now(),
-      players: [
-        Player(uid: docRef.id, username: playerName),
-      ],
-      placement: [],
-      questions: [],
-      gameMode: GameMode.singleplayer,
-    );
+  CollectionReference<Map<String, dynamic>> get _archive =>
+      _firestore.collection('sessions_archive');
 
-    await docRef.set(_toJson(session, categoryId: categoryId));
-    return session;
+  // ── Matchmaking ────────────────────────────────────────────────────────────
+
+  /// Returns the sessionId of a waiting session for this category/size,
+  /// or null if none exists yet.
+  Future<String?> findWaitingSession({
+    required String categoryId,
+    required int maxPlayers,
+  }) async {
+    final snap = await _sessions
+        .where('status', isEqualTo: 'waiting')
+        .where('categoryId', isEqualTo: categoryId)
+        .where('maxPlayers', isEqualTo: maxPlayers)
+        .limit(1)
+        .get();
+
+    if (snap.docs.isEmpty) return null;
+    return snap.docs.first.id;
   }
 
-  Future<MultiplayerSessionData> joinMultiplayerSession(
-      String sessionId,
-      String playerName,
-      ) async {
-    final docRef = _firestore.collection('sessions').doc(sessionId);
-    final snap = await docRef.get();
-    if (!snap.exists) {
-      throw StateError('Session not found: $sessionId');
-    }
+  /// Creates a new session document + adds the first player to the players
+  /// subcollection. Returns the new sessionId.
+  Future<String> createSession({
+    required String categoryId,
+    required int maxPlayers,
+    required List<String> questionIds,
+    required String uid,
+    required String username,
+  }) async {
+    final docRef = _sessions.doc();
 
-    final data = snap.data()!;
-    final session = MultiplayerSessionData.fromJson(data);
+    await _firestore.runTransaction((tx) async {
+      // Main session document
+      tx.set(docRef, {
+        'status': 'waiting',
+        'categoryId': categoryId,
+        'maxPlayers': maxPlayers,
+        'questionIds': questionIds,
+        'playerUids': [uid],
+        'currentQuestionIndex': 0,
+        'createdAt': FieldValue.serverTimestamp(),
+        'gameStartTime': null,
+        'endTime': null,
+      });
 
-    final updatedPlayers = [
-      ...session.players,
-      Player(uid: '${session.players.length + 1}', username: playerName),
-    ];
-
-    await docRef.update({
-      'numPlayers': updatedPlayers.length,
-      'players': updatedPlayers.map((p) => {
-        'uid': p.uid,
-        'username': p.username,
-      }),
+      // First player document in subcollection
+      tx.set(docRef.collection('players').doc(uid), {
+        'uid': uid,
+        'username': username,
+        'joinedAt': FieldValue.serverTimestamp(),
+        'isEliminated': false,
+        'eliminationRound': null,
+        'lotteryTickets': 0,
+      });
     });
 
-    final updatedSession = MultiplayerSessionData(
-      sessionId: session.sessionId,
-      numPlayers: updatedPlayers.length,
-      status: session.status,
-      sessionStartTime: session.sessionStartTime,
-      gameStartTime: session.gameStartTime,
-      endTime: session.endTime,
-      players: updatedPlayers,
-      placement: session.placement,
-      questions: session.questions,
-      gameMode: session.gameMode,
-    );
-
-    return updatedSession;
+    return docRef.id;
   }
 
-  Stream<MultiplayerSessionData> getSessionStream(String sessionId) {
-    return _firestore
-        .collection('sessions')
+  /// Adds a player to an existing session. Returns the sessionId.
+  /// The Cloud Function [onPlayerJoin] starts the game when maxPlayers is
+  /// reached.
+  Future<String> joinSession({
+    required String sessionId,
+    required String uid,
+    required String username,
+  }) async {
+    final sessionRef = _sessions.doc(sessionId);
+
+    await _firestore.runTransaction((tx) async {
+      tx.update(sessionRef, {
+        'playerUids': FieldValue.arrayUnion([uid]),
+      });
+
+      tx.set(sessionRef.collection('players').doc(uid), {
+        'uid': uid,
+        'username': username,
+        'joinedAt': FieldValue.serverTimestamp(),
+        'isEliminated': false,
+        'eliminationRound': null,
+        'lotteryTickets': 0,
+      });
+    });
+
+    return sessionId;
+  }
+
+  // ── Streams ────────────────────────────────────────────────────────────────
+
+  /// Main session document stream (status, currentQuestionIndex, etc.).
+  Stream<Map<String, dynamic>> sessionDocStream(String sessionId) {
+    return _sessions.doc(sessionId).snapshots().map((snap) {
+      if (!snap.exists) throw StateError('Session $sessionId not found');
+      return snap.data()!;
+    });
+  }
+
+  /// Stream of all player documents in the session's subcollection.
+  Stream<List<Map<String, dynamic>>> playersStream(String sessionId) {
+    return _sessions
         .doc(sessionId)
+        .collection('players')
         .snapshots()
-        .map((snap) => MultiplayerSessionData.fromJson(snap.data()!));
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
   }
 
-  Future<void> updatePlayerScore(
-      String sessionId,
-      String playerName,
-      int score,
-      ) async {
-    // Zakładamy, że trzymasz scoreboard np. w mapie {playerName: score}.
-    final docRef = _firestore.collection('sessions').doc(sessionId);
-    await docRef.update({
-      'scores.$playerName': FieldValue.increment(score),
+  /// Stream for a specific round document. Emits null if the round doc
+  /// does not exist yet (CF hasn't created it).
+  Stream<Map<String, dynamic>?> roundStream(
+      String sessionId, int roundIndex) {
+    return _sessions
+        .doc(sessionId)
+        .collection('rounds')
+        .doc(roundIndex.toString())
+        .snapshots()
+        .map((snap) => snap.exists ? snap.data() : null);
+  }
+
+  /// Stream of the answer documents for a given round. Provides both count
+  /// and the set of UIDs who have already answered.
+  Stream<({int count, Set<String> answeredUids})> answersStream(
+      String sessionId, int roundIndex) {
+    return _sessions
+        .doc(sessionId)
+        .collection('answers')
+        .where('roundIndex', isEqualTo: roundIndex)
+        .snapshots()
+        .map((snap) => (
+    count: snap.size,
+    answeredUids:
+    snap.docs.map((d) => d.data()['uid'] as String).toSet(),
+    ));
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  /// Writes a player's answer. Does NOT include [isCorrect] — the Cloud
+  /// Function [onAnswerSubmit] validates and sets that field server-side.
+  Future<void> submitAnswer({
+    required String sessionId,
+    required String uid,
+    required int roundIndex,
+    required String questionId,
+    required String answer,
+  }) async {
+    // Document ID enforced by Firestore rules: must be uid_roundIndex
+    final docId = '${uid}_$roundIndex';
+
+    await _sessions
+        .doc(sessionId)
+        .collection('answers')
+        .doc(docId)
+        .set({
+      'uid': uid,
+      'roundIndex': roundIndex,
+      'questionId': questionId,
+      'answer': answer,
+      'answeredAt': FieldValue.serverTimestamp(),
+      // isCorrect intentionally omitted — set by Cloud Function
     });
   }
 
-  Future<void> updateSessionStatus(String sessionId, String status) async {
-    final docRef = _firestore.collection('sessions').doc(sessionId);
-    await docRef.update({'status': status});
-  }
+  // ── Archive ────────────────────────────────────────────────────────────────
 
-  /// Opcjonalna pomocnicza metoda dla ScoreTableService.
-  Future<MultiplayerSessionData> getGameData(String sessionId) async {
-    final snap =
-    await _firestore.collection('sessions').doc(sessionId).get();
+  /// Fetches the final [MultiplayerSessionData] from [sessions_archive],
+  /// written by the [onGameFinished] Cloud Function.
+  Future<MultiplayerSessionData> fetchArchivedSession(
+      String sessionId) async {
+    final snap = await _archive.doc(sessionId).get();
     if (!snap.exists) {
-      throw StateError('Session not found: $sessionId');
+      throw StateError('Archived session $sessionId not found');
     }
     return MultiplayerSessionData.fromJson(snap.data()!);
-  }
-
-  Map<String, dynamic> _toJson(
-      MultiplayerSessionData session, {
-        required String categoryId,
-      }) {
-    return {
-      'sessionId': session.sessionId,
-      'numPlayers': session.numPlayers,
-      'status': session.status.name,
-      'sessionStartTime': session.sessionStartTime.toIso8601String(),
-      'gameStartTime': session.gameStartTime.toIso8601String(),
-      'endTime': session.endTime?.toIso8601String(),
-      'players': session.players
-          .map((p) => {
-        'uid': p.uid,
-        'username': p.username,
-      })
-          .toList(),
-      'placement': session.placement,
-      'questions': session.questions.map((q) => q.toJson()).toList(),
-      'categoryId': categoryId,
-    };
   }
 }
