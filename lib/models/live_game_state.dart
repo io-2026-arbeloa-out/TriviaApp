@@ -14,7 +14,6 @@ class LiveGameState {
   final int _currentQuestionIndex;
   final List<String> _questionIds;
   final List<PlayerLiveState> _players;
-  final int _answersSubmittedCount;
   final RoundResult? _lastRoundResult;
 
   const LiveGameState({
@@ -24,7 +23,6 @@ class LiveGameState {
     required int currentQuestionIndex,
     required List<String> questionIds,
     required List<PlayerLiveState> players,
-    required int answersSubmittedCount,
     RoundResult? lastRoundResult,
   })  : _sessionId = sessionId,
         _myUid = myUid,
@@ -32,7 +30,6 @@ class LiveGameState {
         _currentQuestionIndex = currentQuestionIndex,
         _questionIds = questionIds,
         _players = players,
-        _answersSubmittedCount = answersSubmittedCount,
         _lastRoundResult = lastRoundResult;
 
   String get sessionId => _sessionId;
@@ -41,7 +38,6 @@ class LiveGameState {
   int get currentQuestionIndex => _currentQuestionIndex;
   List<String> get questionIds => _questionIds;
   List<PlayerLiveState> get players => _players;
-  int get answersSubmittedCount => _answersSubmittedCount;
   RoundResult? get lastRoundResult => _lastRoundResult;
 
   List<PlayerLiveState> get activePlayers =>
@@ -50,7 +46,6 @@ class LiveGameState {
   PlayerLiveState? get myState =>
       _players.where((p) => p.uid == _myUid).firstOrNull;
 
-  bool get hasAnswered => myState?.hasAnsweredCurrentRound ?? false;
   bool get amIEliminated => myState?.isEliminated ?? false;
   int get activeCount => activePlayers.length;
 }
@@ -60,7 +55,6 @@ class PlayerLiveState {
   final String _uid;
   final String _username;
   final bool _isEliminated;
-  final bool _hasAnsweredCurrentRound;
 
   /// Accumulated lottery tickets — increases by 1 each round
   /// the player is in the lottery but survives.
@@ -70,18 +64,15 @@ class PlayerLiveState {
     required String uid,
     required String username,
     required bool isEliminated,
-    required bool hasAnsweredCurrentRound,
     required int lotteryTickets,
   })  : _uid = uid,
         _username = username,
         _isEliminated = isEliminated,
-        _hasAnsweredCurrentRound = hasAnsweredCurrentRound,
         _lotteryTickets = lotteryTickets;
 
   String get uid => _uid;
   String get username => _username;
   bool get isEliminated => _isEliminated;
-  bool get hasAnsweredCurrentRound => _hasAnsweredCurrentRound;
   int get lotteryTickets => _lotteryTickets;
 }
 

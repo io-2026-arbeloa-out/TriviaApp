@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
 import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
@@ -9,6 +10,7 @@ import 'package:triviaapp/screens/loading_screen.dart';
 import 'package:triviaapp/screens/login_screen.dart';
 import 'package:triviaapp/screens/main_menu_screen.dart';
 import 'package:triviaapp/screens/multiplayer_game_screen.dart';
+import 'package:triviaapp/screens/multiplayer_score_table_screen.dart';
 import 'package:triviaapp/screens/private_lobby_screen.dart';
 import 'package:triviaapp/screens/profile_screen.dart';
 import 'package:triviaapp/screens/quiz_list_screen.dart';
@@ -40,6 +42,7 @@ class AppRoute {
   static const String userOptionsScreen = '/userOptions';
   static const String singleplayerScoreTableScreen = '/singleplayerScoreTable';
   static const String privateLobbyScreen = '/privateLobby';
+  static const String multiplayerScoreTableScreen = '/multiplayerScoreTable';
 
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -163,6 +166,20 @@ class AppRoute {
           settings: settings,
         );
 
+      case multiplayerScoreTableScreen:
+        final args = settings.arguments as Map<String, dynamic>;
+        final UIOptions options = args['options'];
+        final MultiplayerSessionData session = args['session'];
+        final String myUid = args['myUid'];
+        return MaterialPageRoute(
+          builder: (_) => MultiplayerScoreTableScreen(
+            options: options,
+            session: session,
+            myUid: myUid,
+          ),
+          settings: settings,
+        );
+
       default:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
@@ -281,6 +298,21 @@ class AppRoute {
     navigatorKey.currentState?.pushNamed(
       privateLobbyScreen,
       arguments: options,
+    );
+  }
+
+  void goToMultiplayerScoreTable({
+    required UIOptions options,
+    required MultiplayerSessionData session,
+    required String myUid,
+  }) {
+    navigatorKey.currentState?.pushReplacementNamed(
+      multiplayerScoreTableScreen,
+      arguments: {
+        'options': options,
+        'session': session,
+        'myUid': myUid,
+      },
     );
   }
 

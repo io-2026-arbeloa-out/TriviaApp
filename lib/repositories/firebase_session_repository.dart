@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 
 class FirebaseSessionRepository {
@@ -15,8 +16,6 @@ class FirebaseSessionRepository {
 
   // ── Matchmaking ────────────────────────────────────────────────────────────
 
-  /// Returns the sessionId of a waiting session for this category/size,
-  /// or null if none exists yet.
   Future<String?> findWaitingSession({
     required String categoryId,
     required int maxPlayers,
@@ -32,8 +31,6 @@ class FirebaseSessionRepository {
     return snap.docs.first.id;
   }
 
-  /// Creates a new session document + adds the first player to the players
-  /// subcollection. Returns the new sessionId.
   Future<String> createSession({
     required String categoryId,
     required int maxPlayers,
@@ -43,37 +40,65 @@ class FirebaseSessionRepository {
   }) async {
     final docRef = _sessions.doc();
 
-    await _firestore.runTransaction((tx) async {
-      // Main session document
-      tx.set(docRef, {
-        'status': 'waiting',
-        'categoryId': categoryId,
-        'maxPlayers': maxPlayers,
-        'questionIds': questionIds,
-        'playerUids': [uid],
-        'currentQuestionIndex': 0,
-        'createdAt': FieldValue.serverTimestamp(),
-        'gameStartTime': null,
-        'endTime': null,
-      });
-
-      // First player document in subcollection
-      tx.set(docRef.collection('players').doc(uid), {
-        'uid': uid,
-        'username': username,
-        'joinedAt': FieldValue.serverTimestamp(),
-        'isEliminated': false,
-        'eliminationRound': null,
-        'lotteryTickets': 0,
-      });
+    await docRef.set({
+      'status': 'waiting',
+      'phase': 'answering',
+      'categoryId': categoryId,
+      'maxPlayers': maxPlayers,
+      'questionIds': questionIds,
+      'playerUids': [uid],
+      'activePlayerCount': 1,
+      'currentQuestionIndex': 0,
+      'players': {uid: _newPlayerEntry(username)},
+      'lastRoundResult': null,
+      'rounds': [],
+      'createdAt': FieldValue.serverTimestamp(),
+      'gameStartTime': null,
+      'endTime': null,
     });
 
     return docRef.id;
   }
 
-  /// Adds a player to an existing session. Returns the sessionId.
-  /// The Cloud Function [onPlayerJoin] starts the game when maxPlayers is
-  /// reached.
+  // ── Leave active game ──────────────────────────────────────────────────────
+
+  /// Removes [uid] from an active session.
+  /// Deletes the session document when the last player leaves.
+  Future<void> leaveGame({
+    required String sessionId,
+    required String uid,
+  }) async {
+    final sessionRef = _sessions.doc(sessionId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(sessionRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      if (data['status'] != 'inProgress') return;
+
+      final playerUids =
+      List<String>.from(data['playerUids'] as List? ?? []);
+      playerUids.remove(uid);
+
+      if (playerUids.isEmpty) {
+        tx.delete(sessionRef);
+      } else {
+        tx.update(sessionRef, {
+          'playerUids': FieldValue.arrayRemove([uid]),
+          'players.$uid': FieldValue.delete(),
+          'activePlayerCount': FieldValue.increment(-1),
+        });
+      }
+    });
+  }
+
+  /// Adds a player and — if the session is now full — atomically flips
+  /// [status] to [inProgress] and creates [roundCounters/0].
+  /// No Cloud Function is required for game start.
+  ///
+  /// Throws [StateError] when the session was taken by another player
+  /// concurrently; the caller should surface this as a matchmaking retry.
   Future<String> joinSession({
     required String sessionId,
     required String uid,
@@ -82,26 +107,80 @@ class FirebaseSessionRepository {
     final sessionRef = _sessions.doc(sessionId);
 
     await _firestore.runTransaction((tx) async {
-      tx.update(sessionRef, {
-        'playerUids': FieldValue.arrayUnion([uid]),
-      });
+      final snap = await tx.get(sessionRef);
+      if (!snap.exists) throw StateError('Session $sessionId not found');
 
-      tx.set(sessionRef.collection('players').doc(uid), {
-        'uid': uid,
-        'username': username,
-        'joinedAt': FieldValue.serverTimestamp(),
-        'isEliminated': false,
-        'eliminationRound': null,
-        'lotteryTickets': 0,
-      });
+      final data = snap.data()!;
+      if (data['status'] != 'waiting') {
+        throw StateError('Session $sessionId is no longer accepting players');
+      }
+
+      final currentUids =
+      List<String>.from(data['playerUids'] as List? ?? []);
+      if (currentUids.contains(uid)) return; // idempotency guard
+
+      final maxPlayers = data['maxPlayers'] as int? ?? 0;
+      final newUids = [...currentUids, uid];
+      final isNowFull = newUids.length >= maxPlayers;
+
+      final updates = <String, dynamic>{
+        'playerUids': newUids,
+        'activePlayerCount': newUids.length,
+        'players.$uid': _newPlayerEntry(username),
+      };
+
+      if (isNowFull) {
+        updates['status'] = 'inProgress';
+        updates['gameStartTime'] = FieldValue.serverTimestamp();
+
+        // Create the first round counter in the same transaction so that a
+        // fast player cannot submit an answer before targetCount is set.
+        tx.set(
+          sessionRef.collection('roundCounters').doc('0'),
+          {
+            'validatedCount': 0,
+            'targetCount': newUids.length,
+            'incorrectUids': <String>[],
+          },
+        );
+      }
+
+      tx.update(sessionRef, updates);
     });
 
     return sessionId;
   }
 
-  // ── Streams ────────────────────────────────────────────────────────────────
+  Future<void> removePlayer({
+    required String sessionId,
+    required String uid,
+  }) async {
+    final sessionRef = _sessions.doc(sessionId);
 
-  /// Main session document stream (status, currentQuestionIndex, etc.).
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(sessionRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      if (data['status'] != 'waiting') return;
+
+      final playerUids =
+      List<String>.from(data['playerUids'] as List? ?? []);
+      playerUids.remove(uid);
+
+      if (playerUids.isEmpty) {
+        tx.delete(sessionRef);
+      } else {
+        tx.update(sessionRef, {
+          'playerUids': FieldValue.arrayRemove([uid]),
+          'players.$uid': FieldValue.delete(),
+        });
+      }
+    });
+  }
+
+  // ── Stream ─────────────────────────────────────────────────────────────────
+
   Stream<Map<String, dynamic>> sessionDocStream(String sessionId) {
     return _sessions.doc(sessionId).snapshots().map((snap) {
       if (!snap.exists) throw StateError('Session $sessionId not found');
@@ -109,47 +188,8 @@ class FirebaseSessionRepository {
     });
   }
 
-  /// Stream of all player documents in the session's subcollection.
-  Stream<List<Map<String, dynamic>>> playersStream(String sessionId) {
-    return _sessions
-        .doc(sessionId)
-        .collection('players')
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
-  }
+  // ── Answer submission ──────────────────────────────────────────────────────
 
-  /// Stream for a specific round document. Emits null if the round doc
-  /// does not exist yet (CF hasn't created it).
-  Stream<Map<String, dynamic>?> roundStream(
-      String sessionId, int roundIndex) {
-    return _sessions
-        .doc(sessionId)
-        .collection('rounds')
-        .doc(roundIndex.toString())
-        .snapshots()
-        .map((snap) => snap.exists ? snap.data() : null);
-  }
-
-  /// Stream of the answer documents for a given round. Provides both count
-  /// and the set of UIDs who have already answered.
-  Stream<({int count, Set<String> answeredUids})> answersStream(
-      String sessionId, int roundIndex) {
-    return _sessions
-        .doc(sessionId)
-        .collection('answers')
-        .where('roundIndex', isEqualTo: roundIndex)
-        .snapshots()
-        .map((snap) => (
-    count: snap.size,
-    answeredUids:
-    snap.docs.map((d) => d.data()['uid'] as String).toSet(),
-    ));
-  }
-
-  // ── Actions ────────────────────────────────────────────────────────────────
-
-  /// Writes a player's answer. Does NOT include [isCorrect] — the Cloud
-  /// Function [onAnswerSubmit] validates and sets that field server-side.
   Future<void> submitAnswer({
     required String sessionId,
     required String uid,
@@ -157,33 +197,36 @@ class FirebaseSessionRepository {
     required String questionId,
     required String answer,
   }) async {
-    // Document ID enforced by Firestore rules: must be uid_roundIndex
-    final docId = '${uid}_$roundIndex';
-
     await _sessions
         .doc(sessionId)
         .collection('answers')
-        .doc(docId)
+        .doc('${uid}_$roundIndex')
         .set({
       'uid': uid,
       'roundIndex': roundIndex,
       'questionId': questionId,
       'answer': answer,
       'answeredAt': FieldValue.serverTimestamp(),
-      // isCorrect intentionally omitted — set by Cloud Function
     });
   }
 
   // ── Archive ────────────────────────────────────────────────────────────────
 
-  /// Fetches the final [MultiplayerSessionData] from [sessions_archive],
-  /// written by the [onGameFinished] Cloud Function.
-  Future<MultiplayerSessionData> fetchArchivedSession(
-      String sessionId) async {
+  Future<MultiplayerSessionData> fetchArchivedSession(String sessionId) async {
     final snap = await _archive.doc(sessionId).get();
     if (!snap.exists) {
       throw StateError('Archived session $sessionId not found');
     }
     return MultiplayerSessionData.fromJson(snap.data()!);
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  static Map<String, dynamic> _newPlayerEntry(String username) => {
+    'username': username,
+    'isEliminated': false,
+    'lotteryTickets': 0,
+    'correctAnswers': 0,
+    'totalAnswers': 0,
+  };
 }

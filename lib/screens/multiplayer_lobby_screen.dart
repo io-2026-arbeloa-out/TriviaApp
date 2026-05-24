@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/question.dart';
@@ -11,7 +12,7 @@ import 'package:triviaapp/screens/multiplayer_game_screen.dart';
 import 'package:triviaapp/services/multiplayer_connection_service.dart';
 import 'package:triviaapp/services/multiplayer_game_service.dart';
 
-enum _LobbyPhase { connecting, waiting, loadingQuestions, error }
+enum _LobbyPhase { connecting, waiting, error }
 
 class MultiplayerLobbyScreen extends StatefulWidget {
   final UIOptions options;
@@ -36,15 +37,19 @@ class MultiplayerLobbyScreen extends StatefulWidget {
   }) : options = options ?? const UIOptions();
 
   @override
-  State<MultiplayerLobbyScreen> createState() => _MultiplayerLobbyScreenState();
+  State<MultiplayerLobbyScreen> createState() =>
+      _MultiplayerLobbyScreenState();
 }
 
 class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   UIOptions get options => widget.options;
 
   late final IMultiplayerConnectionService _connectionService;
-  late final IMultiplayerGameService _gameService;
   late final FirebaseQuestionRepository _questionRepository;
+
+  // Single repo instance shared by connection service, game service and the
+  // session stream — avoids creating redundant Firestore listeners.
+  late final FirebaseSessionRepository _sessionRepo;
 
   _LobbyPhase _phase = _LobbyPhase.connecting;
   String _errorMessage = '';
@@ -52,20 +57,23 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   int _currentPlayerCount = 0;
   StreamSubscription<Map<String, dynamic>>? _sessionSub;
 
+  // Set to true when the player presses "Opuść lobby" before _connect()
+  // resolves.  _connect() checks this flag and removes the player immediately
+  // after the Future completes.
+  bool _leaveRequested = false;
+
   @override
   void initState() {
     super.initState();
 
-    final sessionRepo = FirebaseSessionRepository();
+    _sessionRepo = FirebaseSessionRepository();
     _questionRepository =
         widget.questionRepository ?? FirebaseQuestionRepository();
     _connectionService = widget.connectionService ??
         MultiplayerConnectionService(
-          sessionRepository: sessionRepo,
+          sessionRepository: _sessionRepo,
           questionRepository: _questionRepository,
         );
-    _gameService = widget.gameService ??
-        MultiplayerGameService(repo: sessionRepo);
 
     _connect();
   }
@@ -87,10 +95,23 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         maxPlayers: widget.maxPlayers,
       );
 
+      // Player pressed "Opuść lobby" while connectPlayer was in flight.
+      // Remove them from the session we just joined/created and exit.
+      if (_leaveRequested) {
+        unawaited(
+          _connectionService.disconnectPlayer(
+            sessionId: sessionId,
+            uid: widget.uid,
+          ),
+        );
+        return;
+      }
+
       _sessionId = sessionId;
       setState(() => _phase = _LobbyPhase.waiting);
       _listenToSession(sessionId);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _phase = _LobbyPhase.error;
         _errorMessage = 'Nie udało się połączyć z lobby.\n$e';
@@ -98,9 +119,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     }
   }
 
+  // Uses the shared _sessionRepo — no second FirebaseSessionRepository().
   void _listenToSession(String sessionId) {
-    final repo = FirebaseSessionRepository();
-    _sessionSub = repo.sessionDocStream(sessionId).listen(
+    _sessionSub = _sessionRepo.sessionDocStream(sessionId).listen(
           (data) async {
         final status = data['status'] as String? ?? 'waiting';
         final playerUids = data['playerUids'] as List? ?? [];
@@ -111,7 +132,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         if (status == 'inProgress') {
           await _sessionSub?.cancel();
           _sessionSub = null;
-          _onGameStarted(sessionId, data);
+          _onGameStarted(sessionId);
         }
       },
       onError: (e) {
@@ -124,50 +145,48 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Future<void> _onGameStarted(
-      String sessionId,
-      Map<String, dynamic> sessionData,
-      ) async {
+  Future<void> _onGameStarted(String sessionId) async {
     if (!mounted) return;
-    setState(() => _phase = _LobbyPhase.loadingQuestions);
 
-    try {
-      final questionIds =
-      List<String>.from(sessionData['questionIds'] as List? ?? []);
-      final categoryId = sessionData['categoryId'] as String;
+    final gameService = widget.gameService ?? MultiplayerGameService();
 
-      final questions = await _questionRepository.getQuestionsByIds(
-        category: categoryId,
-        ids: questionIds,
-      );
-
-      if (!mounted) return;
-
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => MultiplayerGameScreen(
-            options: options,
-            sessionId: sessionId,
-            myUid: widget.uid,
-            myUsername: widget.username,
-            questions: questions,
-            gameService: _gameService,
-          ),
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => MultiplayerGameScreen(
+          options: options,
+          gameService: gameService,
         ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _phase = _LobbyPhase.error;
-        _errorMessage = 'Nie udało się załadować pytań.\n$e';
-      });
-    }
+      ),
+    );
   }
+
+  // ── Leave ──────────────────────────────────────────────────────────────────
 
   Future<void> _onLeave() async {
     await _sessionSub?.cancel();
     _sessionSub = null;
-    if (mounted) Navigator.of(context).pop();
+
+    if (_phase == _LobbyPhase.connecting) {
+      // connectPlayer is still in flight — set the flag so it removes the
+      // player once the Future resolves, then navigate away immediately.
+      _leaveRequested = true;
+      if (mounted) AppRoute.instance.goToMainMenu(options);
+      //Navigator.of(context).pop();
+      return;
+    }
+
+    // Session is known — remove the player from Firestore.
+    // Fire-and-forget: navigation should not block on this call.
+    if (_sessionId != null) {
+      unawaited(
+        _connectionService
+            .disconnectPlayer(sessionId: _sessionId!, uid: widget.uid)
+            .catchError((_) {}), // best-effort; CF cleanup handles failures
+      );
+    }
+
+    if (mounted) AppRoute.instance.goToMainMenu(options);
+    // Navigator.of(context).pop();
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -189,7 +208,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               padding: const EdgeInsets.all(24),
               child: switch (_phase) {
                 _LobbyPhase.error => _buildError(),
-                _LobbyPhase.loadingQuestions => _buildLoadingQuestions(),
                 _ => _buildWaiting(),
               },
             ),
@@ -206,9 +224,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          isConnecting
-              ? 'Łączenie z lobby...'
-              : 'Oczekiwanie na graczy',
+          isConnecting ? 'Łączenie z lobby...' : 'Oczekiwanie na graczy',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: options.textColor,
@@ -220,7 +236,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         const SizedBox(height: 24),
         if (!isConnecting && _sessionId != null) ...[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
               color: options.secondaryColor.withOpacity(0.4),
               borderRadius: BorderRadius.circular(12),
@@ -229,7 +246,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               children: [
                 Text(
                   '$_currentPlayerCount / ${widget.maxPlayers}',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  style:
+                  Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: options.textColor,
                     fontWeight: FontWeight.bold,
                   ),
@@ -238,7 +256,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 Text(
                   'graczy w lobby',
                   style: TextStyle(
-                      color: options.textColor.withOpacity(0.7), fontSize: 13),
+                    color: options.textColor.withOpacity(0.7),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -262,22 +282,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Widget _buildLoadingQuestions() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Ładowanie pytań...',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: options.textColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 24),
-        CircularProgressIndicator(color: options.textColor),
-      ],
-    );
-  }
 
   Widget _buildError() {
     return Column(

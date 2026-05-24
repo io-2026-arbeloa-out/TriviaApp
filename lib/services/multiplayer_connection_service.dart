@@ -22,7 +22,6 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
     required String categoryId,
     required int maxPlayers,
   }) async {
-    // Try to join an existing waiting session first.
     final existingId = await _sessionRepository.findWaitingSession(
       categoryId: categoryId,
       maxPlayers: maxPlayers,
@@ -36,8 +35,6 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
       );
     }
 
-    // No waiting session found — this player becomes the host and
-    // fetches the questions that will be used for the entire game.
     final questions = await _questionRepository.getQuestions(
       limit: _questionsPerGame,
       category: categoryId,
@@ -45,18 +42,28 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
     );
 
     if (questions.isEmpty) {
-      throw StateError(
-          'No questions available for category "$categoryId"');
+      throw StateError('No questions available for category "$categoryId"');
     }
 
-    final questionIds = questions.map((q) => q.id).toList();
+    questions.shuffle();//todo check
 
     return _sessionRepository.createSession(
       categoryId: categoryId,
       maxPlayers: maxPlayers,
-      questionIds: questionIds,
+      questionIds: questions.map((q) => q.id).toList(),
       uid: uid,
       username: username,
+    );
+  }
+
+  @override
+  Future<void> disconnectPlayer({
+    required String sessionId,
+    required String uid,
+  }) {
+    return _sessionRepository.removePlayer(
+      sessionId: sessionId,
+      uid: uid,
     );
   }
 }

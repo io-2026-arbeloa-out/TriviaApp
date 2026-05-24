@@ -1,114 +1,108 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/live_game_state.dart';
-import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/screens/multiplayer_score_table_screen.dart';
 import 'package:triviaapp/services/multiplayer_game_service.dart';
 
-// ── Local UI phase ─────────────────────────────────────────────────────────
-
-enum _UIPhase {
-  loading,     // waiting for first LiveGameState
-  answering,   // I haven't answered yet
-  waiting,     // I answered, waiting for others
-  resolving,   // round resolved — showing elimination result
-  eliminated,  // I was eliminated — brief screen before results
-  finished,    // fetching archive + navigating
-}
+// ── Local UI phase ──────────────────────────────────────────────────────────
+// Finer-grained than SessionPhase — drives which widget subtree is shown.
+enum _UIPhase { loading, answering, waiting, resolving, eliminated, finished }
 
 class MultiplayerGameScreen extends StatefulWidget {
-  final UIOptions options;
-  final String sessionId;
-  final String myUid;
-  final String myUsername;
-  final List<Question> questions;
-  final IMultiplayerGameService gameService;
+  final UIOptions _options;
+  final IMultiplayerGameService _gameService;
 
   MultiplayerGameScreen({
     super.key,
-    String? sessionId,
-    String? myUid,
-    String? myUsername,
-    List<Question>? questions,
-    IMultiplayerGameService? gameService,
     UIOptions? options,
-  })  : sessionId = sessionId ?? '',
-        myUid = myUid ?? '',
-        myUsername = myUsername ?? '',
-        questions = questions ?? const [],
-        gameService = gameService ?? MultiplayerGameService(),
-        options = options ?? const UIOptions();
+    IMultiplayerGameService? gameService,
+  })  : _options = options ?? const UIOptions(),
+        _gameService = gameService ?? MultiplayerGameService();
 
   @override
   State<MultiplayerGameScreen> createState() => _MultiplayerGameScreenState();
 }
 
 class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
-  UIOptions get options => widget.options;
+  UIOptions get options => widget._options;
+  IMultiplayerGameService get gameService => widget._gameService;
 
-  StreamSubscription<LiveGameState>? _stateSub;
+  // ── Stream ──────────────────────────────────────────────────────────────
+  StreamSubscription<LiveGameState>? _subscription;
   LiveGameState? _liveState;
-
   _UIPhase _uiPhase = _UIPhase.loading;
 
-  // Current question display
+  // ── Per-question local state ────────────────────────────────────────────
+  // Reset every time currentQuestionIndex advances.
   List<String> _shuffledAnswers = [];
   String? _selectedAnswer;
+
+  // Computed locally from Question.correctAnswers — no server round-trip.
+  // null = not answered yet, true = correct, false = wrong.
+  bool? _isAnswerCorrect;
+
+  // True after the first successful submitAnswer call (locks button grid).
+  bool _hasAnsweredThisRound = false;
+
   int _displayedQuestionIndex = -1;
 
-  // Whether the archive is being fetched (to avoid double navigation)
+  // ── Navigation guard ────────────────────────────────────────────────────
   bool _fetchingResults = false;
+
+  // ── Lifecycle ───────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    _stateSub = widget.gameService
-        .buildLiveGameStateStream(
-      sessionId: widget.sessionId,
-      myUid: widget.myUid,
-    )
+    _subscription = gameService
+        .buildLiveGameStateStream()
         .listen(_onStateUpdate, onError: _onStreamError);
   }
 
   @override
   void dispose() {
-    _stateSub?.cancel();
+    _subscription?.cancel();
     super.dispose();
   }
 
-  // ── State updates ──────────────────────────────────────────────────────────
+  // ── State update ─────────────────────────────────────────────────────────
 
   void _onStateUpdate(LiveGameState state) {
     if (!mounted) return;
 
+    final qIndex = state.currentQuestionIndex;
+
+    // When the question advances, reset all per-question local state.
+    if (qIndex != _displayedQuestionIndex) {
+      _displayedQuestionIndex = qIndex;
+      _selectedAnswer = null;
+      _isAnswerCorrect = null;
+      _hasAnsweredThisRound = false;
+
+      if (qIndex < gameService.questions.length) {
+        _shuffledAnswers = _buildShuffledAnswers(gameService.questions[qIndex]);
+      }
+    }
+
     setState(() {
       _liveState = state;
       _uiPhase = _resolveUIPhase(state);
-
-      // Reset answer choices when the question index advances
-      if (state.currentQuestionIndex != _displayedQuestionIndex &&
-          _uiPhase == _UIPhase.answering) {
-        _displayedQuestionIndex = state.currentQuestionIndex;
-        _selectedAnswer = null;
-        _shuffledAnswers = _buildShuffledAnswers(
-            widget.questions[state.currentQuestionIndex]);
-      }
     });
 
     if (_uiPhase == _UIPhase.finished && !_fetchingResults) {
       _fetchingResults = true;
-      _navigateToResults(state.sessionId);
+      _navigateToResults();
     }
   }
 
   void _onStreamError(Object error) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Błąd synchronizacji: $error')),
+      SnackBar(content: Text('Błąd połączenia: $error')),
     );
   }
 
@@ -116,82 +110,134 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     switch (state.phase) {
       case SessionPhase.waiting:
         return _UIPhase.loading;
-
-      case SessionPhase.answering:
-        if (state.amIEliminated) return _UIPhase.eliminated;
-        return state.hasAnswered ? _UIPhase.waiting : _UIPhase.answering;
-
-      case SessionPhase.resolving:
-        final result = state.lastRoundResult;
-        if (result?.eliminatedUid == widget.myUid) return _UIPhase.eliminated;
-        return _UIPhase.resolving;
-
       case SessionPhase.finished:
         return _UIPhase.finished;
+      case SessionPhase.resolving:
+        return _UIPhase.resolving;
+      case SessionPhase.answering:
+        if (state.amIEliminated) return _UIPhase.eliminated;
+        return _hasAnsweredThisRound ? _UIPhase.waiting : _UIPhase.answering;
     }
   }
 
-  // ── Answer helpers ─────────────────────────────────────────────────────────
-
-  List<String> _buildShuffledAnswers(Question question) {
-    final answers = [
-      ...question.correctAnswers,
-      ...?question.wrongAnswers,//todo wszedzie do zmiany to cos
-    ]..shuffle();
-    return answers;
+  List<String> _buildShuffledAnswers(Question q) {
+    final opts = [...q.correctAnswers, ...?q.wrongAnswers];
+    opts.shuffle();
+    return opts;
   }
+
+  // ── Answer submission ────────────────────────────────────────────────────
 
   Future<void> _onAnswerTapped(String answer) async {
+    // Guards — prevent double-tap and wrong phase.
+    if (_hasAnsweredThisRound) return;
     if (_uiPhase != _UIPhase.answering) return;
-    if (_liveState == null) return;
+    final state = _liveState;
+    if (state == null) return;
+    final qi = state.currentQuestionIndex;
+    if (qi >= gameService.questions.length) return;
 
-    setState(() => _selectedAnswer = answer);
+    final question = gameService.questions[qi];
 
-    final state = _liveState!;
-    final question = widget.questions[state.currentQuestionIndex];
+    // Validate locally — Question is already in memory from lobby load.
+    // This gives immediate UI feedback without waiting for CF.
+    final isCorrect = question.correctAnswers.contains(answer);
 
-    await widget.gameService.submitAnswer(
-      sessionId: state.sessionId,
-      uid: widget.myUid,
-      roundIndex: state.currentQuestionIndex,
-      questionId: question.id,
-      answer: answer,
-    );
+    // Lock UI immediately (optimistic) before the async write.
+    setState(() {
+      _selectedAnswer = answer;
+      _isAnswerCorrect = isCorrect;
+      _hasAnsweredThisRound = true;
+      _uiPhase = _UIPhase.waiting;
+    });
+
+    try {
+      await gameService.submitAnswer(
+        roundIndex: qi,
+        questionId: question.id,
+        answer: answer,
+      );
+    } catch (e) {
+      // Revert optimistic state on failure so player can try again.
+      if (!mounted) return;
+      setState(() {
+        _selectedAnswer = null;
+        _isAnswerCorrect = null;
+        _hasAnsweredThisRound = false;
+        _uiPhase = _resolveUIPhase(state);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Błąd wysyłania odpowiedzi: $e')),
+      );
+    }
   }
 
-  Future<void> _navigateToResults(String sessionId) async {
-    MultiplayerSessionData? sessionData;
-    // Poll the archive — CF may take a moment after setting status=finished
-    for (int attempt = 0; attempt < 5; attempt++) {
-      await Future.delayed(const Duration(seconds: 2));
+  // ── Leave ─────────────────────────────────────────────────────────────────
+
+  Future<void> _onLeavePressed() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: options.secondaryColor,
+        title: Text(
+          'Opuść grę',
+          style: TextStyle(color: options.textColor, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Czy na pewno chcesz opuścić rozgrywkę?',
+          style: TextStyle(color: options.textColor.withOpacity(0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Zostań',
+              style: TextStyle(color: options.textColor.withOpacity(0.7)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Opuść',
+              style: TextStyle(
+                color: options.mainButtonColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    _subscription?.cancel();
+    _subscription = null;
+    // Fire-and-forget — navigation must not wait on Firestore.
+    unawaited(gameService.leaveGame().catchError((_) {}));
+    AppRoute.instance.goToMainMenu(options);
+  }
+
+  // ── Navigation ───────────────────────────────────────────────────────────
+
+  Future<void> _navigateToResults() async {
+    const maxAttempts = 5;
+    for (var i = 0; i < maxAttempts; i++) {
       try {
-        sessionData =
-        await widget.gameService.fetchFinalSessionData(sessionId);
-        break;
+        final session = await gameService.fetchFinalSessionData();
+        if (!mounted) return;
+        AppRoute.instance.goToMultiplayerScoreTable(
+          options: options,
+          session: session,
+          myUid: gameService.myUid,
+        );
+        return;
       } catch (_) {
-        // Archive not ready yet, retry
+        await Future.delayed(const Duration(seconds: 2));
       }
     }
-
-    if (!mounted) return;
-
-    if (sessionData != null) {
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => MultiplayerScoreTableScreen(
-            options: options,
-            session: sessionData!,
-            myUid: widget.myUid,
-          ),
-        ),
-      );
-    } else {
-      // Fallback: archive unavailable, go back to main menu
-      Navigator.of(context).popUntil((r) => r.isFirst);
-    }
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -204,357 +250,416 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             colors: [options.mainColor, options.secondaryColor],
           ),
         ),
-        child: SafeArea(
-          child: switch (_uiPhase) {
-            _UIPhase.loading => _buildLoading(),
-            _UIPhase.answering ||
-            _UIPhase.waiting =>
-                _buildQuestion(context),
-            _UIPhase.resolving => _buildRoundResult(context),
-            _UIPhase.eliminated => _buildEliminated(context),
-            _UIPhase.finished => _buildLoading(), // brief while navigating
-          },
+        child: SafeArea(child: _buildBody()),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    final state = _liveState;
+    if (state == null || _uiPhase == _UIPhase.loading) {
+      return Center(child: CircularProgressIndicator(color: options.textColor));
+    }
+
+    return Stack(
+      children: [
+        Column(
+          children: [
+            _buildTopBar(state),
+            Expanded(child: _buildQuestionArea(state)),
+            _buildBottomBar(state),
+          ],
+        ),
+        if (_uiPhase == _UIPhase.resolving) _buildResolvingOverlay(state),
+      ],
+    );
+  }
+
+  // ── Top bar ───────────────────────────────────────────────────────────────
+
+  Widget _buildTopBar(LiveGameState state) {
+    final current = state.currentQuestionIndex + 1;
+    final total = state.questionIds.length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: _onLeavePressed,
+            icon: Icon(Icons.exit_to_app, color: options.textColor.withOpacity(0.7)),
+            tooltip: 'Opuść grę',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Pytanie $current / $total',
+            style: TextStyle(
+              color: options.textColor.withOpacity(0.8),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: options.secondaryColor.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${state.activeCount} graczy',
+              style: TextStyle(
+                color: options.textColor.withOpacity(0.7),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Question area ─────────────────────────────────────────────────────────
+
+  Widget _buildQuestionArea(LiveGameState state) {
+    final qi = state.currentQuestionIndex;
+    if (qi >= gameService.questions.length) {
+      return Center(
+        child: CircularProgressIndicator(color: options.textColor),
+      );
+    }
+
+    final question = gameService.questions[qi];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildQuestionCard(question, state),
+          const SizedBox(height: 16),
+          ..._shuffledAnswers.map((opt) => _buildAnswerButton(opt, question)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(Question question, LiveGameState state) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: options.secondaryColor.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: options.textColor.withOpacity(0.15)),
+      ),
+      child: Column(
+        children: [
+          if (state.amIEliminated)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Tryb widza',
+                style: TextStyle(
+                  color: Colors.red.shade300,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          Text(
+            question.text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: options.textColor,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnswerButton(String option, Question question) {
+    // ── Color logic ──────────────────────────────────────────────────────
+    // Before answering: neutral style.
+    // After answering:
+    //   • Selected + correct → green
+    //   • Selected + wrong   → red
+    //   • Correct (not selected, revealed when wrong) → green outline
+    //   • Everything else    → dimmed
+    final isSelected = option == _selectedAnswer;
+    final isCorrectOption = question.correctAnswers.contains(option);
+
+    Color bgColor;
+    Color borderColor;
+    Color textColor;
+    Widget? trailingIcon;
+
+    if (!_hasAnsweredThisRound) {
+      // Unanswered state.
+      bgColor = options.secondaryColor.withOpacity(0.25);
+      borderColor = options.textColor.withOpacity(0.2);
+      textColor = options.textColor;
+    } else if (isSelected) {
+      // The option the player tapped.
+      if (_isAnswerCorrect == true) {
+        bgColor = Colors.green.withOpacity(0.25);
+        borderColor = Colors.green;
+        textColor = Colors.green.shade200;
+        trailingIcon = const Icon(Icons.check_circle, color: Colors.green, size: 20);
+      } else {
+        bgColor = Colors.red.withOpacity(0.2);
+        borderColor = Colors.red.shade400;
+        textColor = Colors.red.shade200;
+        trailingIcon = const Icon(Icons.cancel, color: Colors.redAccent, size: 20);
+      }
+    } else if (isCorrectOption && _isAnswerCorrect == false) {
+      // Reveal correct answer when player was wrong.
+      bgColor = Colors.green.withOpacity(0.12);
+      borderColor = Colors.green.withOpacity(0.6);
+      textColor = Colors.green.shade300;
+      trailingIcon =
+          Icon(Icons.check_circle_outline, color: Colors.green.shade300, size: 20);
+    } else {
+      // Other wrong options — dimmed.
+      bgColor = options.secondaryColor.withOpacity(0.1);
+      borderColor = options.textColor.withOpacity(0.08);
+      textColor = options.textColor.withOpacity(0.35);
+    }
+
+    return GestureDetector(
+      onTap: (_hasAnsweredThisRound || (_liveState?.amIEliminated ?? false))
+          ? null
+          : () => _onAnswerTapped(option),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                option,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 15,
+                  fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (trailingIcon != null) ...[
+              const SizedBox(width: 8),
+              trailingIcon,
+            ],
+          ],
         ),
       ),
     );
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
 
-  Widget _buildLoading() {
-    return Center(
-      child: CircularProgressIndicator(color: options.textColor),
+  // ── Bottom bar ────────────────────────────────────────────────────────────
+
+  Widget _buildBottomBar(LiveGameState state) {
+    final message = switch (_uiPhase) {
+      _UIPhase.waiting    => 'Oczekiwanie na pozostałych graczy...',
+      _UIPhase.eliminated => 'Zostałeś wyeliminowany — oglądasz grę',
+      _UIPhase.answering  => 'Wybierz odpowiedź',
+      _              => '',
+    };
+
+    if (message.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: options.secondaryColor.withOpacity(0.2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_uiPhase == _UIPhase.waiting) ...[
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: options.textColor.withOpacity(0.5),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            message,
+            style: TextStyle(
+              color: options.textColor.withOpacity(0.65),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // ── Question screen ────────────────────────────────────────────────────────
+  // ── Resolving overlay ─────────────────────────────────────────────────────
 
-  Widget _buildQuestion(BuildContext context) {
-    final state = _liveState!;
-    final qIndex = state.currentQuestionIndex;
-    if (qIndex >= widget.questions.length) return _buildLoading();
+  Widget _buildResolvingOverlay(LiveGameState state) {
+    final result = state.lastRoundResult;
+    if (result == null) return const SizedBox.shrink();
 
-    final question = widget.questions[qIndex];
-    final activePlayers = state.activePlayers;
-    final answeredCount = state.answersSubmittedCount;
-    final amIWaiting = _uiPhase == _UIPhase.waiting;
+    final eliminatedUid = result.eliminatedUid;
+    final isEliminated = eliminatedUid == gameService.myUid;
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── Header ────────────────────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final String emoji;
+    final String title;
+    final String subtitle;
+    final Color accentColor;
+
+    if (eliminatedUid == null) {
+      emoji = '✅';
+      title = 'Wszyscy odpowiedzieli poprawnie!';
+      subtitle = 'Nikt nie odpada w tej rundzie.';
+      accentColor = Colors.green;
+    } else if (isEliminated) {
+      emoji = '💀';
+      title = 'Odpadłeś!';
+      subtitle = result.lotteryOccurred
+          ? 'Losowanie wybrało ciebie.'
+          : 'Twoja odpowiedź była błędna.';
+      accentColor = Colors.red;
+    } else {
+      final name = result.eliminatedUsername ?? eliminatedUid;
+      emoji = '❌';
+      title = '$name odpada!';
+      subtitle = result.lotteryOccurred
+          ? 'Losowanie wybrało $name.'
+          : 'Odpowiedź $name była błędna.';
+      accentColor = Colors.orange;
+    }
+
+    return Container(
+      color: Colors.black.withOpacity(0.78),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: options.mainColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: accentColor.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(width: 48),
-              Column(
+              Text(emoji, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: options.textColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: options.textColor.withOpacity(0.65),
+                  fontSize: 14,
+                ),
+              ),
+              if (result.lotteryOccurred && result.lotteryPool.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildLotteryPool(result, state),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Pytanie ${qIndex + 1} / ${state.questionIds.length}',
-                    style: TextStyle(
-                      color: options.textColor,
-                      fontWeight: FontWeight.bold,
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: options.textColor.withOpacity(0.4),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
-                    'Graczy aktywnych: ${activePlayers.length}',
+                    'Kolejne pytanie za chwilę...',
                     style: TextStyle(
-                      color: options.textColor.withOpacity(0.7),
+                      color: options.textColor.withOpacity(0.4),
                       fontSize: 12,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(width: 48),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // ── Answer progress bar ────────────────────────────────────────────
-          _buildAnswerProgressBar(answeredCount, activePlayers.length),
-          const SizedBox(height: 16),
-
-          // ── Question card ──────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.35),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              question.text,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: options.textColor,
-                height: 1.4,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // ── Answer grid ────────────────────────────────────────────────────
-          Expanded(
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _shuffledAnswers.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 2.0,
-              ),
-              itemBuilder: (_, i) =>
-                  _buildAnswerButton(_shuffledAnswers[i], amIWaiting),
-            ),
-          ),
-
-          // ── Waiting indicator ──────────────────────────────────────────────
-          if (amIWaiting) ...[
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: options.textColor,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Czekanie na pozostałych graczy...',
-                  style: TextStyle(
-                      color: options.textColor.withOpacity(0.8), fontSize: 13),
-                ),
-              ],
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildAnswerProgressBar(int answered, int total) {
+  Widget _buildLotteryPool(
+      RoundResult result,
+      LiveGameState state,
+      ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Odpowiedzi: $answered / $total',
-              style:
-              TextStyle(color: options.textColor.withOpacity(0.8), fontSize: 12),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: total == 0 ? 0 : answered / total,
-            minHeight: 6,
-            backgroundColor: options.secondaryColor.withOpacity(0.3),
-            valueColor: AlwaysStoppedAnimation(options.mainButtonColor),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAnswerButton(String answer, bool disabled) {
-    final isSelected = _selectedAnswer == answer;
-
-    Color bgColor = options.secondaryColor.withOpacity(0.3);
-    Color borderColor = options.mainButtonColor.withOpacity(0.3);
-
-    if (isSelected) {
-      bgColor = options.mainButtonColor.withOpacity(0.4);
-      borderColor = options.mainButtonColor;
-    }
-
-    return GestureDetector(
-      onTap: disabled ? null : () => _onAnswerTapped(answer),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Text(
-          answer,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: options.textColor
-                .withOpacity(disabled && !isSelected ? 0.4 : 1.0),
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Round result screen ────────────────────────────────────────────────────
-
-  Widget _buildRoundResult(BuildContext context) {
-    final state = _liveState!;
-    final result = state.lastRoundResult;
-    if (result == null) return _buildLoading();
-
-    final eliminated = result.eliminatedUid;
-    final nobody = eliminated == null;
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            nobody ? Icons.check_circle_outline : Icons.remove_circle_outline,
-            color: nobody ? Colors.green : Colors.redAccent,
-            size: 72,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            nobody ? 'Wszyscy odpowiedzieli poprawnie!' : 'Koniec rundy',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: options.textColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (!nobody) ...[
-            if (result.lotteryOccurred) ...[
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.orange.withOpacity(0.5)),
-                ),
-                child: Text(
-                  'Losowanie! ${result.lotteryPool.length} graczy w puli',
-                  style: TextStyle(
-                      color: options.textColor.withOpacity(0.9), fontSize: 13),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-            Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.6)),
-              ),
-              child: Text(
-                '${result.eliminatedUsername ?? eliminated} odpada!',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: options.textColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 32),
-          Text(
-            'Następna runda za chwilę...',
-            style: TextStyle(
-                color: options.textColor.withOpacity(0.6), fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          CircularProgressIndicator(
-              strokeWidth: 2, color: options.textColor.withOpacity(0.5)),
-          const SizedBox(height: 32),
-          _buildPlayerList(state),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlayerList(LiveGameState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Gracze',
-          style: TextStyle(
-              color: options.textColor.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.bold),
-        ),
+        Divider(color: options.textColor.withOpacity(0.15)),
         const SizedBox(height: 8),
-        ...state.players.map((p) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Row(
-            children: [
-              Icon(
-                p.isEliminated
-                    ? Icons.cancel_outlined
-                    : Icons.person_outline,
-                color: p.isEliminated
-                    ? Colors.red.withOpacity(0.6)
-                    : Colors.green.withOpacity(0.8),
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                p.username,
-                style: TextStyle(
-                  color: options.textColor
-                      .withOpacity(p.isEliminated ? 0.4 : 1.0),
-                  decoration:
-                  p.isEliminated ? TextDecoration.lineThrough : null,
-                ),
-              ),
-            ],
+        Text(
+          '🎲 Pula losowania',
+          style: TextStyle(
+            color: options.textColor.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
           ),
-        )),
-      ],
-    );
-  }
-
-  // ── Eliminated screen ──────────────────────────────────────────────────────
-
-  Widget _buildEliminated(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.sentiment_dissatisfied_outlined,
-                color: Colors.redAccent, size: 80),
-            const SizedBox(height: 20),
-            Text(
-              'Odpadłeś!',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: options.textColor,
-                fontWeight: FontWeight.bold,
+        ),
+        const SizedBox(height: 6),
+        ...result.lotteryPool.map((uid) {
+          final player =
+              state.players.where((p) => p.uid == uid).firstOrNull;
+          final name = player?.username ?? uid;
+          // +1 because tickets are incremented AFTER round resolution.
+          final tickets = (player?.lotteryTickets ?? 0) + 1;
+          final isEliminated = uid == result.eliminatedUid;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(
+              '${isEliminated ? "💀 " : ""}$name — $tickets piłeczek',
+              style: TextStyle(
+                color: isEliminated
+                    ? Colors.red.shade300
+                    : options.textColor.withOpacity(0.6),
+                fontSize: 12,
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Czekanie na zakończenie gry...',
-              style: TextStyle(
-                  color: options.textColor.withOpacity(0.7), fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-            CircularProgressIndicator(color: options.textColor),
-          ],
-        ),
-      ),
+          );
+        }),
+      ],
     );
   }
 }
