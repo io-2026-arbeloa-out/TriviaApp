@@ -19,9 +19,9 @@ class MultiplayerGameScreen extends StatefulWidget {
   MultiplayerGameScreen({
     super.key,
     UIOptions? options,
-    IMultiplayerGameService? gameService,
+    required IMultiplayerGameService gameService,
   })  : _options = options ?? const UIOptions(),
-        _gameService = gameService ?? MultiplayerGameService();
+        _gameService = gameService;
 
   @override
   State<MultiplayerGameScreen> createState() => _MultiplayerGameScreenState();
@@ -52,6 +52,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   // ── Navigation guard ────────────────────────────────────────────────────
   bool _fetchingResults = false;
+  DateTime? _resolvingSince;
+  bool _resolvingStuckNotified = false;
 
   // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -88,9 +90,35 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       }
     }
 
+    final uiPhase = _resolveUIPhase(state);
+    if (uiPhase == _UIPhase.resolving) {
+      _resolvingSince ??= DateTime.now();
+      if (!_resolvingStuckNotified &&
+          DateTime.now().difference(_resolvingSince!) > const Duration(seconds: 12)) {
+        _resolvingStuckNotified = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Runda trwa zbyt długo. Możesz opuścić grę przyciskiem wyjścia.',
+              ),
+              action: SnackBarAction(
+                label: 'Opuść',
+                onPressed: _onLeavePressed,
+              ),
+            ),
+          );
+        });
+      }
+    } else {
+      _resolvingSince = null;
+      _resolvingStuckNotified = false;
+    }
+
     setState(() {
       _liveState = state;
-      _uiPhase = _resolveUIPhase(state);
+      _uiPhase = uiPhase;
     });
 
     if (_uiPhase == _UIPhase.finished && !_fetchingResults) {
@@ -235,6 +263,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         await Future.delayed(const Duration(seconds: 2));
       }
     }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Nie udało się pobrać wyników. Spróbuj ponownie później.'),
+      ),
+    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────

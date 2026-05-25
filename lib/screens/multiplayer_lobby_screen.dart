@@ -81,6 +81,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   @override
   void dispose() {
     _sessionSub?.cancel();
+    if (_phase == _LobbyPhase.waiting && _sessionId != null && !_leaveRequested) {
+      unawaited(
+        _connectionService
+            .disconnectPlayer(sessionId: _sessionId!, uid: widget.uid)
+            .catchError((_) {}),
+      );
+    }
     super.dispose();
   }
 
@@ -148,7 +155,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   Future<void> _onGameStarted(String sessionId) async {
     if (!mounted) return;
 
-    final gameService = widget.gameService ?? MultiplayerGameService();
+    final gameService = widget.gameService ??
+        MultiplayerGameService(
+          sessionId: sessionId,
+          sessionRepository: _sessionRepo,
+          questionRepository: _questionRepository,
+        );
 
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -193,23 +205,29 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [options.mainColor, options.secondaryColor],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_onLeave());
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [options.mainColor, options.secondaryColor],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: switch (_phase) {
-                _LobbyPhase.error => _buildError(),
-                _ => _buildWaiting(),
-              },
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: switch (_phase) {
+                  _LobbyPhase.error => _buildError(),
+                  _ => _buildWaiting(),
+                },
+              ),
             ),
           ),
         ),

@@ -4,22 +4,20 @@ const { onDocumentCreated, onDocumentWritten } = require('firebase-functions/v2/
 const { setGlobalOptions }                      = require('firebase-functions/v2');
 const admin                                     = require('firebase-admin');
 
-// Must match the region where Firestore lives.
-// Check: Firebase Console → Firestore → your database URL or location badge.
 setGlobalOptions({ region: 'europe-central2' });
 
 admin.initializeApp();
 
-const db = admin.firestore();
-const FV   = admin.firestore.FieldValue;
+const db  = admin.firestore();
+const rtdb = admin.database();
+const FV  = admin.firestore.FieldValue;
 
-const RESOLVE_DISPLAY_MS = 5_000; // ms clients spend on the resolving screen
+const RESOLVE_DISPLAY_MS = 5_000;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Weighted lottery: each player's weight = lotteryTickets + 1
+const skip = new Error('SKIP');
+
 // ─────────────────────────────────────────────────────────────────────────────
 function weightedRandom(pool) {
-  // pool: [{ uid, lotteryTickets }, ...]
   const weights = pool.map(p => (p.lotteryTickets || 0) + 1);
   const total   = weights.reduce((a, b) => a + b, 0);
   let   r       = Math.random() * total;
@@ -30,89 +28,150 @@ function weightedRandom(pool) {
   return pool[pool.length - 1].uid;
 }
 
+function countActivePlayers(playersMap) {
+  return Object.values(playersMap || {}).filter(p => !p.isEliminated).length;
+}
+
+/** Flatten incorrectUids — handles legacy nested-array entries from arrayUnion([uid]). */
+function normalizeIncorrectUids(raw) {
+  const out = [];
+  for (const item of raw || []) {
+    if (typeof item === 'string') {
+      out.push(item);
+    } else if (Array.isArray(item)) {
+      for (const inner of item) {
+        if (typeof inner === 'string') out.push(inner);
+      }
+    }
+  }
+  return [...new Set(out)];
+}
+
+async function validateAnswerViaRtdb(categoryId, questionId, answer) {
+  const index = parseInt(questionId, 10);
+  if (!categoryId || Number.isNaN(index)) return false;
+
+  const snap = await rtdb.ref(`${categoryId}/questions/${index}`).get();
+  if (!snap.exists()) return false;
+
+  const question = snap.val();
+  const correct = question?.correctAnswers || [];
+  return correct.includes(answer);
+}
+
+async function deleteAnswersForRound(sessionRef, roundIndex) {
+  const snap = await sessionRef
+    .collection('answers')
+    .where('roundIndex', '==', roundIndex)
+    .get();
+  if (snap.empty) return;
+  const batch = db.batch();
+  snap.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+}
+
+async function deleteSubcollectionDocs(colRef) {
+  const snap = await colRef.get();
+  if (snap.empty) return;
+  const batch = db.batch();
+  snap.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 1.  onAnswerCreate
-//     Triggered when a player writes an answer document.
-//     • Validates the answer against Realtime Database.
-//     • Writes isCorrect back to the answer doc.
-//     • Increments the round counter (set+merge — creates doc if missing).
+// tryResolveFromCounter — shared entry when counter may have reached target
+// ─────────────────────────────────────────────────────────────────────────────
+async function tryResolveFromCounter(sessionId, roundIndex, counterData, session, sessionRef) {
+  if (!counterData || counterData.resolved === true) return;
+
+  if (session.status !== 'inProgress') return;
+  if (session.phase !== 'answering') return;
+  if (session.currentQuestionIndex !== roundIndex) return;
+
+  const target = counterData.targetCount || session.activePlayerCount || 0;
+  if (target <= 0) return;
+  if ((counterData.validatedCount || 0) < target) return;
+
+  await resolveRound(
+    sessionId,
+    roundIndex,
+    normalizeIncorrectUids(counterData.incorrectUids),
+    session,
+    sessionRef,
+    counterData,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. onAnswerCreate
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onAnswerCreate = onDocumentCreated(
   'sessions/{sessionId}/answers/{answerId}',
   async (event) => {
     const { sessionId } = event.params;
-    const { uid, roundIndex, questionId, answer } = event.data.data();
+    const answerRef = event.data.ref;
+    const answerData = event.data.data();
+    if (!answerData) return;
 
-    // 1. Read session to get categoryId (1 CF Firestore read).
+    const { uid, roundIndex, questionId, answer } = answerData;
+    if (uid == null || roundIndex == null || questionId == null || answer == null) return;
+    if (answerData.validatedAt != null) return;
+
     const sessionRef  = db.collection('sessions').doc(sessionId);
     const sessionSnap = await sessionRef.get();
     if (!sessionSnap.exists) return;
 
     const session = sessionSnap.data();
     if (session.status !== 'inProgress') return;
+    if (session.phase !== 'answering') return;
+    if (session.currentQuestionIndex !== roundIndex) return;
 
-    // 2. Validate answer against Firestore questions.
-    //    If the question document is missing, treat the answer as incorrect
-    //    so the round still progresses instead of hanging indefinitely.
-    let isCorrect = false;
-    const qSnap = await db.collection('questions').doc(questionId).get();
-    if (qSnap.exists) {
-      const question = qSnap.data();
-      isCorrect = (question.correctAnswers || []).includes(answer);
-    }
+    const player = session.players?.[uid];
+    if (!player || player.isEliminated) return;
 
-    // 3. Increment the round counter atomically.
-    //    set+merge creates the doc if it doesn't exist yet (race-safe).
-    const counterRef    = sessionRef.collection('roundCounters').doc(String(roundIndex));
+    const isCorrect = await validateAnswerViaRtdb(
+      session.categoryId,
+      String(questionId),
+      answer,
+    );
+
+    const counterRef = sessionRef.collection('roundCounters').doc(String(roundIndex));
     const counterUpdate = { validatedCount: FV.increment(1) };
     if (!isCorrect) {
-      counterUpdate.incorrectUids = FV.arrayUnion([uid]);
+      counterUpdate.incorrectUids = FV.arrayUnion(uid);
     }
-    await counterRef.set(counterUpdate, { merge: true });
+
+    const batch = db.batch();
+    batch.update(answerRef, {
+      isCorrect,
+      validatedAt: FV.serverTimestamp(),
+    });
+    batch.set(counterRef, counterUpdate, { merge: true });
+    await batch.commit();
   },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2.  onCounterUpdate
-//     Triggered on every write to a roundCounters document.
-//     Resolves the round when validatedCount reaches activePlayerCount.
-//
-//     Multiple invocations fire per round (one per answer), but only the one
-//     where the count first crosses the threshold proceeds — the transaction
-//     inside resolveRound guards against duplicate resolution.
+// 2. onCounterUpdate
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onCounterUpdate = onDocumentWritten(
   'sessions/{sessionId}/roundCounters/{roundIndex}',
   async (event) => {
     const after = event.data.after.data();
-    if (!after) return; // document deleted
+    if (!after) return;
 
     const { sessionId, roundIndex } = event.params;
     const rIdx = parseInt(roundIndex, 10);
 
-    // Read session to get activePlayerCount and verify current state
-    // (1 CF read per invocation; unavoidable without a separate targetCount
-    // field — see architecture notes in FIREBASE_SETUP.md).
     const sessionRef  = db.collection('sessions').doc(sessionId);
     const sessionSnap = await sessionRef.get();
     if (!sessionSnap.exists) return;
 
-    const session = sessionSnap.data();
-    if (session.status !== 'inProgress')          return;
-    if (session.phase  !== 'answering')            return;
-    if (session.currentQuestionIndex !== rIdx)     return; // stale trigger
-
-    // targetCount is written into the counter document by joinSession (Dart)
-    // and by resolveRound (CF) for subsequent rounds.  It reflects the exact
-    // number of players expected to answer this round, so we don't have to
-    // trust session.activePlayerCount which may not be updated yet.
-    const target = after.targetCount || session.activePlayerCount || 0;
-    if ((after.validatedCount || 0) < target)      return; // not everyone answered yet
-
-    await resolveRound(
-      sessionId, rIdx,
-      after.incorrectUids || [],
-      session,
+    await tryResolveFromCounter(
+      sessionId,
+      rIdx,
+      after,
+      sessionSnap.data(),
       sessionRef,
     );
   },
@@ -120,21 +179,25 @@ exports.onCounterUpdate = onDocumentWritten(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // resolveRound
-//   • Computes lottery if needed.
-//   • Atomically updates the session document (phase → resolving, player
-//     stats, lastRoundResult, rounds[]).
-//   • Waits RESOLVE_DISPLAY_MS so clients can show the result screen.
-//   • Either advances to the next round (creates next roundCounter) or
-//     finishes the game.
 // ─────────────────────────────────────────────────────────────────────────────
-async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessionRef) {
+async function resolveRound(
+  sessionId,
+  roundIndex,
+  incorrectUids,
+  session,
+  sessionRef,
+  counterData,
+) {
+  const counterRef = sessionRef.collection('roundCounters').doc(String(roundIndex));
+
+  if (counterData?.resolved === true) return;
+
   const playersMap  = session.players || {};
   const activeUids  = Object.keys(playersMap).filter(uid => !playersMap[uid].isEliminated);
 
-  // Determine elimination.
-  let eliminatedUid      = null;
-  let lotteryOccurred    = false;
-  let lotteryPool        = [];
+  let eliminatedUid   = null;
+  let lotteryOccurred = false;
+  let lotteryPool     = [];
 
   const incorrectActive = incorrectUids.filter(uid => activeUids.includes(uid));
 
@@ -155,7 +218,6 @@ async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessi
     ? (playersMap[eliminatedUid]?.username || '')
     : null;
 
-  // Build atomic update for the session document.
   const updates = {
     phase: 'resolving',
     lastRoundResult: {
@@ -166,7 +228,7 @@ async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessi
     },
     rounds: FV.arrayUnion([{
       roundIndex,
-      questionId:      (session.questionIds || [])[roundIndex] || '',
+      questionId: (session.questionIds || [])[roundIndex] || '',
       eliminatedUid,
       lotteryOccurred,
       lotteryPool,
@@ -179,7 +241,6 @@ async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessi
     updates['activePlayerCount']                          = FV.increment(-1);
   }
 
-  // Increment lotteryTickets for lottery survivors.
   if (lotteryOccurred && eliminatedUid) {
     for (const uid of lotteryPool) {
       if (uid !== eliminatedUid) {
@@ -188,7 +249,6 @@ async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessi
     }
   }
 
-  // Update answer stats for every active player.
   for (const uid of activeUids) {
     updates[`players.${uid}.totalAnswers`] = FV.increment(1);
     if (!incorrectActive.includes(uid)) {
@@ -196,41 +256,64 @@ async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessi
     }
   }
 
-  // Atomically write — transaction prevents duplicate resolution when multiple
-  // onCounterUpdate invocations fire simultaneously.
-  const skip = new Error('SKIP');
   try {
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(sessionRef);
       const data = snap.data();
-      if (!data || data.phase !== 'answering')        throw skip;
-      if (data.currentQuestionIndex !== roundIndex)   throw skip;
+      if (!data || data.phase !== 'answering') throw skip;
+      if (data.currentQuestionIndex !== roundIndex) throw skip;
+
+      const counterSnap = await tx.get(counterRef);
+      const counter = counterSnap.data();
+      if (counter?.resolved === true) throw skip;
+
       tx.update(sessionRef, updates);
+      tx.update(counterRef, { resolved: true });
     });
   } catch (e) {
     if (e === skip) return;
     throw e;
   }
 
-  // Wait for clients to display the resolving screen before advancing.
+  const roundAnswersSnap = await sessionRef
+    .collection('answers')
+    .where('roundIndex', '==', roundIndex)
+    .get();
+
+  const answerDetails = {};
+  const isCorrectMap  = {};
+  roundAnswersSnap.forEach(doc => {
+    const d = doc.data();
+    if (d.uid) {
+      answerDetails[d.uid] = d.answer || '';
+      isCorrectMap[d.uid]  = d.isCorrect === true;
+    }
+  });
+
+  await deleteAnswersForRound(sessionRef, roundIndex);
+
   await new Promise(r => setTimeout(r, RESOLVE_DISPLAY_MS));
 
-  // Re-read so we have the post-elimination activePlayerCount.
   const freshSnap      = await sessionRef.get();
   const fresh          = freshSnap.data();
+  if (!fresh || fresh.status !== 'inProgress') return;
+
   const newActiveCount = fresh.activePlayerCount || 0;
   const nextIndex      = roundIndex + 1;
   const totalQuestions = (fresh.questionIds || []).length;
 
   if (newActiveCount <= 1 || nextIndex >= totalQuestions) {
-    await finishGame(sessionRef, fresh);
+    await finishGame(sessionRef, fresh, { roundIndex, answerDetails, isCorrectMap });
   } else {
-    // Create next round counter before flipping phase so fast players can
-    // submit answers as soon as they see the new question.
     await sessionRef
       .collection('roundCounters')
       .doc(String(nextIndex))
-      .set({ validatedCount: 0, targetCount: newActiveCount, incorrectUids: [] }, { merge: true });
+      .set({
+        validatedCount: 0,
+        targetCount:    newActiveCount,
+        incorrectUids:  [],
+        resolved:       false,
+      }, { merge: true });
 
     await sessionRef.update({
       phase:                'answering',
@@ -243,8 +326,7 @@ async function resolveRound(sessionId, roundIndex, incorrectUids, session, sessi
 // ─────────────────────────────────────────────────────────────────────────────
 // finishGame + buildArchive
 // ─────────────────────────────────────────────────────────────────────────────
-async function finishGame(sessionRef, sessionData) {
-  const skip = new Error('SKIP');
+async function finishGame(sessionRef, sessionData, lastRoundEnrichment) {
   try {
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(sessionRef);
@@ -260,13 +342,12 @@ async function finishGame(sessionRef, sessionData) {
     throw e;
   }
 
-  await buildArchive(sessionRef.id, sessionData);
+  await buildArchive(sessionRef.id, sessionData, lastRoundEnrichment);
 }
 
-async function buildArchive(sessionId, session) {
+async function buildArchive(sessionId, session, lastRoundEnrichment) {
   const playersMap = session.players || {};
 
-  // Sort: winner first (eliminationRound == null), then latest elimination.
   const sorted = Object.entries(playersMap).sort(([, a], [, b]) => {
     if (a.eliminationRound == null && b.eliminationRound == null) return 0;
     if (a.eliminationRound == null) return -1;
@@ -276,23 +357,33 @@ async function buildArchive(sessionId, session) {
 
   const playerResults = sorted.map(([uid, p], i) => ({
     uid,
-    username:        p.username        || '',
-    placement:       i + 1,
-    correctAnswers:  p.correctAnswers  || 0,
-    totalAnswers:    p.totalAnswers    || 0,
+    username:         p.username        || '',
+    placement:        i + 1,
+    correctAnswers:   p.correctAnswers  || 0,
+    totalAnswers:     p.totalAnswers    || 0,
     eliminationRound: p.eliminationRound ?? null,
-    lotteryTimesIn:  p.lotteryTickets  || 0,
+    lotteryTimesIn:   p.lotteryTickets  || 0,
   }));
 
-  const rounds = (session.rounds || []).map(r => ({
-    roundIndex:      r.roundIndex,
-    questionId:      r.questionId,
-    playerAnswers:   {},   // text not stored in session doc; enrich if needed
-    isCorrect:       {},
-    lotteryOccurred: r.lotteryOccurred || false,
-    lotteryPool:     r.lotteryPool     || [],
-    eliminatedUid:   r.eliminatedUid   ?? null,
-  }));
+  const rounds = (session.rounds || []).map(r => {
+    const base = {
+      roundIndex:      r.roundIndex,
+      questionId:      r.questionId,
+      playerAnswers:   {},
+      isCorrect:       {},
+      lotteryOccurred: r.lotteryOccurred || false,
+      lotteryPool:     r.lotteryPool     || [],
+      eliminatedUid:   r.eliminatedUid   ?? null,
+    };
+    if (
+      lastRoundEnrichment &&
+      r.roundIndex === lastRoundEnrichment.roundIndex
+    ) {
+      base.playerAnswers = lastRoundEnrichment.answerDetails || {};
+      base.isCorrect     = lastRoundEnrichment.isCorrectMap  || {};
+    }
+    return base;
+  });
 
   const now = new Date().toISOString();
 
@@ -309,46 +400,62 @@ async function buildArchive(sessionId, session) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// deleteSubcollectionDocs
-//   Batch-deletes all documents in a subcollection reference.
-//   Firestore does NOT auto-delete subcollections when a parent document is
-//   removed, so this must be called explicitly.
+// syncRoundTargetAfterPlayerLeave — called from onSessionWrite
 // ─────────────────────────────────────────────────────────────────────────────
-async function deleteSubcollectionDocs(colRef) {
-  const snap = await colRef.get();
-  if (snap.empty) return;
-  const batch = db.batch();
-  snap.forEach(doc => batch.delete(doc.ref));
-  await batch.commit();
+async function syncRoundTargetAfterPlayerLeave(sessionRef, session) {
+  if (session.status !== 'inProgress' || session.phase !== 'answering') return;
+
+  const roundIndex = session.currentQuestionIndex ?? 0;
+  const activeCount = countActivePlayers(session.players);
+
+  const counterRef = sessionRef.collection('roundCounters').doc(String(roundIndex));
+  const counterSnap = await counterRef.get();
+  if (!counterSnap.exists) return;
+
+  const counter = counterSnap.data();
+  if (counter.resolved === true) return;
+
+  await counterRef.set({ targetCount: activeCount }, { merge: true });
+
+  const updatedSnap = await counterRef.get();
+  await tryResolveFromCounter(
+    sessionRef.id,
+    roundIndex,
+    updatedSnap.data(),
+    session,
+    sessionRef,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3.  onSessionWrite — safety-net cleanup
-//     • When the session document is deleted (last player left via leaveGame
-//       or removePlayer): cleans up the answers/ and roundCounters/
-//       subcollections that Firestore leaves behind.
-//     • When the document still exists but has no players: deletes both
-//       subcollections and then the document itself (triggers this handler
-//       once more, caught by the !after.exists branch above).
+// 3. onSessionWrite — cleanup + leave sync
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onSessionWrite = onDocumentWritten(
   'sessions/{sessionId}',
   async (event) => {
+    const before = event.data.before?.data();
     const after  = event.data.after;
     const docRef = after.ref;
 
     if (!after.exists) {
-      // Document was already deleted by the client transaction.
-      // Clean up subcollections that Firestore left behind.
       await deleteSubcollectionDocs(docRef.collection('answers'));
       await deleteSubcollectionDocs(docRef.collection('roundCounters'));
       return;
     }
 
     const data = after.data();
-    if ((data.playerUids || []).length > 0) return; // players still present
 
-    // Empty session — clean up subcollections then the document.
+    if (
+      before &&
+      data.status === 'inProgress' &&
+      data.phase === 'answering' &&
+      (data.activePlayerCount ?? 0) < (before.activePlayerCount ?? 0)
+    ) {
+      await syncRoundTargetAfterPlayerLeave(docRef, data);
+    }
+
+    if ((data.playerUids || []).length > 0) return;
+
     if (data.status === 'waiting' || data.status === 'inProgress') {
       await deleteSubcollectionDocs(docRef.collection('answers'));
       await deleteSubcollectionDocs(docRef.collection('roundCounters'));

@@ -120,6 +120,9 @@ class FirebaseSessionRepository {
       if (currentUids.contains(uid)) return; // idempotency guard
 
       final maxPlayers = data['maxPlayers'] as int? ?? 0;
+      if (currentUids.length >= maxPlayers) {
+        throw StateError('Session $sessionId is full');
+      }
       final newUids = [...currentUids, uid];
       final isNowFull = newUids.length >= maxPlayers;
 
@@ -141,6 +144,7 @@ class FirebaseSessionRepository {
             'validatedCount': 0,
             'targetCount': newUids.length,
             'incorrectUids': <String>[],
+            'resolved': false,
           },
         );
       }
@@ -174,6 +178,7 @@ class FirebaseSessionRepository {
         tx.update(sessionRef, {
           'playerUids': FieldValue.arrayRemove([uid]),
           'players.$uid': FieldValue.delete(),
+          'activePlayerCount': playerUids.length,
         });
       }
     });

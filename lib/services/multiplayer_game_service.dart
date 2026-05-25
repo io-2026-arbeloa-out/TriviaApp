@@ -13,56 +13,43 @@ class MultiplayerGameService implements IMultiplayerGameService {
   final FirebaseQuestionRepository _questionRepo;
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final String _sessionId;
 
-  late String _sessionId;
   late String _myUid;
   late String _myUsername;
   late List<Question> _questions;
 
-  /// Completes once [_initialize] has populated all four fields.
-  /// Await this before accessing [sessionId], [myUid], [myUsername], [questions].
   late final Future<void> ready;
 
   MultiplayerGameService({
+    required String sessionId,
     FirebaseSessionRepository? repo,
     FirebaseQuestionRepository? questionRepo,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
-  })  : _repo = repo ?? FirebaseSessionRepository(),
+  })  : _sessionId = sessionId,
+        _repo = repo ?? FirebaseSessionRepository(),
         _questionRepo = questionRepo ?? FirebaseQuestionRepository(),
         _auth = auth ?? FirebaseAuth.instance,
         _firestore = firestore ?? FirebaseFirestore.instance {
     ready = _initialize();
   }
 
-  // ── Initialization ─────────────────────────────────────────────────────────
-
   Future<void> _initialize() async {
     final user = _auth.currentUser;
     if (user == null) throw StateError('No authenticated user');
     _myUid = user.uid;
 
-    final userSnap =
-    await _firestore.collection('users').doc(_myUid).get();
+    final userSnap = await _firestore.collection('users').doc(_myUid).get();
     _myUsername = userSnap.data()?['username'] as String? ?? '';
 
-    final sessionSnap = await _firestore
-        .collection('sessions')
-        .where('playerUids', arrayContains: _myUid)
-        .where('status', isEqualTo: 'inProgress')
-        .limit(1)
-        .get();
-
-    if (sessionSnap.docs.isEmpty) {
-      throw StateError('No active session found for user $_myUid');
+    final sessionSnap = await _firestore.collection('sessions').doc(_sessionId).get();
+    if (!sessionSnap.exists) {
+      throw StateError('Session $_sessionId not found');
     }
 
-    final sessionDoc = sessionSnap.docs.first;
-    _sessionId = sessionDoc.id;
-
-    final data = sessionDoc.data();
-    final questionIds =
-    List<String>.from(data['questionIds'] as List? ?? []);
+    final data = sessionSnap.data()!;
+    final questionIds = List<String>.from(data['questionIds'] as List? ?? []);
     final categoryId = data['categoryId'] as String;
 
     _questions = await _questionRepo.getQuestionsByIds(
@@ -70,8 +57,6 @@ class MultiplayerGameService implements IMultiplayerGameService {
       ids: questionIds,
     );
   }
-
-  // ── Getters ────────────────────────────────────────────────────────────────
 
   @override
   String get sessionId => _sessionId;
@@ -85,10 +70,6 @@ class MultiplayerGameService implements IMultiplayerGameService {
   @override
   List<Question> get questions => _questions;
 
-  // ── Stream ─────────────────────────────────────────────────────────────────
-
-  /// Awaits [ready] before subscribing, so the stream never emits before
-  /// sessionId and myUid are known.
   @override
   Stream<LiveGameState> buildLiveGameStateStream() async* {
     await ready;
@@ -99,8 +80,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
     final status = data['status'] as String? ?? 'waiting';
     final phaseStr = data['phase'] as String? ?? 'answering';
     final currentQuestionIndex = data['currentQuestionIndex'] as int? ?? 0;
-    final questionIds =
-    List<String>.from(data['questionIds'] as List? ?? []);
+    final questionIds = List<String>.from(data['questionIds'] as List? ?? []);
 
     final playersRaw = data['players'] as Map<String, dynamic>? ?? {};
     final players = playersRaw.entries.map((entry) {
@@ -130,8 +110,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
               eliminatedUid: r['eliminatedUid'] as String?,
               eliminatedUsername: r['eliminatedUsername'] as String?,
               lotteryOccurred: r['lotteryOccurred'] as bool? ?? false,
-              lotteryPool:
-              List<String>.from(r['lotteryPool'] as List? ?? []),
+              lotteryPool: List<String>.from(r['lotteryPool'] as List? ?? []),
             );
           }
         } else {
@@ -150,8 +129,6 @@ class MultiplayerGameService implements IMultiplayerGameService {
     );
   }
 
-  // ── Answer submission ──────────────────────────────────────────────────────
-
   @override
   Future<void> submitAnswer({
     required int roundIndex,
@@ -167,15 +144,11 @@ class MultiplayerGameService implements IMultiplayerGameService {
     );
   }
 
-  // ── Leave ──────────────────────────────────────────────────────────────────
-
   @override
   Future<void> leaveGame() async {
     await ready;
     return _repo.leaveGame(sessionId: _sessionId, uid: _myUid);
   }
-
-  // ── Archive ────────────────────────────────────────────────────────────────
 
   @override
   Future<MultiplayerSessionData> fetchFinalSessionData() {

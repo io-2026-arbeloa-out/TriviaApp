@@ -8,6 +8,7 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
   final FirebaseQuestionRepository _questionRepository;
 
   static const int _questionsPerGame = 10;
+  static const int _maxMatchmakingAttempts = 3;
 
   MultiplayerConnectionService({
     required FirebaseSessionRepository sessionRepository,
@@ -22,19 +23,45 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
     required String categoryId,
     required int maxPlayers,
   }) async {
-    final existingId = await _sessionRepository.findWaitingSession(
-      categoryId: categoryId,
-      maxPlayers: maxPlayers,
-    );
+    Object? lastError;
 
-    if (existingId != null) {
-      return _sessionRepository.joinSession(
-        sessionId: existingId,
-        uid: uid,
-        username: username,
-      );
+    for (var attempt = 0; attempt < _maxMatchmakingAttempts; attempt++) {
+      try {
+        final existingId = await _sessionRepository.findWaitingSession(
+          categoryId: categoryId,
+          maxPlayers: maxPlayers,
+        );
+
+        if (existingId != null) {
+          return _sessionRepository.joinSession(
+            sessionId: existingId,
+            uid: uid,
+            username: username,
+          );
+        }
+
+        return _createNewSession(
+          uid: uid,
+          username: username,
+          categoryId: categoryId,
+          maxPlayers: maxPlayers,
+        );
+      } on StateError catch (e) {
+        lastError = e;
+        if (attempt == _maxMatchmakingAttempts - 1) rethrow;
+        await Future.delayed(Duration(milliseconds: 400 * (attempt + 1)));
+      }
     }
 
+    throw StateError('Matchmaking failed: $lastError');
+  }
+
+  Future<String> _createNewSession({
+    required String uid,
+    required String username,
+    required String categoryId,
+    required int maxPlayers,
+  }) async {
     final questions = await _questionRepository.getQuestions(
       limit: _questionsPerGame,
       category: categoryId,
@@ -44,8 +71,6 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
     if (questions.isEmpty) {
       throw StateError('No questions available for category "$categoryId"');
     }
-
-    questions.shuffle();//todo check
 
     return _sessionRepository.createSession(
       categoryId: categoryId,

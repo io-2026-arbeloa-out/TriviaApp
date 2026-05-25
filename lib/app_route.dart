@@ -9,6 +9,7 @@ import 'package:triviaapp/screens/leaderboard_screen.dart';
 import 'package:triviaapp/screens/loading_screen.dart';
 import 'package:triviaapp/screens/login_screen.dart';
 import 'package:triviaapp/screens/main_menu_screen.dart';
+import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/screens/multiplayer_game_screen.dart';
 import 'package:triviaapp/screens/multiplayer_score_table_screen.dart';
 import 'package:triviaapp/screens/private_lobby_screen.dart';
@@ -113,9 +114,14 @@ class AppRoute {
         );
 
       case multiplayerGameScreen:
-        final UIOptions options = settings.arguments as UIOptions;
+        final args = settings.arguments as Map<String, dynamic>;
+        final UIOptions options = args['options'] as UIOptions;
+        final gameService = args['gameService'] as IMultiplayerGameService;
         return MaterialPageRoute(
-          builder: (_) => MultiplayerGameScreen(options: options),//todo
+          builder: (_) => MultiplayerGameScreen(
+            options: options,
+            gameService: gameService,
+          ),
           settings: settings,
         );
 
@@ -246,10 +252,16 @@ class AppRoute {
     );
   }
 
-  void goToMultiplayer(UIOptions options) {
+  void goToMultiplayer(
+    UIOptions options,
+    IMultiplayerGameService gameService,
+  ) {
     navigatorKey.currentState?.pushNamed(
       multiplayerGameScreen,
-      arguments: options,
+      arguments: {
+        'options': options,
+        'gameService': gameService,
+      },
     );
   }
 
