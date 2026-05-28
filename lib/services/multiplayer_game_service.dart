@@ -9,8 +9,8 @@ import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 
 class MultiplayerGameService implements IMultiplayerGameService {
-  final FirebaseSessionRepository _repo;
-  final FirebaseQuestionRepository _questionRepo;
+  final FirebaseSessionRepository _sessionRepository;
+  final FirebaseQuestionRepository _questionRepository;
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final String _sessionId;
@@ -23,13 +23,13 @@ class MultiplayerGameService implements IMultiplayerGameService {
 
   MultiplayerGameService({
     required String sessionId,
-    FirebaseSessionRepository? repo,
-    FirebaseQuestionRepository? questionRepo,
+    FirebaseSessionRepository? sessionRepository,
+    FirebaseQuestionRepository? questionRepository,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
   })  : _sessionId = sessionId,
-        _repo = repo ?? FirebaseSessionRepository(),
-        _questionRepo = questionRepo ?? FirebaseQuestionRepository(),
+        _sessionRepository = sessionRepository ?? FirebaseSessionRepository(),
+        _questionRepository = questionRepository ?? FirebaseQuestionRepository(),
         _auth = auth ?? FirebaseAuth.instance,
         _firestore = firestore ?? FirebaseFirestore.instance {
     ready = _initialize();
@@ -52,7 +52,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
     final questionIds = List<String>.from(data['questionIds'] as List? ?? []);
     final categoryId = data['categoryId'] as String;
 
-    _questions = await _questionRepo.getQuestionsByIds(
+    _questions = await _questionRepository.getQuestionsByIds(
       category: categoryId,
       ids: questionIds,
     );
@@ -73,7 +73,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
   @override
   Stream<LiveGameState> buildLiveGameStateStream() async* {
     await ready;
-    yield* _repo.sessionDocStream(_sessionId).map(_parse);
+    yield* _sessionRepository.sessionDocStream(_sessionId).map(_parse);
   }
 
   LiveGameState _parse(Map<String, dynamic> data) {
@@ -135,7 +135,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
     required String questionId,
     required String answer,
   }) {
-    return _repo.submitAnswer(
+    return _sessionRepository.submitAnswer(
       sessionId: _sessionId,
       uid: _myUid,
       roundIndex: roundIndex,
@@ -147,11 +147,11 @@ class MultiplayerGameService implements IMultiplayerGameService {
   @override
   Future<void> leaveGame() async {
     await ready;
-    return _repo.leaveGame(sessionId: _sessionId, uid: _myUid);
+    return _sessionRepository.leaveGame(sessionId: _sessionId, uid: _myUid);
   }
 
   @override
   Future<MultiplayerSessionData> fetchFinalSessionData() {
-    return _repo.fetchArchivedSession(_sessionId);
+    return _sessionRepository.fetchArchivedSession(_sessionId);
   }
 }

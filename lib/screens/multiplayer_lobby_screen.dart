@@ -318,7 +318,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             backgroundColor: options.mainButtonColor,
             foregroundColor: options.textColor,
           ),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => AppRoute.instance.goToMainMenu(options),
           child: const Text('Wróć'),
         ),
       ],
