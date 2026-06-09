@@ -1,16 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:triviaapp/models/session_phase.dart';
+import 'package:triviaapp/models/session_status.dart';
 
-export 'package:triviaapp/models/session_phase.dart';
-
-/// Real-time game state built from multiple Firestore streams.
-/// Used exclusively during an active multiplayer session.
-/// After the game ends, [MultiplayerSessionData] is fetched from the archive.
 @immutable
 class LiveGameState {
   final String _sessionId;
   final String _myUid;
-  final SessionPhase _phase;
+  final SessionStatus _status;
   final int _currentQuestionIndex;
   final List<String> _questionIds;
   final List<PlayerLiveState> _players;
@@ -19,14 +14,14 @@ class LiveGameState {
   const LiveGameState({
     required String sessionId,
     required String myUid,
-    required SessionPhase phase,
+    required SessionStatus status,
     required int currentQuestionIndex,
     required List<String> questionIds,
     required List<PlayerLiveState> players,
     RoundResult? lastRoundResult,
   })  : _sessionId = sessionId,
         _myUid = myUid,
-        _phase = phase,
+        _status = status,
         _currentQuestionIndex = currentQuestionIndex,
         _questionIds = questionIds,
         _players = players,
@@ -34,7 +29,7 @@ class LiveGameState {
 
   String get sessionId => _sessionId;
   String get myUid => _myUid;
-  SessionPhase get phase => _phase;
+  SessionStatus get status => _status;
   int get currentQuestionIndex => _currentQuestionIndex;
   List<String> get questionIds => _questionIds;
   List<PlayerLiveState> get players => _players;
@@ -55,9 +50,6 @@ class PlayerLiveState {
   final String _uid;
   final String _username;
   final bool _isEliminated;
-
-  /// Accumulated lottery tickets — increases by 1 each round
-  /// the player is in the lottery but survives.
   final int _lotteryTickets;
 
   const PlayerLiveState({
@@ -83,14 +75,14 @@ class RoundResult {
   final String? _eliminatedUsername;
   final bool _lotteryOccurred;
 
-  /// UIDs of players who were in the lottery pool.
-  final List<String> _lotteryPool;
+  /// uid → number of tickets
+  final Map<String, int> _lotteryPool;
 
   const RoundResult({
     required String? eliminatedUid,
     required String? eliminatedUsername,
     required bool lotteryOccurred,
-    required List<String> lotteryPool,
+    required  Map<String, int> lotteryPool,
   })  : _eliminatedUid = eliminatedUid,
         _eliminatedUsername = eliminatedUsername,
         _lotteryOccurred = lotteryOccurred,
@@ -99,5 +91,5 @@ class RoundResult {
   String? get eliminatedUid => _eliminatedUid;
   String? get eliminatedUsername => _eliminatedUsername;
   bool get lotteryOccurred => _lotteryOccurred;
-  List<String> get lotteryPool => _lotteryPool;
+  Map<String, int> get lotteryPool => _lotteryPool;
 }

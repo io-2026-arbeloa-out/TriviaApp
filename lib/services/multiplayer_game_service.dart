@@ -4,7 +4,7 @@ import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/live_game_state.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/models/session_phase.dart';
+import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 
@@ -77,51 +77,49 @@ class MultiplayerGameService implements IMultiplayerGameService {
   }
 
   LiveGameState _parse(Map<String, dynamic> data) {
-    final status = data['status'] as String? ?? 'waiting';
-    final phaseStr = data['phase'] as String? ?? 'answering';
-    final currentQuestionIndex = data['currentQuestionIndex'] as int? ?? 0;
-    final questionIds = List<String>.from(data['questionIds'] as List? ?? []);
+    // FIX: CF używa dwóch pól: 'status' (waiting/inProgress/finished) oraz
+    // 'phase' (answering/resolving/finished). SessionStatus odpowiada wartościom
+    // z 'phase', więc gdy status == 'inProgress' czytamy 'phase'.
+    final statusRaw = data['status'] as String? ?? '';
+    final phaseRaw  = data['phase']  as String? ?? '';
+    final status    = SessionStatus.fromJson(
+      statusRaw == 'inProgress' ? phaseRaw : statusRaw,
+    );
 
-    final playersRaw = data['players'] as Map<String, dynamic>? ?? {};
+    final currentQuestionIndex = data['currentQuestionIndex'] as int;
+    final questionIds = List<String>.from(data['questionIds'] as List);
+
+    final playersRaw = data['players'] as Map<String, dynamic>;
     final players = playersRaw.entries.map((entry) {
       final p = entry.value as Map<String, dynamic>;
       return PlayerLiveState(
         uid: entry.key,
-        username: p['username'] as String? ?? '',
-        isEliminated: p['isEliminated'] as bool? ?? false,
-        lotteryTickets: p['lotteryTickets'] as int? ?? 0,
+        username: p['username'] as String,
+        isEliminated: p['isEliminated'] as bool,
+        lotteryTickets: p['lotteryTickets'] as int,
       );
     }).toList();
 
-    SessionPhase phase;
     RoundResult? lastRoundResult;
 
-    switch (status) {
-      case 'waiting':
-        phase = SessionPhase.waiting;
-      case 'finished':
-        phase = SessionPhase.finished;
-      default:
-        if (phaseStr == 'resolving') {
-          phase = SessionPhase.resolving;
-          final r = data['lastRoundResult'] as Map<String, dynamic>?;
-          if (r != null) {
-            lastRoundResult = RoundResult(
-              eliminatedUid: r['eliminatedUid'] as String?,
-              eliminatedUsername: r['eliminatedUsername'] as String?,
-              lotteryOccurred: r['lotteryOccurred'] as bool? ?? false,
-              lotteryPool: List<String>.from(r['lotteryPool'] as List? ?? []),
-            );
-          }
-        } else {
-          phase = SessionPhase.answering;
-        }
+    if (status == SessionStatus.resolving) {
+      final r = data['lastRoundResult'] as Map<String, dynamic>?;
+      if (r != null) {
+        lastRoundResult = RoundResult(
+          eliminatedUid: r['eliminatedUid'] as String?,
+          eliminatedUsername: r['eliminatedUsername'] as String?,
+          lotteryOccurred: r['lotteryOccurred'] as bool,
+          lotteryPool: Map<String, int>.from(r['lotteryPool'] as Map? ?? {}),
+        );
+      } else {
+        throw StateError('Last round result not found');
+      }
     }
 
     return LiveGameState(
       sessionId: _sessionId,
       myUid: _myUid,
-      phase: phase,
+      status: status,
       currentQuestionIndex: currentQuestionIndex,
       questionIds: questionIds,
       players: players,

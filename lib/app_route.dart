@@ -256,7 +256,7 @@ class AppRoute {
     UIOptions options,
     IMultiplayerGameService gameService,
   ) {
-    navigatorKey.currentState?.pushNamed(
+    navigatorKey.currentState?.pushReplacementNamed(
       multiplayerGameScreen,
       arguments: {
         'options': options,

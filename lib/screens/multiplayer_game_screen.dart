@@ -5,6 +5,7 @@ import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/live_game_state.dart';
 import 'package:triviaapp/models/question.dart';
+import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/services/multiplayer_game_service.dart';
 
@@ -135,16 +136,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   }
 
   _UIPhase _resolveUIPhase(LiveGameState state) {
-    switch (state.phase) {
-      case SessionPhase.waiting:
+    switch (state.status) {
+      case SessionStatus.waiting:
         return _UIPhase.loading;
-      case SessionPhase.finished:
+      case SessionStatus.finished:
         return _UIPhase.finished;
-      case SessionPhase.resolving:
+      case SessionStatus.resolving:
         return _UIPhase.resolving;
-      case SessionPhase.answering:
+      case SessionStatus.answering:
         if (state.amIEliminated) return _UIPhase.eliminated;
         return _hasAnsweredThisRound ? _UIPhase.waiting : _UIPhase.answering;
+      default:
+        return _UIPhase.loading;
     }
   }
 
@@ -673,12 +676,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        ...result.lotteryPool.map((uid) {
-          final player =
-              state.players.where((p) => p.uid == uid).firstOrNull;
+        ...result.lotteryPool.entries.map((entry) {
+          final uid = entry.key;
+          final tickets = entry.value + 1; // +1 because tickets are incremented AFTER round resolution
+          final player = state.players.where((p) => p.uid == uid).firstOrNull;
           final name = player?.username ?? uid;
-          // +1 because tickets are incremented AFTER round resolution.
-          final tickets = (player?.lotteryTickets ?? 0) + 1;
           final isEliminated = uid == result.eliminatedUid;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),

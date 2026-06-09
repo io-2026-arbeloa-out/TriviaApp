@@ -4,11 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
-import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
-import 'package:triviaapp/screens/multiplayer_game_screen.dart';
 import 'package:triviaapp/services/multiplayer_connection_service.dart';
 import 'package:triviaapp/services/multiplayer_game_service.dart';
 
@@ -22,7 +19,6 @@ class MultiplayerLobbyScreen extends StatefulWidget {
   final int maxPlayers;
   final IMultiplayerConnectionService? connectionService;
   final IMultiplayerGameService? gameService;
-  final FirebaseQuestionRepository? questionRepository;
 
   const MultiplayerLobbyScreen({
     super.key,
@@ -33,7 +29,6 @@ class MultiplayerLobbyScreen extends StatefulWidget {
     UIOptions? options,
     this.connectionService,
     this.gameService,
-    this.questionRepository,
   }) : options = options ?? const UIOptions();
 
   @override
@@ -45,10 +40,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   UIOptions get options => widget.options;
 
   late final IMultiplayerConnectionService _connectionService;
-  late final FirebaseQuestionRepository _questionRepository;
-
-  // Single repo instance shared by connection service, game service and the
-  // session stream — avoids creating redundant Firestore listeners.
   late final FirebaseSessionRepository _sessionRepo;
 
   _LobbyPhase _phase = _LobbyPhase.connecting;
@@ -56,10 +47,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   String? _sessionId;
   int _currentPlayerCount = 0;
   StreamSubscription<Map<String, dynamic>>? _sessionSub;
-
-  // Set to true when the player presses "Opuść lobby" before _connect()
-  // resolves.  _connect() checks this flag and removes the player immediately
-  // after the Future completes.
   bool _leaveRequested = false;
 
   @override
@@ -67,14 +54,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     super.initState();
 
     _sessionRepo = FirebaseSessionRepository();
-    _questionRepository =
-        widget.questionRepository ?? FirebaseQuestionRepository();
-    _connectionService = widget.connectionService ??
-        MultiplayerConnectionService(
-          sessionRepository: _sessionRepo,
-          questionRepository: _questionRepository,
-        );
-
+    _connectionService = widget.connectionService ?? MultiplayerConnectionService();
     _connect();
   }
 
@@ -91,8 +71,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     super.dispose();
   }
 
-  // ── Connection ─────────────────────────────────────────────────────────────
-
   Future<void> _connect() async {
     try {
       final sessionId = await _connectionService.connectPlayer(
@@ -102,8 +80,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         maxPlayers: widget.maxPlayers,
       );
 
-      // Player pressed "Opuść lobby" while connectPlayer was in flight.
-      // Remove them from the session we just joined/created and exit.
       if (_leaveRequested) {
         unawaited(
           _connectionService.disconnectPlayer(
@@ -126,7 +102,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     }
   }
 
-  // Uses the shared _sessionRepo — no second FirebaseSessionRepository().
   void _listenToSession(String sessionId) {
     _sessionSub = _sessionRepo.sessionDocStream(sessionId).listen(
           (data) async {
@@ -159,49 +134,41 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         MultiplayerGameService(
           sessionId: sessionId,
           sessionRepository: _sessionRepo,
-          questionRepository: _questionRepository,
         );
 
-    await Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => MultiplayerGameScreen(
-          options: options,
-          gameService: gameService,
-        ),
-      ),
-    );
+    AppRoute.instance.goToMultiplayer(options, gameService); //todo do testa czy dziala
+    // await Navigator.of(context).pushReplacement(
+    //   MaterialPageRoute(
+    //     builder: (_) => MultiplayerGameScreen(
+    //       options: options,
+    //       gameService: gameService,
+    //     ),
+    //   ),
+    // );
   }
-
-  // ── Leave ──────────────────────────────────────────────────────────────────
 
   Future<void> _onLeave() async {
     await _sessionSub?.cancel();
     _sessionSub = null;
 
     if (_phase == _LobbyPhase.connecting) {
-      // connectPlayer is still in flight — set the flag so it removes the
-      // player once the Future resolves, then navigate away immediately.
       _leaveRequested = true;
       if (mounted) AppRoute.instance.goToMainMenu(options);
       //Navigator.of(context).pop();
       return;
     }
 
-    // Session is known — remove the player from Firestore.
-    // Fire-and-forget: navigation should not block on this call.
     if (_sessionId != null) {
       unawaited(
         _connectionService
             .disconnectPlayer(sessionId: _sessionId!, uid: widget.uid)
-            .catchError((_) {}), // best-effort; CF cleanup handles failures
+            .catchError((_) {}),
       );
     }
 
     if (mounted) AppRoute.instance.goToMainMenu(options);
     // Navigator.of(context).pop();
   }
-
-  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {

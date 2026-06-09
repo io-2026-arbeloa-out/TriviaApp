@@ -3,9 +3,6 @@ import 'package:triviaapp/models/game_mode.dart';
 
 export 'package:triviaapp/models/game_mode.dart';
 
-/// Final session record fetched from `sessions_archive/{sessionId}` after
-/// the Cloud Function writes it on game completion.
-/// Not used during live gameplay — use [LiveGameState] for that.
 @immutable
 class MultiplayerSessionData {
   final String _sessionId;
@@ -47,11 +44,9 @@ class MultiplayerSessionData {
   List<PlayerResult> get playerResults => _playerResults;
   List<RoundRecord> get rounds => _rounds;
 
-  /// Convenience: winner is the player with placement == 1.
   PlayerResult? get winner =>
       _playerResults.where((r) => r.placement == 1).firstOrNull;
 
-  /// Find a single [PlayerResult] by uid. Returns null if not found.
   PlayerResult? playerByUid(String uid) =>
       _playerResults.where((r) => r.uid == uid).firstOrNull;
 
@@ -88,17 +83,12 @@ class MultiplayerSessionData {
 class PlayerResult {
   final String _uid;
   final String _username;
-
-  /// 1 = winner.
   final int _placement;
-
   final int _correctAnswers;
   final int _totalAnswers;
 
-  /// null for the winner.
-  final int? _eliminationRound;
-
-  /// How many times this player was in a lottery draw.
+  /// 0 for the winner.
+  final int _eliminationRound;
   final int _lotteryTimesIn;
 
   const PlayerResult({
@@ -107,7 +97,7 @@ class PlayerResult {
     required int placement,
     required int correctAnswers,
     required int totalAnswers,
-    int? eliminationRound,
+    int eliminationRound = 0,
     required int lotteryTimesIn,
   })  : _uid = uid,
         _username = username,
@@ -131,8 +121,8 @@ class PlayerResult {
     placement: json['placement'] as int,
     correctAnswers: json['correctAnswers'] as int,
     totalAnswers: json['totalAnswers'] as int,
-    eliminationRound: json['eliminationRound'] as int?,
-    lotteryTimesIn: json['lotteryTimesIn'] as int? ?? 0,
+    eliminationRound: (json['eliminationRound'] as int?) ?? 0,
+    lotteryTimesIn: json['lotteryTimesIn'] as int,
   );
 
   Map<String, dynamic> toJson() => {
@@ -154,11 +144,13 @@ class RoundRecord {
   /// uid → answer text submitted by that player.
   final Map<String, String> _playerAnswers;
 
-  /// uid → whether the answer was correct (set by Cloud Function).
+  /// uid → whether the answer was correct
   final Map<String, bool> _isCorrect;
 
   final bool _lotteryOccurred;
-  final List<String> _lotteryPool;
+
+  /// uid → number of tickets
+  final Map<String, int> _lotteryPool;
 
   /// null when nobody was eliminated (all answered correctly).
   final String? _eliminatedUid;
@@ -169,7 +161,7 @@ class RoundRecord {
     required Map<String, String> playerAnswers,
     required Map<String, bool> isCorrect,
     required bool lotteryOccurred,
-    required List<String> lotteryPool,
+    required Map<String, int> lotteryPool,
     String? eliminatedUid,
   })  : _roundIndex = roundIndex,
         _questionId = questionId,
@@ -184,7 +176,7 @@ class RoundRecord {
   Map<String, String> get playerAnswers => _playerAnswers;
   Map<String, bool> get isCorrect => _isCorrect;
   bool get lotteryOccurred => _lotteryOccurred;
-  List<String> get lotteryPool => _lotteryPool;
+  Map<String, int> get lotteryPool => _lotteryPool;
   String? get eliminatedUid => _eliminatedUid;
 
   factory RoundRecord.fromJson(Map<String, dynamic> json) => RoundRecord(
@@ -195,7 +187,7 @@ class RoundRecord {
     isCorrect:
     Map<String, bool>.from(json['isCorrect'] as Map<dynamic, dynamic>),
     lotteryOccurred: json['lotteryOccurred'] as bool,
-    lotteryPool: List<String>.from(json['lotteryPool'] as List<dynamic>),
+    lotteryPool: Map<String, int>.from(json['lotteryPool'] as Map<dynamic, dynamic>),
     eliminatedUid: json['eliminatedUid'] as String?,
   );
 

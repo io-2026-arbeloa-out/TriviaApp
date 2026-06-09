@@ -1,18 +1,21 @@
 'use strict';
 
 const { onDocumentCreated, onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { onTaskDispatched }                      = require('firebase-functions/v2/tasks');
 const { setGlobalOptions }                      = require('firebase-functions/v2');
 const admin                                     = require('firebase-admin');
+const { getFunctions }                          = require('firebase-admin/functions');
 
 setGlobalOptions({ region: 'europe-central2' });
 
 admin.initializeApp();
 
-const db  = admin.firestore();
+const db   = admin.firestore();
 const rtdb = admin.database();
-const FV  = admin.firestore.FieldValue;
+const FV   = admin.firestore.FieldValue;
 
 const RESOLVE_DISPLAY_MS = 5_000;
+const ROUND_TIMEOUT_MS   = 30_000;
 
 const skip = new Error('SKIP');
 
@@ -55,7 +58,7 @@ async function validateAnswerViaRtdb(categoryId, questionId, answer) {
   if (!snap.exists()) return false;
 
   const question = snap.val();
-  const correct = question?.correctAnswers || [];
+  const correct  = question?.correctAnswers || [];
   return correct.includes(answer);
 }
 
@@ -79,16 +82,35 @@ async function deleteSubcollectionDocs(colRef) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// enqueueRoundTimeout — planuje Cloud Task po ROUND_TIMEOUT_MS
+// ─────────────────────────────────────────────────────────────────────────────
+async function enqueueRoundTimeout(sessionId, roundIndex) {
+  const queue = getFunctions().taskQueue(
+    `locations/europe-central2/functions/roundTimeoutQueue`,
+  );
+  await queue.enqueue(
+    { sessionId, roundIndex },
+    { scheduleDelaySeconds: Math.floor(ROUND_TIMEOUT_MS / 1000) },
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // tryResolveFromCounter — shared entry when counter may have reached target
 // ─────────────────────────────────────────────────────────────────────────────
 async function tryResolveFromCounter(sessionId, roundIndex, counterData, session, sessionRef) {
   if (!counterData || counterData.resolved === true) return;
 
   if (session.status !== 'inProgress') return;
-  if (session.phase !== 'answering') return;
+  if (session.phase  !== 'answering')  return;
   if (session.currentQuestionIndex !== roundIndex) return;
 
-  const target = counterData.targetCount || session.activePlayerCount || 0;
+  // FIX: countActivePlayers jako ostateczny fallback gdy targetCount i
+  // activePlayerCount nie są ustawione (np. dla rundy 0 bez pre-inicjalizacji)
+  const target = counterData.targetCount
+    || session.activePlayerCount
+    || countActivePlayers(session.players)
+    || 0;
+
   if (target <= 0) return;
   if ((counterData.validatedCount || 0) < target) return;
 
@@ -109,8 +131,8 @@ exports.onAnswerCreate = onDocumentCreated(
   'sessions/{sessionId}/answers/{answerId}',
   async (event) => {
     const { sessionId } = event.params;
-    const answerRef = event.data.ref;
-    const answerData = event.data.data();
+    const answerRef     = event.data.ref;
+    const answerData    = event.data.data();
     if (!answerData) return;
 
     const { uid, roundIndex, questionId, answer } = answerData;
@@ -123,7 +145,7 @@ exports.onAnswerCreate = onDocumentCreated(
 
     const session = sessionSnap.data();
     if (session.status !== 'inProgress') return;
-    if (session.phase !== 'answering') return;
+    if (session.phase  !== 'answering')  return;
     if (session.currentQuestionIndex !== roundIndex) return;
 
     const player = session.players?.[uid];
@@ -135,19 +157,37 @@ exports.onAnswerCreate = onDocumentCreated(
       answer,
     );
 
-    const counterRef = sessionRef.collection('roundCounters').doc(String(roundIndex));
+    const counterRef    = sessionRef.collection('roundCounters').doc(String(roundIndex));
     const counterUpdate = { validatedCount: FV.increment(1) };
     if (!isCorrect) {
       counterUpdate.incorrectUids = FV.arrayUnion(uid);
     }
 
-    const batch = db.batch();
-    batch.update(answerRef, {
-      isCorrect,
-      validatedAt: FV.serverTimestamp(),
-    });
-    batch.set(counterRef, counterUpdate, { merge: true });
-    await batch.commit();
+    // FIX: transakcja z validatedUids zapobiega wielokrotnemu zliczeniu odpowiedzi
+    // tego samego gracza. Dodatkowo inicjalizuje targetCount jeśli nie jest ustawiony
+    // (zabezpieczenie dla rundy 0 gdy Flutter nie pre-inicjalizuje countera).
+    try {
+      await db.runTransaction(async (tx) => {
+        const counterSnap = await tx.get(counterRef);
+        const counter     = counterSnap.data() || {};
+
+        if ((counter.validatedUids || []).includes(uid)) throw skip;
+
+        // FIX: defensywna inicjalizacja targetCount przy pierwszej odpowiedzi
+        if (!counter.targetCount) {
+          counterUpdate.targetCount = countActivePlayers(session.players);
+        }
+
+        tx.update(answerRef, { isCorrect, validatedAt: FV.serverTimestamp() });
+        tx.set(counterRef, {
+          ...counterUpdate,
+          validatedUids: FV.arrayUnion(uid),
+        }, { merge: true });
+      });
+    } catch (e) {
+      if (e === skip) return;
+      throw e;
+    }
   },
 );
 
@@ -197,7 +237,7 @@ async function resolveRound(
 
   let eliminatedUid   = null;
   let lotteryOccurred = false;
-  let lotteryPool     = [];
+  let lotteryPool     = {}; // FIX: map<uid, ticketCount> zamiast string[]
 
   const incorrectActive = incorrectUids.filter(uid => activeUids.includes(uid));
 
@@ -205,12 +245,12 @@ async function resolveRound(
     eliminatedUid = incorrectActive[0];
   } else if (incorrectActive.length > 1) {
     lotteryOccurred = true;
-    lotteryPool     = incorrectActive;
-    eliminatedUid   = weightedRandom(
-      lotteryPool.map(uid => ({
-        uid,
-        lotteryTickets: playersMap[uid]?.lotteryTickets || 0,
-      })),
+    // FIX: budowanie mapy {uid: ticketCount} zamiast przypisania tablicy
+    for (const uid of incorrectActive) {
+      lotteryPool[uid] = playersMap[uid]?.lotteryTickets || 0;
+    }
+    eliminatedUid = weightedRandom(
+      Object.entries(lotteryPool).map(([uid, tickets]) => ({ uid, lotteryTickets: tickets })),
     );
   }
 
@@ -226,13 +266,13 @@ async function resolveRound(
       lotteryOccurred,
       lotteryPool,
     },
-    rounds: FV.arrayUnion([{
+    rounds: FV.arrayUnion({
       roundIndex,
-      questionId: (session.questionIds || [])[roundIndex] || '',
+      questionId:      (session.questionIds || [])[roundIndex] || '',
       eliminatedUid,
       lotteryOccurred,
       lotteryPool,
-    }]),
+    }),
   };
 
   if (eliminatedUid) {
@@ -242,7 +282,8 @@ async function resolveRound(
   }
 
   if (lotteryOccurred && eliminatedUid) {
-    for (const uid of lotteryPool) {
+    // FIX: iteracja po Object.keys() zamiast po tablicy stringów
+    for (const uid of Object.keys(lotteryPool)) {
       if (uid !== eliminatedUid) {
         updates[`players.${uid}.lotteryTickets`] = FV.increment(1);
       }
@@ -264,11 +305,13 @@ async function resolveRound(
       if (data.currentQuestionIndex !== roundIndex) throw skip;
 
       const counterSnap = await tx.get(counterRef);
-      const counter = counterSnap.data();
+      const counter     = counterSnap.data();
       if (counter?.resolved === true) throw skip;
 
       tx.update(sessionRef, updates);
-      tx.update(counterRef, { resolved: true });
+      // FIX: set zamiast update — update rzuca NOT_FOUND gdy roundCounters/N
+      // nie istnieje (np. gdy deployed CF używa roundProgress zamiast subkolekcji)
+      tx.set(counterRef, { resolved: true }, { merge: true });
     });
   } catch (e) {
     if (e === skip) return;
@@ -285,7 +328,7 @@ async function resolveRound(
   roundAnswersSnap.forEach(doc => {
     const d = doc.data();
     if (d.uid) {
-      answerDetails[d.uid] = d.answer || '';
+      answerDetails[d.uid] = d.answer    || '';
       isCorrectMap[d.uid]  = d.isCorrect === true;
     }
   });
@@ -312,6 +355,7 @@ async function resolveRound(
         validatedCount: 0,
         targetCount:    newActiveCount,
         incorrectUids:  [],
+        validatedUids:  [],
         resolved:       false,
       }, { merge: true });
 
@@ -372,7 +416,7 @@ async function buildArchive(sessionId, session, lastRoundEnrichment) {
       playerAnswers:   {},
       isCorrect:       {},
       lotteryOccurred: r.lotteryOccurred || false,
-      lotteryPool:     r.lotteryPool     || [],
+      lotteryPool:     r.lotteryPool     || {}, // FIX: {} zamiast []
       eliminatedUid:   r.eliminatedUid   ?? null,
     };
     if (
@@ -405,10 +449,10 @@ async function buildArchive(sessionId, session, lastRoundEnrichment) {
 async function syncRoundTargetAfterPlayerLeave(sessionRef, session) {
   if (session.status !== 'inProgress' || session.phase !== 'answering') return;
 
-  const roundIndex = session.currentQuestionIndex ?? 0;
+  const roundIndex  = session.currentQuestionIndex ?? 0;
   const activeCount = countActivePlayers(session.players);
 
-  const counterRef = sessionRef.collection('roundCounters').doc(String(roundIndex));
+  const counterRef  = sessionRef.collection('roundCounters').doc(String(roundIndex));
   const counterSnap = await counterRef.get();
   if (!counterSnap.exists) return;
 
@@ -428,7 +472,48 @@ async function syncRoundTargetAfterPlayerLeave(sessionRef, session) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. onSessionWrite — cleanup + leave sync
+// handleRoundTimeout — logika wywoływana przez Cloud Task po upływie czasu
+// ─────────────────────────────────────────────────────────────────────────────
+async function handleRoundTimeout(sessionId, roundIndex) {
+  const sessionRef  = db.collection('sessions').doc(sessionId);
+  const sessionSnap = await sessionRef.get();
+  if (!sessionSnap.exists) return;
+
+  const session = sessionSnap.data();
+  if (session.status !== 'inProgress') return;
+  if (session.phase  !== 'answering')  return;
+  if (session.currentQuestionIndex !== roundIndex) return;
+
+  const counterRef  = sessionRef.collection('roundCounters').doc(String(roundIndex));
+  const counterSnap = await counterRef.get();
+  if (!counterSnap.exists) return;
+
+  const counter = counterSnap.data();
+  if (counter.resolved === true) return;
+
+  // Gracze którzy nie odpowiedzieli w czasie są traktowani jako błędna odpowiedź
+  const validatedUids = counter.validatedUids || [];
+  const playersMap    = session.players       || {};
+  const activeUids    = Object.keys(playersMap).filter(uid => !playersMap[uid].isEliminated);
+  const nonResponders = activeUids.filter(uid => !validatedUids.includes(uid));
+
+  const incorrectUids = [
+    ...normalizeIncorrectUids(counter.incorrectUids),
+    ...nonResponders,
+  ];
+
+  await resolveRound(
+    sessionId,
+    roundIndex,
+    [...new Set(incorrectUids)],
+    session,
+    sessionRef,
+    counter,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. onSessionWrite — cleanup + leave sync + enqueue timeout
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onSessionWrite = onDocumentWritten(
   'sessions/{sessionId}',
@@ -445,10 +530,21 @@ exports.onSessionWrite = onDocumentWritten(
 
     const data = after.data();
 
+    // Enqueue timeout przy każdym przejściu do fazy 'answering':
+    // - start pierwszej rundy (np. 'waiting' → 'answering')
+    // - przejście do kolejnej rundy ('resolving' → 'answering')
+    if (
+      data.status === 'inProgress' &&
+      data.phase  === 'answering'  &&
+      before?.phase !== 'answering'
+    ) {
+      await enqueueRoundTimeout(event.params.sessionId, data.currentQuestionIndex ?? 0);
+    }
+
     if (
       before &&
       data.status === 'inProgress' &&
-      data.phase === 'answering' &&
+      data.phase  === 'answering' &&
       (data.activePlayerCount ?? 0) < (before.activePlayerCount ?? 0)
     ) {
       await syncRoundTargetAfterPlayerLeave(docRef, data);
@@ -461,5 +557,19 @@ exports.onSessionWrite = onDocumentWritten(
       await deleteSubcollectionDocs(docRef.collection('roundCounters'));
       await docRef.delete();
     }
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. roundTimeoutQueue — Cloud Tasks handler
+// ─────────────────────────────────────────────────────────────────────────────
+exports.roundTimeoutQueue = onTaskDispatched(
+  {
+    retryConfig: { maxAttempts: 1 },
+    rateLimits:  { maxConcurrentDispatches: 20 },
+  },
+  async (req) => {
+    const { sessionId, roundIndex } = req.data;
+    await handleRoundTimeout(sessionId, parseInt(roundIndex, 10));
   },
 );

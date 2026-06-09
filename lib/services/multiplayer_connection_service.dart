@@ -11,10 +11,10 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
   static const int _maxMatchmakingAttempts = 3;
 
   MultiplayerConnectionService({
-    required FirebaseSessionRepository sessionRepository,
-    required FirebaseQuestionRepository questionRepository,
-  })  : _sessionRepository = sessionRepository,
-        _questionRepository = questionRepository;
+    FirebaseSessionRepository? sessionRepository,
+    FirebaseQuestionRepository? questionRepository,
+  })  : _sessionRepository = sessionRepository ?? FirebaseSessionRepository(),
+        _questionRepository = questionRepository ?? FirebaseQuestionRepository();
 
   @override
   Future<String> connectPlayer({
