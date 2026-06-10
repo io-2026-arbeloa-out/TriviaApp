@@ -1,12 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:triviaapp/models/multiplayer_session_data.dart';
+import 'package:triviaapp/models/profile_data.dart';
+import 'package:triviaapp/repositories/firebase_profile_repository.dart';
 
 class FirebaseSessionRepository {
   final FirebaseFirestore _firestore;
+  final FirebaseProfileRepository _profileRepo;
 
-  FirebaseSessionRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseSessionRepository({
+    FirebaseFirestore? firestore,
+    FirebaseProfileRepository? profileRepo
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _profileRepo = profileRepo ?? FirebaseProfileRepository();
 
   CollectionReference<Map<String, dynamic>> get _sessions =>
       _firestore.collection('sessions');
@@ -39,6 +45,7 @@ class FirebaseSessionRepository {
     required String username,
   }) async {
     final docRef = _sessions.doc();
+    final String profilePicture = await _getProfilePicture();
 
     await docRef.set({
       'status': 'waiting',
@@ -49,7 +56,7 @@ class FirebaseSessionRepository {
       'playerUids': [uid],
       'activePlayerCount': 1,
       'currentQuestionIndex': 0,
-      'players': {uid: _newPlayerEntry(username)},
+      'players': {uid: _newPlayerEntry(username, profilePicture)},
       'lastRoundResult': null,
       'rounds': [],
       'createdAt': FieldValue.serverTimestamp(),
@@ -84,9 +91,13 @@ class FirebaseSessionRepository {
       if (playerUids.isEmpty) {
         tx.delete(sessionRef);
       } else {
+        // FIX: zamiast kasowac dane gracza, oznaczamy go jako wyeliminowanego.
+        // buildArchive w CF uwzgledni go w tabeli wynikow.
+        final currentRound = data['currentQuestionIndex'] as int? ?? 0;
         tx.update(sessionRef, {
           'playerUids': FieldValue.arrayRemove([uid]),
-          'players.$uid': FieldValue.delete(),
+          'players.$uid.isEliminated': true,
+          'players.$uid.eliminationRound': currentRound,
           'activePlayerCount': FieldValue.increment(-1),
         });
       }
@@ -125,11 +136,12 @@ class FirebaseSessionRepository {
       }
       final newUids = [...currentUids, uid];
       final isNowFull = newUids.length >= maxPlayers;
+      final String profilePicture = await _getProfilePicture();
 
       final updates = <String, dynamic>{
         'playerUids': newUids,
         'activePlayerCount': newUids.length,
-        'players.$uid': _newPlayerEntry(username),
+        'players.$uid': _newPlayerEntry(username, profilePicture),
       };
 
       if (isNowFull) {
@@ -227,11 +239,17 @@ class FirebaseSessionRepository {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  static Map<String, dynamic> _newPlayerEntry(String username) => {
+  static Map<String, dynamic> _newPlayerEntry(String username, String profilePicture) => {
     'username': username,
     'isEliminated': false,
+    'profilePicture': profilePicture,
     'lotteryTickets': 0,
     'correctAnswers': 0,
     'totalAnswers': 0,
   };
+
+  Future<String> _getProfilePicture() async {
+    final ProfileData? data = await _profileRepo.getProfileData();
+    return data?.profilePicture ?? 'deafultAvatar.png';
+  }
 }

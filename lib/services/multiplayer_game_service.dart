@@ -77,9 +77,6 @@ class MultiplayerGameService implements IMultiplayerGameService {
   }
 
   LiveGameState _parse(Map<String, dynamic> data) {
-    // FIX: CF używa dwóch pól: 'status' (waiting/inProgress/finished) oraz
-    // 'phase' (answering/resolving/finished). SessionStatus odpowiada wartościom
-    // z 'phase', więc gdy status == 'inProgress' czytamy 'phase'.
     final statusRaw = data['status'] as String? ?? '';
     final phaseRaw  = data['phase']  as String? ?? '';
     final status    = SessionStatus.fromJson(
@@ -95,6 +92,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
       return PlayerLiveState(
         uid: entry.key,
         username: p['username'] as String,
+        profilePicture: p['profilePicture'] as String,
         isEliminated: p['isEliminated'] as bool,
         lotteryTickets: p['lotteryTickets'] as int,
       );

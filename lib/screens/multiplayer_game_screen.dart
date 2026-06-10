@@ -7,7 +7,7 @@ import 'package:triviaapp/models/live_game_state.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/services/multiplayer_game_service.dart';
+import 'package:triviaapp/widgets/lottery_animation.dart';
 
 // ── Local UI phase ──────────────────────────────────────────────────────────
 // Finer-grained than SessionPhase — drives which widget subtree is shown.
@@ -17,7 +17,7 @@ class MultiplayerGameScreen extends StatefulWidget {
   final UIOptions _options;
   final IMultiplayerGameService _gameService;
 
-  MultiplayerGameScreen({
+  const MultiplayerGameScreen({
     super.key,
     UIOptions? options,
     required IMultiplayerGameService gameService,
@@ -50,6 +50,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   bool _hasAnsweredThisRound = false;
 
   int _displayedQuestionIndex = -1;
+
+  //animation
+  static const Duration _lotteryAnimationLength = Duration(seconds: 4);
+  bool _lotteryRevealDone = false;
 
   // ── Navigation guard ────────────────────────────────────────────────────
   bool _fetchingResults = false;
@@ -94,6 +98,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     final uiPhase = _resolveUIPhase(state);
     if (uiPhase == _UIPhase.resolving) {
       _resolvingSince ??= DateTime.now();
+
+      if (_uiPhase != _UIPhase.resolving) {
+        _lotteryRevealDone = false;
+      }
       if (!_resolvingStuckNotified &&
           DateTime.now().difference(_resolvingSince!) > const Duration(seconds: 12)) {
         _resolvingStuckNotified = true;
@@ -560,35 +568,50 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     if (result == null) return const SizedBox.shrink();
 
     final eliminatedUid = result.eliminatedUid;
-    final isEliminated = eliminatedUid == gameService.myUid;
+    final isEliminated  = eliminatedUid == gameService.myUid;
+    final showLottery   = result.lotteryOccurred &&
+        result.lotteryPool.isNotEmpty &&
+        eliminatedUid != null;
 
+    // While the spinner is running the result is hidden — only revealed
+    // once the tape stops (_lotteryRevealDone = true).
+    final bool revealResult = !showLottery || _lotteryRevealDone;
+
+    // ── Text content ──────────────────────────────────────────────────────────
     final String emoji;
     final String title;
     final String subtitle;
-    final Color accentColor;
+    final Color  accentColor;
 
-    if (eliminatedUid == null) {
-      emoji = '✅';
-      title = 'Wszyscy odpowiedzieli poprawnie!';
-      subtitle = 'Nikt nie odpada w tej rundzie.';
+    if (!revealResult) {
+      // Spinner still running — neutral placeholder
+      emoji       = '🎲';
+      title       = 'Trwa losowanie...';
+      subtitle    = 'Zaraz dowiemy się kto odpada.';
+      accentColor = Colors.amber;
+    } else if (eliminatedUid == null) {
+      emoji       = '✅';
+      title       = 'Wszyscy odpowiedzieli poprawnie!';
+      subtitle    = 'Nikt nie odpada w tej rundzie.';
       accentColor = Colors.green;
     } else if (isEliminated) {
-      emoji = '💀';
-      title = 'Odpadłeś!';
-      subtitle = result.lotteryOccurred
+      emoji       = '💀';
+      title       = 'Odpadłeś!';
+      subtitle    = result.lotteryOccurred
           ? 'Losowanie wybrało ciebie.'
           : 'Twoja odpowiedź była błędna.';
       accentColor = Colors.red;
     } else {
-      final name = result.eliminatedUsername ?? eliminatedUid;
-      emoji = '❌';
-      title = '$name odpada!';
-      subtitle = result.lotteryOccurred
+      final name  = result.eliminatedUsername ?? eliminatedUid;
+      emoji       = '❌';
+      title       = '$name odpada!';
+      subtitle    = result.lotteryOccurred
           ? 'Losowanie wybrało $name.'
           : 'Odpowiedź $name była błędna.';
       accentColor = Colors.orange;
     }
 
+    // ── Layout ─────────────────────────────────────────────────────────────────
     return Container(
       color: Colors.black.withOpacity(0.78),
       child: Center(
@@ -606,31 +629,68 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 48)),
+              // Emoji / icon
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  emoji,
+                  key: ValueKey(emoji),
+                  style: const TextStyle(fontSize: 48),
+                ),
+              ),
               const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: options.textColor,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+
+              // Title
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  title,
+                  key: ValueKey(title),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: options.textColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: options.textColor.withOpacity(0.65),
-                  fontSize: 14,
+
+              // Subtitle
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  subtitle,
+                  key: ValueKey(subtitle),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: options.textColor.withOpacity(0.65),
+                    fontSize: 14,
+                  ),
                 ),
               ),
-              if (result.lotteryOccurred && result.lotteryPool.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildLotteryPool(result, state),
+
+              // ── Lottery spinner ─────────────────────────────────────────────
+              if (showLottery) ...[
+                const SizedBox(height: 20),
+                LotteryWidget(
+                  // Key tied to the round index — preserves animation state
+                  // across parent rebuilds within the same resolving phase.
+                  key: ValueKey('lottery_${state.currentQuestionIndex}'),
+                  players: state.players
+                      .where((player) => result.lotteryPool.containsKey(player.uid))
+                      .toList(),
+                  eliminatedUid: eliminatedUid,
+                  animationLength: _lotteryAnimationLength,
+                  onAnimationComplete: () {
+                    if (mounted) setState(() => _lotteryRevealDone = true);
+                  },
+                ),
               ],
+
               const SizedBox(height: 20),
+
+              // "Next question" indicator
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

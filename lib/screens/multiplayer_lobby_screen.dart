@@ -136,15 +136,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           sessionRepository: _sessionRepo,
         );
 
-    AppRoute.instance.goToMultiplayer(options, gameService); //todo do testa czy dziala
-    // await Navigator.of(context).pushReplacement(
-    //   MaterialPageRoute(
-    //     builder: (_) => MultiplayerGameScreen(
-    //       options: options,
-    //       gameService: gameService,
-    //     ),
-    //   ),
-    // );
+    AppRoute.instance.goToMultiplayer(options, gameService);
   }
 
   Future<void> _onLeave() async {
@@ -154,7 +146,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     if (_phase == _LobbyPhase.connecting) {
       _leaveRequested = true;
       if (mounted) AppRoute.instance.goToMainMenu(options);
-      //Navigator.of(context).pop();
       return;
     }
 
@@ -167,7 +158,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     }
 
     if (mounted) AppRoute.instance.goToMainMenu(options);
-    // Navigator.of(context).pop();
   }
 
   @override

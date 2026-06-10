@@ -49,21 +49,25 @@ class LiveGameState {
 class PlayerLiveState {
   final String _uid;
   final String _username;
+  final String _profilePicture;
   final bool _isEliminated;
   final int _lotteryTickets;
 
   const PlayerLiveState({
     required String uid,
     required String username,
+    required String profilePicture,
     required bool isEliminated,
     required int lotteryTickets,
   })  : _uid = uid,
         _username = username,
+        _profilePicture = profilePicture,
         _isEliminated = isEliminated,
         _lotteryTickets = lotteryTickets;
 
   String get uid => _uid;
   String get username => _username;
+  String get profilePicture => _profilePicture;
   bool get isEliminated => _isEliminated;
   int get lotteryTickets => _lotteryTickets;
 }

@@ -235,17 +235,61 @@ async function resolveRound(
   const playersMap  = session.players || {};
   const activeUids  = Object.keys(playersMap).filter(uid => !playersMap[uid].isEliminated);
 
+  // Gdy zostało 1 lub 0 aktywnych graczy (np. po wyjściu gracza z gry),
+  // nie ma kogo eliminować — kończymy grę bez fazy 'resolving'.
+  // Dzięki temu pozostały gracz nie zobaczy fałszywego komunikatu "odpadłeś".
+  if (activeUids.length <= 1) {
+    const statsUpdates = {};
+    for (const uid of activeUids) {
+      statsUpdates[`players.${uid}.totalAnswers`] = FV.increment(1);
+      if (!incorrectUids.includes(uid)) {
+        statsUpdates[`players.${uid}.correctAnswers`] = FV.increment(1);
+      }
+    }
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(sessionRef);
+        const data = snap.data();
+        if (!data || data.phase !== 'answering') throw skip;
+        if (data.currentQuestionIndex !== roundIndex) throw skip;
+        const cSnap = await tx.get(counterRef);
+        if (cSnap.data()?.resolved === true) throw skip;
+        if (Object.keys(statsUpdates).length > 0) tx.update(sessionRef, statsUpdates);
+        tx.set(counterRef, { resolved: true }, { merge: true });
+      });
+    } catch (e) {
+      if (e === skip) return;
+      throw e;
+    }
+    await deleteAnswersForRound(sessionRef, roundIndex);
+    const freshSnap = await sessionRef.get();
+    const fresh     = freshSnap.data();
+    if (fresh && fresh.status === 'inProgress') {
+      await finishGame(sessionRef, fresh, { roundIndex, answerDetails: {}, isCorrectMap: {} });
+    }
+    return;
+  }
+
   let eliminatedUid   = null;
   let lotteryOccurred = false;
   let lotteryPool     = {}; // FIX: map<uid, ticketCount> zamiast string[]
 
   const incorrectActive = incorrectUids.filter(uid => activeUids.includes(uid));
 
-  if (incorrectActive.length === 1) {
-    eliminatedUid = incorrectActive[0];
-  } else if (incorrectActive.length > 1) {
+  if (incorrectActive.length === 0) {
+    // Wszyscy odpowiedzieli poprawnie — loteria wsrod wszystkich aktywnych graczy.
+    // Kazdy gracz ktory przezyje loterie dostanie +1 bilet (standardowa mechanika).
     lotteryOccurred = true;
-    // FIX: budowanie mapy {uid: ticketCount} zamiast przypisania tablicy
+    for (const uid of activeUids) {
+      lotteryPool[uid] = playersMap[uid]?.lotteryTickets || 0;
+    }
+    eliminatedUid = weightedRandom(
+      Object.entries(lotteryPool).map(([uid, tickets]) => ({ uid, lotteryTickets: tickets })),
+    );
+  } else if (incorrectActive.length === 1) {
+    eliminatedUid = incorrectActive[0];
+  } else {
+    lotteryOccurred = true;
     for (const uid of incorrectActive) {
       lotteryPool[uid] = playersMap[uid]?.lotteryTickets || 0;
     }

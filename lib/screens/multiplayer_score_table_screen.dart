@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
@@ -242,7 +243,7 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
           ),
           onPressed: () {
             // Pop back to main menu (or however many screens are in the stack).
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            AppRoute.instance.goToMainMenu(options);
           },
           child: const Text(
             'Menu główne',
