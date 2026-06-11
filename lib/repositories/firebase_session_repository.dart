@@ -98,6 +98,7 @@ class FirebaseSessionRepository {
           'playerUids': FieldValue.arrayRemove([uid]),
           'players.$uid.isEliminated': true,
           'players.$uid.eliminationRound': currentRound,
+          'players.$uid.voluntaryExit': true,
           'activePlayerCount': FieldValue.increment(-1),
         });
       }

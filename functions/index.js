@@ -81,6 +81,19 @@ async function deleteSubcollectionDocs(colRef) {
   await batch.commit();
 }
 
+/**
+ * Zlicza ile kolejnych rund z konca tablicy rounds mialo eliminatedUid === null
+ * (wszyscy odpowiedzieli poprawnie). Uzywane do wykrycia serii 3 z rzedu.
+ */
+function countAllCorrectStreak(rounds) {
+  let streak = 0;
+  for (let i = (rounds || []).length - 1; i >= 0; i--) {
+    if (rounds[i].eliminatedUid == null) streak++;
+    else break;
+  }
+  return streak;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // enqueueRoundTimeout — planuje Cloud Task po ROUND_TIMEOUT_MS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -239,6 +252,9 @@ async function resolveRound(
   // nie ma kogo eliminować — kończymy grę bez fazy 'resolving'.
   // Dzięki temu pozostały gracz nie zobaczy fałszywego komunikatu "odpadłeś".
   if (activeUids.length <= 1) {
+    // Zostal 1 lub 0 aktywnych graczy (np. po wyjsciu gracza z gry).
+    // Idziemy przez faze 'resolving' z opponentLeft: true, zeby klient mogl
+    // wyswietlic komunikat "Twoj przeciwnik opuscil gre. Wygrales!".
     const statsUpdates = {};
     for (const uid of activeUids) {
       statsUpdates[`players.${uid}.totalAnswers`] = FV.increment(1);
@@ -254,7 +270,17 @@ async function resolveRound(
         if (data.currentQuestionIndex !== roundIndex) throw skip;
         const cSnap = await tx.get(counterRef);
         if (cSnap.data()?.resolved === true) throw skip;
-        if (Object.keys(statsUpdates).length > 0) tx.update(sessionRef, statsUpdates);
+        tx.update(sessionRef, {
+          ...statsUpdates,
+          phase: 'resolving',
+          lastRoundResult: {
+            eliminatedUid:      null,
+            eliminatedUsername: null,
+            lotteryOccurred:    false,
+            lotteryPool:        {},
+            opponentLeft:       true,
+          },
+        });
         tx.set(counterRef, { resolved: true }, { merge: true });
       });
     } catch (e) {
@@ -262,6 +288,7 @@ async function resolveRound(
       throw e;
     }
     await deleteAnswersForRound(sessionRef, roundIndex);
+    await new Promise(r => setTimeout(r, RESOLVE_DISPLAY_MS));
     const freshSnap = await sessionRef.get();
     const fresh     = freshSnap.data();
     if (fresh && fresh.status === 'inProgress') {
@@ -277,15 +304,23 @@ async function resolveRound(
   const incorrectActive = incorrectUids.filter(uid => activeUids.includes(uid));
 
   if (incorrectActive.length === 0) {
-    // Wszyscy odpowiedzieli poprawnie — loteria wsrod wszystkich aktywnych graczy.
-    // Kazdy gracz ktory przezyje loterie dostanie +1 bilet (standardowa mechanika).
-    lotteryOccurred = true;
-    for (const uid of activeUids) {
-      lotteryPool[uid] = playersMap[uid]?.lotteryTickets || 0;
+    // Wszyscy odpowiedzieli poprawnie — sprawdz serie.
+    // Loteria odpala sie dopiero po 3 kolejnych rundach bez zadnej blednej odpowiedzi.
+    // Streak jest implicite zakodowany w session.rounds: liczba konowych rekordow
+    // z eliminatedUid === null.
+    const streak = countAllCorrectStreak(session.rounds);
+    if (streak + 1 >= 3) {
+      // Trzecia runda z rzedu bez bledu — loteria wsrod wszystkich aktywnych graczy.
+      // Kazdy ktory przezye dostanie +1 bilet (standardowa mechanika).
+      lotteryOccurred = true;
+      for (const uid of activeUids) {
+        lotteryPool[uid] = playersMap[uid]?.lotteryTickets || 0;
+      }
+      eliminatedUid = weightedRandom(
+        Object.entries(lotteryPool).map(([uid, tickets]) => ({ uid, lotteryTickets: tickets })),
+      );
     }
-    eliminatedUid = weightedRandom(
-      Object.entries(lotteryPool).map(([uid, tickets]) => ({ uid, lotteryTickets: tickets })),
-    );
+    // streak < 2: eliminatedUid zostaje null, runda przechodzi bez eliminacji
   } else if (incorrectActive.length === 1) {
     eliminatedUid = incorrectActive[0];
   } else {
@@ -440,7 +475,11 @@ async function buildArchive(sessionId, session, lastRoundEnrichment) {
     if (a.eliminationRound == null && b.eliminationRound == null) return 0;
     if (a.eliminationRound == null) return -1;
     if (b.eliminationRound == null) return  1;
-    return b.eliminationRound - a.eliminationRound;
+    if (a.eliminationRound !== b.eliminationRound) return b.eliminationRound - a.eliminationRound;
+    // Ta sama runda: dobrowolne wyjscie (voluntaryExit) rankuje nizej niz formalna eliminacja
+    if (a.voluntaryExit && !b.voluntaryExit) return  1;
+    if (!a.voluntaryExit && b.voluntaryExit) return -1;
+    return 0;
   });
 
   const playerResults = sorted.map(([uid, p], i) => ({

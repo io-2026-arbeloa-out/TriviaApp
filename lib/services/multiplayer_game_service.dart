@@ -92,7 +92,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
       return PlayerLiveState(
         uid: entry.key,
         username: p['username'] as String,
-        profilePicture: p['profilePicture'] as String,
+        profilePicture: p['profilePicture'] as String? ?? 'defaultAvatar.png',
         isEliminated: p['isEliminated'] as bool,
         lotteryTickets: p['lotteryTickets'] as int,
       );
@@ -108,6 +108,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
           eliminatedUsername: r['eliminatedUsername'] as String?,
           lotteryOccurred: r['lotteryOccurred'] as bool,
           lotteryPool: Map<String, int>.from(r['lotteryPool'] as Map? ?? {}),
+          opponentLeft: r['opponentLeft'] as bool? ?? false,
         );
       } else {
         throw StateError('Last round result not found');

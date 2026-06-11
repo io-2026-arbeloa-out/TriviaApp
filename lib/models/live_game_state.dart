@@ -79,21 +79,28 @@ class RoundResult {
   final String? _eliminatedUsername;
   final bool _lotteryOccurred;
 
-  /// uid → number of tickets
+  /// uid -> number of tickets
   final Map<String, int> _lotteryPool;
+
+  /// true when the round ended because an opponent left the game,
+  /// not due to a normal elimination.
+  final bool _opponentLeft;
 
   const RoundResult({
     required String? eliminatedUid,
     required String? eliminatedUsername,
     required bool lotteryOccurred,
-    required  Map<String, int> lotteryPool,
+    required Map<String, int> lotteryPool,
+    bool opponentLeft = false,
   })  : _eliminatedUid = eliminatedUid,
         _eliminatedUsername = eliminatedUsername,
         _lotteryOccurred = lotteryOccurred,
-        _lotteryPool = lotteryPool;
+        _lotteryPool = lotteryPool,
+        _opponentLeft = opponentLeft;
 
   String? get eliminatedUid => _eliminatedUid;
   String? get eliminatedUsername => _eliminatedUsername;
   bool get lotteryOccurred => _lotteryOccurred;
   Map<String, int> get lotteryPool => _lotteryPool;
+  bool get opponentLeft => _opponentLeft;
 }

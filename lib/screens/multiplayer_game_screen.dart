@@ -51,6 +51,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   int _displayedQuestionIndex = -1;
 
+  RoundResult? _cachedRoundResult;
+
   //animation
   static const Duration _lotteryAnimationLength = Duration(seconds: 4);
   bool _lotteryRevealDone = false;
@@ -123,6 +125,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     } else {
       _resolvingSince = null;
       _resolvingStuckNotified = false;
+    }
+
+    if (state.lastRoundResult != null) {
+      _cachedRoundResult = state.lastRoundResult;
     }
 
     setState(() {
@@ -315,7 +321,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             _buildBottomBar(state),
           ],
         ),
-        if (_uiPhase == _UIPhase.resolving) _buildResolvingOverlay(state),
+        if (_uiPhase == _UIPhase.resolving ||
+            (_uiPhase == _UIPhase.finished && _cachedRoundResult != null))
+          _buildResolvingOverlay(state),
       ],
     );
   }
@@ -354,7 +362,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${state.activeCount} graczy',
+              '${state.activeCount} ${state.activeCount == 1 ? 'gracz' : 'graczy'}',
               style: TextStyle(
                 color: options.textColor.withOpacity(0.7),
                 fontSize: 12,
@@ -564,7 +572,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   // ── Resolving overlay ─────────────────────────────────────────────────────
 
   Widget _buildResolvingOverlay(LiveGameState state) {
-    final result = state.lastRoundResult;
+    // Fallback na cache — overlay pozostaje widoczny podczas przejscia do wynikow
+    final result = state.lastRoundResult ?? _cachedRoundResult;
     if (result == null) return const SizedBox.shrink();
 
     final eliminatedUid = result.eliminatedUid;
@@ -583,7 +592,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     final String subtitle;
     final Color  accentColor;
 
-    if (!revealResult) {
+    if (result.opponentLeft) {
+      // Gra zakonczona bo przeciwnik wyszedl — pozostaly gracz wygrywa
+      emoji       = '🏆';
+      title       = 'Wygrałeś!';
+      subtitle    = 'Twój przeciwnik opuścił grę.';
+      accentColor = Colors.green;
+    } else if (!revealResult) {
       // Spinner still running — neutral placeholder
       emoji       = '🎲';
       title       = 'Trwa losowanie...';
@@ -704,7 +719,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Kolejne pytanie za chwilę...',
+                    _uiPhase == _UIPhase.finished
+                        ? 'Ładowanie wyników...'
+                        : 'Kolejne pytanie za chwilę...',
                     style: TextStyle(
                       color: options.textColor.withOpacity(0.4),
                       fontSize: 12,
@@ -716,46 +733,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLotteryPool(
-      RoundResult result,
-      LiveGameState state,
-      ) {
-    return Column(
-      children: [
-        Divider(color: options.textColor.withOpacity(0.15)),
-        const SizedBox(height: 8),
-        Text(
-          '🎲 Pula losowania',
-          style: TextStyle(
-            color: options.textColor.withOpacity(0.7),
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 6),
-        ...result.lotteryPool.entries.map((entry) {
-          final uid = entry.key;
-          final tickets = entry.value + 1; // +1 because tickets are incremented AFTER round resolution
-          final player = state.players.where((p) => p.uid == uid).firstOrNull;
-          final name = player?.username ?? uid;
-          final isEliminated = uid == result.eliminatedUid;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text(
-              '${isEliminated ? "💀 " : ""}$name — $tickets piłeczek',
-              style: TextStyle(
-                color: isEliminated
-                    ? Colors.red.shade300
-                    : options.textColor.withOpacity(0.6),
-                fontSize: 12,
-              ),
-            ),
-          );
-        }),
-      ],
     );
   }
 }
