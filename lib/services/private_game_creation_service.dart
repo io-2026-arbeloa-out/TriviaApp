@@ -1,6 +1,6 @@
 /*
 import 'package:triviaapp/interfaces/i_private_game_creation_service.dart';
-import 'package:triviaapp/models/private_game_options.dart';
+import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 

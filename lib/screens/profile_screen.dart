@@ -357,6 +357,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
           _buildStatCard(context, 'Wygrane gry rankingowe',
               '${_profileData?.rankedGamesWon ?? 0}'),
+          const SizedBox(height: 8),
+          _buildStatCard(context, 'Punkty rankingowe',
+              '${_profileData?.ratingPoints ?? 0}'),
           const SizedBox(height: 24),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

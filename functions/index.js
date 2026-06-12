@@ -447,6 +447,31 @@ async function resolveRound(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// updatePlayerStats — increments per-user counters after a game ends
+// ─────────────────────────────────────────────────────────────────────────────
+async function updatePlayerStats(session, playerResults) {
+  const isRanked = (session.mode || '') === 'ranked';
+  const batch    = db.batch();
+
+  for (const player of playerResults) {
+    const userRef = db.collection('users').doc(player.uid);
+    const updates = {
+      totalQuestionsAnswered: FV.increment(player.totalAnswers   || 0),
+      correctAnswers:         FV.increment(player.correctAnswers || 0),
+    };
+    if (isRanked) {
+      updates.rankedGamesPlayed = FV.increment(1);
+      if (player.placement === 1) {
+        updates.rankedGamesWon = FV.increment(1);
+      }
+    }
+    batch.update(userRef, updates);
+  }
+
+  await batch.commit();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // finishGame + buildArchive
 // ─────────────────────────────────────────────────────────────────────────────
 async function finishGame(sessionRef, sessionData, lastRoundEnrichment) {
@@ -466,6 +491,11 @@ async function finishGame(sessionRef, sessionData, lastRoundEnrichment) {
   }
 
   await buildArchive(sessionRef.id, sessionData, lastRoundEnrichment);
+
+  // Remove the live session document after it has been safely archived.
+  await deleteSubcollectionDocs(sessionRef.collection('answers'));
+  await deleteSubcollectionDocs(sessionRef.collection('roundCounters'));
+  await sessionRef.delete();
 }
 
 async function buildArchive(sessionId, session, lastRoundEnrichment) {
@@ -524,6 +554,8 @@ async function buildArchive(sessionId, session, lastRoundEnrichment) {
     playerResults,
     rounds,
   });
+
+  await updatePlayerStats(session, playerResults);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

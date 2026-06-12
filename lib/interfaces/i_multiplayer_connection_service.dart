@@ -1,9 +1,10 @@
+import 'package:triviaapp/models/online_game_options.dart';
+
 abstract class IMultiplayerConnectionService {
   Future<String> connectPlayer({
     required String uid,
     required String username,
-    required String categoryId,
-    required int maxPlayers,
+    required OnlineGameOptions settings,
   });
 
   Future<void> disconnectPlayer({

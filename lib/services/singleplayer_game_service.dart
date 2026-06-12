@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:triviaapp/interfaces/i_singleplayer_game_service.dart';
+import 'package:triviaapp/models/difficulty.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/question_type.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
@@ -26,6 +27,7 @@ class SingleplayerGameService implements ISingleplayerGameService {
       limit: options.numQuestions,
       category: category,
       questionTypes: options.gameQuestionType.toQuestionTypes(),
+      difficulty: Difficulty.random,
     );
   }
 

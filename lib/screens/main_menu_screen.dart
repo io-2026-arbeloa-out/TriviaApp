@@ -2,8 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/audio_manager.dart';
+import 'package:triviaapp/models/difficulty.dart';
+import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/screens/multiplayer_lobby_screen.dart';
+import 'package:triviaapp/screens/private_lobby_screen.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 import 'package:triviaapp/widgets/login_register_pop_up.dart';
 
@@ -12,8 +15,9 @@ class MainMenuScreen extends StatefulWidget {
     super.key,
     UIOptions? options,
     bool Function()? authChecker,
-  }) : _authChecker = authChecker ?? (() => FirebaseAuth.instance.currentUser != null),
-       _options = options ?? UIOptions();
+  }) : _authChecker =
+      authChecker ?? (() => FirebaseAuth.instance.currentUser != null),
+        _options = options ?? UIOptions();
 
   final UIOptions _options;
   final bool Function() _authChecker;
@@ -26,7 +30,6 @@ class MainMenuScreen extends StatefulWidget {
 }
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
-
   bool _popupDismissed = false;
 
   bool get _showPopup => !widget.authChecker() && !_popupDismissed;
@@ -34,11 +37,106 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   void initState() {
     super.initState();
-    //AudioManager.instance.playMusicForScreen(AppRoute.mainMenuScreen); //todo jedna z opcji ale szkoda gadac
+    //AudioManager.instance.playMusicForScreen(AppRoute.mainMenuScreen);
   }
 
   void _onPopupClose() {
     setState(() => _popupDismissed = true);
+  }
+
+  void _showJoinDialog() {
+    final controller = TextEditingController();
+    String? errorText;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: widget.options.secondaryColor,
+          title: Text(
+            'Dołącz do gry',
+            style: TextStyle(
+              color: widget.options.textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            style: TextStyle(color: widget.options.textColor),
+            cursorColor: widget.options.textColor,
+            decoration: InputDecoration(
+              labelText: 'Kod pokoju',
+              labelStyle: TextStyle(
+                color: widget.options.textColor.withOpacity(0.7),
+              ),
+              errorText: errorText,
+              counterStyle: TextStyle(
+                color: widget.options.textColor.withOpacity(0.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: widget.options.textColor.withOpacity(0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: widget.options.textColor),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.red),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                'Anuluj',
+                style: TextStyle(
+                  color: widget.options.textColor.withOpacity(0.7),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                final text = controller.text.trim();
+                final code = int.tryParse(text);
+                if (code == null || text.length != 6) {
+                  setDialogState(
+                        () => errorText = 'Wpisz prawidłowy 6-cyfrowy kod',
+                  );
+                  return;
+                }
+                Navigator.of(ctx).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PrivateLobbyScreen(
+                      options: widget.options,
+                      code: code,
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'Dołącz',
+                style: TextStyle(
+                  color: widget.options.mainButtonColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -106,14 +204,29 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: () {
-                          /*AppRoute.instance.goToSingleplayer(
-                              'general',
-                              widget.options
-                          );*///todo zmiana na private game
-                        },
+                        onPressed: _showJoinDialog,
                         child: const Text(
-                          'Singleplayer',
+                          'Dołącz do gry',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: 220,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.options.mainButtonColor,
+                          foregroundColor: widget.options.textColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () =>
+                            AppRoute.instance.goToGameOptions(widget.options),
+                        child: const Text(
+                          'Utwórz grę',
                           style: TextStyle(fontSize: 16),
                         ),
                       ),
@@ -134,15 +247,21 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
                               builder: (_) => MultiplayerLobbyScreen(
-                                uid: FirebaseAuth.instance.currentUser?.uid ?? 'uid1',
-                                username: FirebaseAuth.instance.currentUser?.displayName ?? 'test',
-                                categoryId: 'general',
-                                maxPlayers: 2,
+                                uid: FirebaseAuth.instance.currentUser?.uid ??
+                                    'uid1',
+                                username:
+                                FirebaseAuth.instance.currentUser
+                                    ?.displayName ??
+                                    'test',
+                                settings: const OnlineGameOptions(
+                                  categoryId: 'general',
+                                  maxPlayers: 2,//todo
+                                  difficulty: Difficulty.random,
+                                ),
                                 options: widget.options,
                               ),
                             ),
                           );
-                          // TODO: przejście do trybu multiplayer
                         },
                         child: const Text(
                           'Multiplayer',
@@ -157,23 +276,23 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           ),
         ),
       ),
-        bottomNavigationBar: Container(
-          color: widget.options.secondaryColor,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_showPopup)
-                LoginRegisterPopUp(
-                  options: widget.options,
-                  onClose: _onPopupClose,
-                ),
-              AppBottomNavigationBar(
-                currentIndex: 1,
+      bottomNavigationBar: Container(
+        color: widget.options.secondaryColor,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_showPopup)
+              LoginRegisterPopUp(
                 options: widget.options,
+                onClose: _onPopupClose,
               ),
-            ],
-          ),
+            AppBottomNavigationBar(
+              currentIndex: 1,
+              options: widget.options,
+            ),
+          ],
         ),
+      ),
     );
   }
 }

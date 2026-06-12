@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:triviaapp/models/difficulty.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/question_type.dart';
 
@@ -13,6 +14,7 @@ class FirebaseQuestionRepository {
     required int limit,
     required String category,
     required List<QuestionType> questionTypes,
+    required Difficulty difficulty,
   }) async {
     final ref = _database.ref('$category/questions');
     final snapshot = await ref.get();
@@ -35,9 +37,10 @@ class FirebaseQuestionRepository {
         orElse: () => QuestionType.values.first,
       );
 
-      if (questionTypes.contains(type)) {
-        validIndexes.add(i);
-      }
+      if (!questionTypes.contains(type)) continue;
+      if (difficulty != Difficulty.random && value['difficulty'] != difficulty.name) continue;
+
+      validIndexes.add(i);
     }
 
     if (validIndexes.isEmpty) return [];

@@ -2,7 +2,8 @@ enum Difficulty{
   easy,
   medium,
   hard,
-  impossible;
+  impossible,
+  random;
 
   static Difficulty fromJson(String? json) {
     if (json == null) return Difficulty.medium; // wartość domyślna

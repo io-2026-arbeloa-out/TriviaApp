@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
+import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 import 'package:triviaapp/services/multiplayer_connection_service.dart';
@@ -12,24 +13,22 @@ import 'package:triviaapp/services/multiplayer_game_service.dart';
 enum _LobbyPhase { connecting, waiting, error }
 
 class MultiplayerLobbyScreen extends StatefulWidget {
-  final UIOptions options;
-  final String uid;
-  final String username;
-  final String categoryId;
-  final int maxPlayers;
-  final IMultiplayerConnectionService? connectionService;
-  final IMultiplayerGameService? gameService;
-
   const MultiplayerLobbyScreen({
     super.key,
     required this.uid,
     required this.username,
-    required this.categoryId,
-    required this.maxPlayers,
+    required this.settings,
     UIOptions? options,
     this.connectionService,
     this.gameService,
   }) : options = options ?? const UIOptions();
+
+  final String uid;
+  final String username;
+  final OnlineGameOptions settings;
+  final UIOptions options;
+  final IMultiplayerConnectionService? connectionService;
+  final IMultiplayerGameService? gameService;
 
   @override
   State<MultiplayerLobbyScreen> createState() =>
@@ -52,16 +51,18 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   @override
   void initState() {
     super.initState();
-
     _sessionRepo = FirebaseSessionRepository();
-    _connectionService = widget.connectionService ?? MultiplayerConnectionService();
+    _connectionService =
+        widget.connectionService ?? MultiplayerConnectionService();
     _connect();
   }
 
   @override
   void dispose() {
     _sessionSub?.cancel();
-    if (_phase == _LobbyPhase.waiting && _sessionId != null && !_leaveRequested) {
+    if (_phase == _LobbyPhase.waiting &&
+        _sessionId != null &&
+        !_leaveRequested) {
       unawaited(
         _connectionService
             .disconnectPlayer(sessionId: _sessionId!, uid: widget.uid)
@@ -76,8 +77,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       final sessionId = await _connectionService.connectPlayer(
         uid: widget.uid,
         username: widget.username,
-        categoryId: widget.categoryId,
-        maxPlayers: widget.maxPlayers,
+        settings: widget.settings,
       );
 
       if (_leaveRequested) {
@@ -127,7 +127,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     );
   }
 
-  Future<void> _onGameStarted(String sessionId) async {
+  void _onGameStarted(String sessionId) {
     if (!mounted) return;
 
     final gameService = widget.gameService ??
@@ -211,8 +211,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         const SizedBox(height: 24),
         if (!isConnecting && _sessionId != null) ...[
           Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
               color: options.secondaryColor.withOpacity(0.4),
               borderRadius: BorderRadius.circular(12),
@@ -220,9 +219,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
             child: Column(
               children: [
                 Text(
-                  '$_currentPlayerCount / ${widget.maxPlayers}',
-                  style:
-                  Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  '$_currentPlayerCount / ${widget.settings.maxPlayers}',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: options.textColor,
                     fontWeight: FontWeight.bold,
                   ),
@@ -242,7 +240,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           Text(
             'Kod sesji: ${_sessionId!.substring(0, 6).toUpperCase()}',
             style: TextStyle(
-                color: options.textColor.withOpacity(0.5), fontSize: 12),
+              color: options.textColor.withOpacity(0.5),
+              fontSize: 12,
+            ),
           ),
         ],
         const SizedBox(height: 32),
@@ -256,7 +256,6 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
       ],
     );
   }
-
 
   Widget _buildError() {
     return Column(
