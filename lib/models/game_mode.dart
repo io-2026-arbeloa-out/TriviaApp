@@ -1,7 +1,8 @@
 enum GameMode {
   ranked,
   private,
-  singleplayer;
+  singleplayer,
+  casual;
 
   static GameMode fromJson(String? json) {
     if (json == null) return GameMode.singleplayer; // wartość domyślna

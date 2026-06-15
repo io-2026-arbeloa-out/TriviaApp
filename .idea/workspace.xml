@@ -9,25 +9,37 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="Odpowiednie przejście między rundami oraz fixy UI">
+    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza">
+      <change afterPath="$PROJECT_DIR$/test/modele/live_game_state_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/modele/multiplayer_session_data_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/modele/session_status_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/repositories/firebase_question_repository_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/repositories/firebase_session_repository_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/services/multiplayer_connection_service_test.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/services/multiplayer_game_service_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/functions/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_game_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_game_options_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_multiplayer_connection_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_multiplayer_connection_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/interfaces/i_private_game_creation_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/interfaces/i_private_game_creation_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/difficulty.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/difficulty.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/private_game_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/online_game_options.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/game_mode.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/game_mode.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/game_question_type.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/question.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/question_type.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question_type.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/models/singleplayer_game_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/singleplayer_game_options.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_question_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_question_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_session_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/main_menu_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/multiplayer_lobby_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/multiplayer_lobby_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/private_game_options_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/private_game_options_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/private_lobby_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/private_lobby_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/profile_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/profile_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/game_options_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/game_options_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/multiplayer_connection_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/multiplayer_connection_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/private_game_creation_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/private_game_creation_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/multiplayer_game_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/multiplayer_game_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/singleplayer_game_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/singleplayer_game_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/screens/singleplayer_options_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/singleplayer_options_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/services/singleplayer_game_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/singleplayer_game_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/modele/singleplayer_game_options_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/modele/singleplayer_game_options_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/repositories/firebase_auth_repository_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/repositories/firebase_auth_repository_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/repositories/firebase_options_repository_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/repositories/firebase_options_repository_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/services/options_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/services/options_services_test.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/services/singleplayer_game_screen_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/services/singleplayer_game_service_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/unimplemented/multiplayer_services_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/unimplemented/private_game_services_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/unimplemented/profile_leaderboard_achievements_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/unimplemented/quiz_and_question_services_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/unimplemented/score_table_service_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/unimplemented/singleplayer_service_test.dart" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/triviaapp.iml" beforeDir="false" afterPath="$PROJECT_DIR$/triviaapp.iml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -114,10 +126,10 @@
       <recent name="C:\TriviaApp\android\app" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\TriviaApp\test\modele" />
-      <recent name="C:\TriviaApp\test\services" />
-      <recent name="C:\TriviaApp\test\screens" />
       <recent name="C:\TriviaApp\test\repositories" />
+      <recent name="C:\TriviaApp\test\services" />
+      <recent name="C:\TriviaApp\test\modele" />
+      <recent name="C:\TriviaApp\test\screens" />
       <recent name="C:\TriviaApp\test\unimplemented" />
     </key>
   </component>
@@ -341,7 +353,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781170337477</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza">
+      <option name="closed" value="true" />
+      <created>1781285538232</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1781285538232</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -392,6 +412,7 @@
     <MESSAGE value="Debug multiplayer mode v1 (advancing to next round)" />
     <MESSAGE value="Animacja loterii" />
     <MESSAGE value="Odpowiednie przejście między rundami oraz fixy UI" />
-    <option name="LAST_COMMIT_MESSAGE" value="Odpowiednie przejście między rundami oraz fixy UI" />
+    <MESSAGE value="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza" />
+    <option name="LAST_COMMIT_MESSAGE" value="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza" />
   </component>
 </project>

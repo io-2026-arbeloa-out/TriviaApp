@@ -401,7 +401,6 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
 
   Widget _buildAnswerGrid(Question question) {
     final answers = _questionState.answers;
-    final isBool = question.type == question.type; // always 2 cols
     final crossCount = 2;
 
     return GridView.builder(
@@ -423,7 +422,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
     final inFeedback = _phase == _Phase.feedback;
     final isCorrectAnswer = question.correctAnswers.any(
           (c) => c.trim().toLowerCase() ==
-          _toDbValue(answer).trim().toLowerCase(),
+          answer.trim().toLowerCase(),
     );
 
     Color bgColor = options.secondaryColor.withOpacity(0.3);
@@ -474,7 +473,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   Widget _buildFeedbackBar(BuildContext context) {
     final isCorrect = _questionState.isCorrect ?? false;
     final correctAnswer = _phase == _Phase.feedback
-        ? _fromDbValue(_questions[_currentIndex].correctAnswers.first)
+        ? _questions[_currentIndex].correctAnswers.first
         : '';
 
     return Container(
@@ -537,16 +536,4 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       ),
     );
   }
-
-  String _toDbValue(String answer) => switch (answer) {
-    'Prawda' => 'True',
-    'Fałsz' => 'False',
-    _ => answer,
-  };
-
-  String _fromDbValue(String answer) => switch (answer) {
-    'True' => 'Prawda',
-    'False' => 'Fałsz',
-    _ => answer,
-  };
 }

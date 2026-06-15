@@ -138,12 +138,20 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     if (_uiPhase == _UIPhase.finished && !_fetchingResults) {
       _fetchingResults = true;
+      // Cancel immediately — the CF deletes the session document after
+      // archiving. Without this the deletion triggers onError on the
+      // still-active stream, producing a spurious 'session not found' snackbar.
+      _subscription?.cancel();
+      _subscription = null;
       _navigateToResults();
     }
   }
 
   void _onStreamError(Object error) {
     if (!mounted) return;
+    // If we already received the finished status and cancelled the subscription,
+    // a deletion event may still arrive before the cancel propagates. Ignore it.
+    if (_fetchingResults) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Błąd połączenia: $error')),
     );

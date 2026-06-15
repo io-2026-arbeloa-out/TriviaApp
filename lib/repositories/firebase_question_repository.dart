@@ -16,21 +16,18 @@ class FirebaseQuestionRepository {
     required List<QuestionType> questionTypes,
     required Difficulty difficulty,
   }) async {
-    final ref = _database.ref('$category/questions');
+    final ref = _database.ref('questions/$category');
     final snapshot = await ref.get();
 
     if (!snapshot.exists || snapshot.value == null) return [];
 
-    final List raw = snapshot.value as List;
     final random = Random();
+    final List<({String id, Map<String, dynamic> value})> validItems = [];
 
-    final List<int> validIndexes = [];
+    for (final child in snapshot.children) {
+      if (child.value == null || child.value is! Map) continue;
 
-    for (int i = 0; i < raw.length; i++) {
-      final item = raw[i];
-      if (item == null || item is! Map) continue;
-
-      final value = Map<String, dynamic>.from(item);
+      final value = Map<String, dynamic>.from(child.value as Map);
 
       final type = QuestionType.values.firstWhere(
             (e) => e.name == value['type'],
@@ -38,28 +35,24 @@ class FirebaseQuestionRepository {
       );
 
       if (!questionTypes.contains(type)) continue;
-      if (difficulty != Difficulty.random && value['difficulty'] != difficulty.name) continue;
+      if (difficulty != Difficulty.random &&
+          value['difficulty'] != difficulty.name) continue;
 
-      validIndexes.add(i);
+      validItems.add((id: child.key!, value: value));
     }
 
-    if (validIndexes.isEmpty) return [];
+    if (validItems.isEmpty) return [];
 
-    validIndexes.shuffle(random);
-    final selectedIndexes = validIndexes.take(limit);
+    validItems.shuffle(random);
+    final selected = validItems.take(limit);
 
-    final List<Question> questions = [];
-
-    for (final i in selectedIndexes) {
-      final value = Map<String, dynamic>.from(raw[i]);
-      questions.add(Question.fromJson({
-        'id': i.toString(),
+    return selected.map((item) {
+      return Question.fromJson({
+        'id': item.id,
         'category': category,
-        ...value,
-      }));
-    }
-
-    return questions;
+        ...item.value,
+      });
+    }).toList();
   }
 
   /// Fetches specific questions by their index-based IDs.
@@ -71,7 +64,7 @@ class FirebaseQuestionRepository {
   }) async {
     if (ids.isEmpty) return [];
 
-    final ref = _database.ref('$category/questions');
+    final ref = _database.ref('questions/$category');
     final snapshot = await ref.get();
 
     if (!snapshot.exists || snapshot.value == null) return [];

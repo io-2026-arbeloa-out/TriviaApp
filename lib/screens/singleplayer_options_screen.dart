@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
-import 'package:triviaapp/models/game_question_type.dart';
+import 'package:triviaapp/models/question_type.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
 import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
@@ -30,25 +30,25 @@ class _SingleplayerOptionsScreenState
 
   static const List<int> _numQuestionChoices = [10, 15, 20];
   static const List<int> _timeChoices = [0, 15, 20, 30]; // 0 = brak limitu
-  static const List<GameQuestionType> _gameQuestionTypes = GameQuestionType.values;
+  static const List<QuestionType> _questionTypes = QuestionType.values;
 
   String _timeLabel(int seconds) {
     if (seconds == 0) return 'Brak limitu';
     return '${seconds}s';
   }
 
-  String _typeLabel(GameQuestionType? type) {
+  String _typeLabel(QuestionType? type) {
     if (type == null) return 'Mieszane';
     switch (type) {
-      case GameQuestionType.boolean:
+      case QuestionType.true_false:
         return 'Prawda / Fałsz';
-      case GameQuestionType.closed4:
-        return 'Zamknięte, 4 opcje';
-      case GameQuestionType.closed6:
-        return 'Zamknięte, 6 opcji';
-      case GameQuestionType.open:
+      case QuestionType.open4:
+        return '4 opcje';
+      case QuestionType.open6:
+        return '6 opcji';
+      case QuestionType.open:
         return 'Otwarte';
-      case GameQuestionType.mixed:
+      case QuestionType.mixed:
         return 'Mieszane';
     }
   }
@@ -120,13 +120,13 @@ class _SingleplayerOptionsScreenState
                         _buildSection(
                           context,
                           label: 'Typ pytań',
-                          children: _gameQuestionTypes
+                          children: _questionTypes
                               .map((type) => _buildChip(
                             label: _typeLabel(type),
-                            selected: _gameOptions.gameQuestionType == type,
+                            selected: _gameOptions.questionType == type,
                             onTap: () => setState(() {
                               _gameOptions = _gameOptions.copyWith(
-                                  gameQuestionType: type);
+                                  questionType: type);
                             }),
                           ))
                               .toList(),

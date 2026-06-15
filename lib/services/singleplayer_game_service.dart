@@ -26,14 +26,14 @@ class SingleplayerGameService implements ISingleplayerGameService {
     return _questionRepository.getQuestions(
       limit: options.numQuestions,
       category: category,
-      questionTypes: options.gameQuestionType.toQuestionTypes(),
+      questionTypes: options.questionType.toList(),
       difficulty: Difficulty.random,
     );
   }
 
   @override
   List<String> getAnswerOptions(Question question) {
-    if (question.type == QuestionType.boolean) {
+    if (question.type == QuestionType.true_false) {
       return ['Prawda', 'Fałsz'];
     }
     final opts = [
@@ -46,13 +46,7 @@ class SingleplayerGameService implements ISingleplayerGameService {
 
   @override
   bool checkAnswer(Question question, String answer) {
-    // Tłumaczenie odpowiedzi gracza z polskiego na angielski (wartości w bazie)
-    final translated = switch (answer.trim()) {
-      'Prawda' => 'True',
-      'Fałsz' => 'False',
-      final a => a,
-    };
-    final normalised = translated.toLowerCase();
+    final normalised = answer.toLowerCase();
     return question.correctAnswers.any(
           (correct) => correct.trim().toLowerCase() == normalised,
     );

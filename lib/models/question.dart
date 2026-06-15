@@ -6,7 +6,6 @@ import 'package:triviaapp/models/question_type.dart';
 class Question {
   final String _id;
   final String _text;
-  final String _category;
   final Set<String> _correctAnswers;
   final Set<String>? _wrongAnswers;
   final QuestionType _type;
@@ -15,7 +14,6 @@ class Question {
   const Question({
     required String id,
     required String text,
-    required String category,
     required Set<String> correctAnswers,
     Set<String>? wrongAnswers,
     required QuestionType type,
@@ -24,7 +22,6 @@ class Question {
         _type = type,
         _id = id,
         _text = text,
-        _category = category,
         _correctAnswers = correctAnswers,
         _wrongAnswers = wrongAnswers;
 
@@ -32,7 +29,6 @@ class Question {
     return Question(
       id: json['id'] as String,
       text: json['text'] as String,
-      category: json['category'] as String,
       correctAnswers: Set<String>.from(json['correctAnswers'] as List),
       wrongAnswers: Set<String>.from(json['wrongAnswers'] as List),
       type: QuestionType.fromJson(json['type'] as String?),
@@ -44,7 +40,6 @@ class Question {
     return {
       'id': id,
       'text': text,
-      'category': category,
       'correctAnswers': correctAnswers.toList(),
       'wrongAnswers': wrongAnswers?.toList(),
       'type': type.name,
@@ -54,7 +49,6 @@ class Question {
 
   String get id => _id;
   String get text => _text;
-  String get category => _category;
   Set<String> get correctAnswers => _correctAnswers;
   Set<String>? get wrongAnswers => _wrongAnswers;
   Difficulty get difficulty => _difficulty;

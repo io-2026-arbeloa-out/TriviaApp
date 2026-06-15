@@ -1,4 +1,3 @@
-/*
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/question_type.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
@@ -67,8 +66,8 @@ void main() {
       });
 
       test('returns new instance with updated questionType', () {
-        final updated = base.copyWith(questionType: QuestionType.boolean);
-        expect(updated.questionType, QuestionType.boolean);
+        final updated = base.copyWith(questionType: QuestionType.true_false);
+        expect(updated.questionType, QuestionType.true_false);
       });
 
       test('preserves all fields when no parameters provided', () {
@@ -76,26 +75,6 @@ void main() {
         expect(copy.numQuestions, base.numQuestions);
         expect(copy.timePerQuestion, base.timePerQuestion);
         expect(copy.questionType, base.questionType);
-      });
-
-      test('clearQuestionType sets questionType to null', () {
-        final updated = base.copyWith(clearQuestionType: true);
-        expect(updated.questionType, isNull);
-      });
-
-      test('clearQuestionType preserves numQuestions and timePerQuestion', () {
-        final updated = base.copyWith(clearQuestionType: true);
-        expect(updated.numQuestions, 10);
-        expect(updated.timePerQuestion, 30);
-      });
-
-      test('clearQuestionType takes precedence over provided questionType', () {
-        // jeśli obie flagi podane jednocześnie, clearQuestionType wygrywa
-        final updated = base.copyWith(
-          questionType: QuestionType.open6,
-          clearQuestionType: true,
-        );
-        expect(updated.questionType, isNull);
       });
 
       test('setting questionType to null without flag does not clear it', () {
@@ -113,4 +92,3 @@ void main() {
     });
   });
 }
-*/
