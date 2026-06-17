@@ -88,13 +88,14 @@ void main() {
   group('getUserOptions', () {
     test('returns UserOptions with values from Firestore', () async {
       await fakeFirestore.collection('users').doc(tUid).set({
-        'user_options': {'soundVolume': 60, 'musicVolume': 30},
+        'user_options': {'soundVolume': 60, 'musicVolume': 30, 'sfxVolume': 40},
       });
 
       final result = await repo.getUserOptions();
 
       expect(result.soundVolume, 60);
       expect(result.musicVolume, 30);
+      expect(result.sfxVolume, 30);
     });
 
     test('returns default UserOptions when document does not exist', () async {

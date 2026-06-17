@@ -112,7 +112,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
     _timerController?.dispose();
     _timerController = null;
 
-    _currentIndex++;
+    // ← ZMIANA: pobierz pytanie pod aktualnym indeksem (bez inkrementacji)
     final question = _questions[_currentIndex];
 
     setState(() {
@@ -166,6 +166,8 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       AppRoute.instance.goToSingleplayerScoreTable(options, sessionData);
       return;
     }
+    // ← ZMIANA: inkrementacja przed przejściem do następnego pytania
+    _currentIndex++;
     _startQuestion();
   }
 
@@ -290,8 +292,6 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
           const SizedBox(height: 8),
           if (gameOptions.timePerQuestion > 0) _buildTimerBar(),
           const SizedBox(height: 12),
-          // Okienko feedbacku zawsze rezerwuje przestrzeń pod headerem.
-          // Gdy nie ma feedbacku, Opacity ukrywa widget ale zachowuje rozmiar.
           Opacity(
             opacity: inFeedback ? 1.0 : 0.0,
             child: _buildFeedbackBar(context),
@@ -324,7 +324,8 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
         Column(
           children: [
             Text(
-              'Pytanie $_currentIndex / ${_questions.length}',
+              // ← ZMIANA: +1 aby wyświetlać numery 1..N zamiast 0..N-1
+              'Pytanie ${_currentIndex + 1} / ${_questions.length}',
               style: TextStyle(
                   color: options.textColor, fontWeight: FontWeight.bold),
             ),
@@ -401,7 +402,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
 
   Widget _buildAnswerGrid(Question question) {
     final answers = _questionState.answers;
-    final crossCount = 2;
+    const crossCount = 2;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -421,15 +422,13 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
     final selected = _questionState.selectedAnswer == answer;
     final inFeedback = _phase == _Phase.feedback;
     final isCorrectAnswer = question.correctAnswers.any(
-          (c) => c.trim().toLowerCase() ==
-          answer.trim().toLowerCase(),
+          (c) => c.trim().toLowerCase() == answer.trim().toLowerCase(),
     );
 
     Color bgColor = options.secondaryColor.withOpacity(0.3);
     Color borderColor = options.mainButtonColor.withOpacity(0.3);
 
     if (inFeedback && selected) {
-      // Podświetl tylko wybraną odpowiedź
       if (isCorrectAnswer) {
         bgColor = Colors.green.withOpacity(0.3);
         borderColor = Colors.green;
@@ -438,7 +437,6 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
         borderColor = Colors.red;
       }
     } else if (inFeedback && isCorrectAnswer) {
-      // Zawsze podświetl poprawną odpowiedź na zielono
       bgColor = Colors.green.withOpacity(0.3);
       borderColor = Colors.green;
     } else if (!inFeedback && selected) {
@@ -528,6 +526,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
             ),
             onPressed: _nextQuestion,
             child: Text(
+              // ← ZMIANA: +1 po obu stronach porównania, spójne z nową logiką
               _currentIndex + 1 >= _questions.length ? 'Wyniki' : 'Następne',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),

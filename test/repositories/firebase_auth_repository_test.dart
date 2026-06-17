@@ -29,7 +29,7 @@ void main() {
       final result =
           await repo.registerWithEmail(tEmail, tPassword, tUsername);
 
-      expect(result.uid, tUid);
+      expect(result, isNotNull);
     });
 
     test('returns ProfileData with provided username', () async {

@@ -10,10 +10,11 @@ void main() {
   late MockFirebaseAuth mockAuth;
   late FirebaseProfileRepository repo;
 
-  const tUid = 'uid1';
-  final tUser = MockUser(uid: tUid, email: 'test@test.com');
+  // uid pobieramy z mockAuth, nie hardkodujemy
+  late String uid;
 
-  // Minimal valid Firestore document matching struktura_bazy_danych.json
+  final tUser = MockUser(uid: 'uid1', email: 'test@test.com');
+
   final tDocData = {
     'username': 'TestUser',
     'totalQuestionsAnswered': 10,
@@ -34,13 +35,15 @@ void main() {
       firestore: fakeFirestore,
       auth: mockAuth,
     );
+    // ← ZMIANA: uid zawsze pochodzi z tego samego mockAuth co repo
+    uid = mockAuth.currentUser!.uid;
   });
 
   // ── uid getter ─────────────────────────────────────────────────────────────
 
   group('uid getter', () {
     test('returns uid when user is logged in', () {
-      expect(repo.uid, tUid);
+      expect(repo.uid, uid);
     });
 
     test('throws Exception when no user is logged in', () {
@@ -56,15 +59,15 @@ void main() {
 
   group('getProfileData', () {
     test('returns ProfileData with correct uid', () async {
-      await fakeFirestore.collection('users').doc(tUid).set(tDocData);
+      await fakeFirestore.collection('users').doc(uid).set(tDocData);
 
       final result = await repo.getProfileData();
 
-      expect(result.uid, tUid);
+      expect(result.uid, uid);
     });
 
     test('maps all scalar fields correctly', () async {
-      await fakeFirestore.collection('users').doc(tUid).set(tDocData);
+      await fakeFirestore.collection('users').doc(uid).set(tDocData);
 
       final result = await repo.getProfileData();
 
@@ -77,7 +80,7 @@ void main() {
     });
 
     test('maps profilePicture correctly', () async {
-      await fakeFirestore.collection('users').doc(tUid).set(tDocData);
+      await fakeFirestore.collection('users').doc(uid).set(tDocData);
 
       final result = await repo.getProfileData();
 
@@ -88,7 +91,7 @@ void main() {
             () async {
           final dataWithoutPicture = Map<String, dynamic>.from(tDocData)
             ..remove('profilePicture');
-          await fakeFirestore.collection('users').doc(tUid).set(dataWithoutPicture);
+          await fakeFirestore.collection('users').doc(uid).set(dataWithoutPicture);
 
           final result = await repo.getProfileData();
 
@@ -96,7 +99,7 @@ void main() {
         });
 
     test('maps user_options correctly', () async {
-      await fakeFirestore.collection('users').doc(tUid).set(tDocData);
+      await fakeFirestore.collection('users').doc(uid).set(tDocData);
 
       final result = await repo.getProfileData();
 
@@ -105,7 +108,7 @@ void main() {
     });
 
     test('maps ui_options preset string correctly', () async {
-      await fakeFirestore.collection('users').doc(tUid).set(tDocData);
+      await fakeFirestore.collection('users').doc(uid).set(tDocData);
 
       final result = await repo.getProfileData();
 
@@ -120,7 +123,7 @@ void main() {
             () async {
           final dataWithoutOptions = Map<String, dynamic>.from(tDocData)
             ..remove('user_options');
-          await fakeFirestore.collection('users').doc(tUid).set(dataWithoutOptions);
+          await fakeFirestore.collection('users').doc(uid).set(dataWithoutOptions);
 
           final result = await repo.getProfileData();
 
@@ -131,51 +134,56 @@ void main() {
   // ── updateProfileData ───────────────────────────────────────────────────────
 
   group('updateProfileData', () {
-    final tProfile = ProfileData(
-      uid: tUid,
-      username: 'TestUser',
-      totalQuestionsAnswered: 5,
-      correctAnswers: 3,
-      ratingPoints: 50,
-      rankedGamesPlayed: 2,
-      rankedGamesWon: 1,
-      userOptions: const UserOptions(soundVolume: 70, musicVolume: 40),
-      uiPreset: 'pr1',
-      profilePicture: 'assets/avatars/avatar3.png',
-    );
+    // ← ZMIANA: ProfileData budowany z uid pobranym z mockAuth
+    late ProfileData tProfile;
+
+    setUp(() {
+      tProfile = ProfileData(
+        uid: uid,
+        username: 'TestUser',
+        totalQuestionsAnswered: 5,
+        correctAnswers: 3,
+        ratingPoints: 50,
+        rankedGamesPlayed: 2,
+        rankedGamesWon: 1,
+        userOptions: const UserOptions(soundVolume: 70, musicVolume: 40),
+        uiPreset: 'pr1',
+        profilePicture: 'assets/avatars/avatar3.png',
+      );
+    });
 
     test('creates document with correct username', () async {
       await repo.updateProfileData(tProfile);
 
-      final doc = await fakeFirestore.collection('users').doc(tUid).get();
+      final doc = await fakeFirestore.collection('users').doc(uid).get();
       expect(doc.data()!['username'], 'TestUser');
     });
 
     test('writes ratingPoints correctly', () async {
       await repo.updateProfileData(tProfile);
 
-      final doc = await fakeFirestore.collection('users').doc(tUid).get();
+      final doc = await fakeFirestore.collection('users').doc(uid).get();
       expect(doc.data()!['ratingPoints'], 50);
     });
 
     test('writes ui_options preset string correctly', () async {
       await repo.updateProfileData(tProfile);
 
-      final doc = await fakeFirestore.collection('users').doc(tUid).get();
+      final doc = await fakeFirestore.collection('users').doc(uid).get();
       expect(doc.data()!['ui_options'], 'pr1');
     });
 
     test('writes profilePicture correctly', () async {
       await repo.updateProfileData(tProfile);
 
-      final doc = await fakeFirestore.collection('users').doc(tUid).get();
+      final doc = await fakeFirestore.collection('users').doc(uid).get();
       expect(doc.data()!['profilePicture'], 'assets/avatars/avatar3.png');
     });
 
     test('does not write uid as a field in the document', () async {
       await repo.updateProfileData(tProfile);
 
-      final doc = await fakeFirestore.collection('users').doc(tUid).get();
+      final doc = await fakeFirestore.collection('users').doc(uid).get();
       expect(doc.data()!.containsKey('uid'), isFalse);
     });
 
@@ -183,24 +191,24 @@ void main() {
             () async {
           await fakeFirestore
               .collection('users')
-              .doc(tUid)
+              .doc(uid)
               .set({'someOtherField': 'keepMe'});
 
           await repo.updateProfileData(tProfile);
 
-          final doc = await fakeFirestore.collection('users').doc(tUid).get();
+          final doc = await fakeFirestore.collection('users').doc(uid).get();
           expect(doc.data()!['someOtherField'], 'keepMe');
         });
 
     test('overwrites existing profilePicture with new value', () async {
       await fakeFirestore
           .collection('users')
-          .doc(tUid)
+          .doc(uid)
           .set({'profilePicture': 'assets/avatars/avatar1.png'});
 
       await repo.updateProfileData(tProfile);
 
-      final doc = await fakeFirestore.collection('users').doc(tUid).get();
+      final doc = await fakeFirestore.collection('users').doc(uid).get();
       expect(doc.data()!['profilePicture'], 'assets/avatars/avatar3.png');
     });
   });
@@ -211,7 +219,7 @@ void main() {
     test('returns preset string from document', () async {
       await fakeFirestore
           .collection('users')
-          .doc(tUid)
+          .doc(uid)
           .set({'ui_options': 'pr2'});
 
       final result = await repo.getUIPreset();
@@ -228,7 +236,7 @@ void main() {
     test('returns default when ui_options field is missing', () async {
       await fakeFirestore
           .collection('users')
-          .doc(tUid)
+          .doc(uid)
           .set({'username': 'TestUser'});
 
       final result = await repo.getUIPreset();

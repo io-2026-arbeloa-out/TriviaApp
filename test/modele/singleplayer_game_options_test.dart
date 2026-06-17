@@ -12,14 +12,14 @@ void main() {
         expect(opts.numQuestions, 10);
       });
 
-      test('timePerQuestion defaults to 30', () {
+      test('timePerQuestion defaults to 0 (unlimited)', () {
         const opts = SingleplayerGameOptions();
-        expect(opts.timePerQuestion, 30);
+        expect(opts.timePerQuestion, 0);
       });
 
-      test('questionType defaults to null (mieszane)', () {
+      test('questionType defaults to mixed', () {
         const opts = SingleplayerGameOptions();
-        expect(opts.questionType, isNull);
+        expect(opts.questionType, QuestionType.mixed);
       });
 
       test('stores provided values correctly', () {

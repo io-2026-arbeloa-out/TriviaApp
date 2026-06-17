@@ -9,37 +9,13 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza">
-      <change afterPath="$PROJECT_DIR$/test/modele/live_game_state_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/modele/multiplayer_session_data_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/modele/session_status_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/repositories/firebase_question_repository_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/repositories/firebase_session_repository_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/services/multiplayer_connection_service_test.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/services/multiplayer_game_service_test.dart" afterDir="false" />
+    <list default="true" id="0e774a86-bb7e-4b54-a1fe-a3fa2467da50" name="Changes" comment="Integracja singleplayer ze zmianami w rtdb + nowe testy jednostkowe">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/game_mode.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/game_mode.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/game_question_type.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/question.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/question_type.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/question_type.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/models/singleplayer_game_options.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/models/singleplayer_game_options.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/repositories/firebase_question_repository.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/repositories/firebase_question_repository.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/multiplayer_game_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/multiplayer_game_screen.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/screens/singleplayer_game_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/singleplayer_game_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/screens/singleplayer_options_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/screens/singleplayer_options_screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/services/singleplayer_game_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/services/singleplayer_game_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/modele/singleplayer_game_options_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/modele/singleplayer_game_options_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/repositories/firebase_auth_repository_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/repositories/firebase_auth_repository_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/repositories/firebase_options_repository_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/repositories/firebase_options_repository_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/services/options_services_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/services/options_services_test.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/services/singleplayer_game_screen_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/services/singleplayer_game_service_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/unimplemented/multiplayer_services_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/unimplemented/private_game_services_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/unimplemented/profile_leaderboard_achievements_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/unimplemented/quiz_and_question_services_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/unimplemented/score_table_service_test.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/unimplemented/singleplayer_service_test.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/repositories/firebase_profile_repository_test.dart" beforeDir="false" afterPath="$PROJECT_DIR$/test/repositories/firebase_profile_repository_test.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/triviaapp.iml" beforeDir="false" afterPath="$PROJECT_DIR$/triviaapp.iml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -87,40 +63,42 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Flutter Test.QuestionService pobiera pytania z repozytorium.executor": "Run",
-    "Flutter Test.QuizListService pobiera listę quizów.executor": "Run",
-    "Flutter Test.UIOptionsService zapisuje i ładuje ustawienia interfejsu.executor": "Run",
-    "Flutter Test.UserOptionsService pobiera opcje użytkownika.executor": "Run",
-    "Flutter Test.UserOptionsService zapisuje opcje uzytkownika.executor": "Run",
-    "Flutter Test.fromJson(toJson()) round-trip preserves all values.executor": "Debug",
-    "Flutter Test.handles null rank by defaulting to unranked.executor": "Debug",
-    "Flutter Test.navigates to MainMenuScreen on successful login.executor": "Run",
-    "Flutter Test.returns JSON with all expected keys.executor": "Debug",
-    "Flutter Test.tests in test.executor": "Run",
-    "Flutter.main.dart.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "com.google.services.firebase.aqiPopupShown": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "deletionFromPopupRequiresConfirmation": "false",
-    "git-widget-placeholder": "multiplayer",
-    "io.flutter.project.isFirstOpen": "true",
-    "io.flutter.reload.alreadyRun": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/TriviaApp/android/app",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flutter Test.QuestionService pobiera pytania z repozytorium.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.QuizListService pobiera listę quizów.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.UIOptionsService zapisuje i ładuje ustawienia interfejsu.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.UserOptionsService pobiera opcje użytkownika.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.UserOptionsService zapisuje opcje uzytkownika.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.fromJson(toJson()) round-trip preserves all values.executor&quot;: &quot;Debug&quot;,
+    &quot;Flutter Test.handles null rank by defaulting to unranked.executor&quot;: &quot;Debug&quot;,
+    &quot;Flutter Test.navigates to MainMenuScreen on successful login.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.questionType defaults to mixed.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.returns JSON with all expected keys.executor&quot;: &quot;Debug&quot;,
+    &quot;Flutter Test.tests in test.executor&quot;: &quot;Run&quot;,
+    &quot;Flutter Test.timePerQuestion defaults to 0 (unlimited).executor&quot;: &quot;Run&quot;,
+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;com.google.services.firebase.aqiPopupShown&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;deletionFromPopupRequiresConfirmation&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;multiplayer&quot;,
+    &quot;io.flutter.project.isFirstOpen&quot;: &quot;true&quot;,
+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/TriviaApp/android/app&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\TriviaApp\android\app" />
@@ -361,7 +339,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781285538232</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="Integracja singleplayer ze zmianami w rtdb + nowe testy jednostkowe">
+      <option name="closed" value="true" />
+      <created>1781548728828</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1781548728828</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -413,6 +399,7 @@
     <MESSAGE value="Animacja loterii" />
     <MESSAGE value="Odpowiednie przejście między rundami oraz fixy UI" />
     <MESSAGE value="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza" />
-    <option name="LAST_COMMIT_MESSAGE" value="Private game i normalizacja gier multiplayer z użyciem OnlinGameOptions, podstawowe liczenie statystyk gracza" />
+    <MESSAGE value="Integracja singleplayer ze zmianami w rtdb + nowe testy jednostkowe" />
+    <option name="LAST_COMMIT_MESSAGE" value="Integracja singleplayer ze zmianami w rtdb + nowe testy jednostkowe" />
   </component>
 </project>
