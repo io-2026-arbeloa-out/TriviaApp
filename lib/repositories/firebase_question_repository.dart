@@ -69,17 +69,19 @@ class FirebaseQuestionRepository {
 
     if (!snapshot.exists || snapshot.value == null) return [];
 
-    final List raw = snapshot.value as List;
+    // Budujemy słownik key → child, tak jak getQuestions używa child.key
+    final Map<String, DataSnapshot> childByKey = {
+      for (final child in snapshot.children)
+        if (child.key != null) child.key!: child,
+    };
+
     final questions = <Question>[];
 
     for (final id in ids) {
-      final index = int.tryParse(id);
-      if (index == null || index >= raw.length || raw[index] == null) continue;
+      final child = childByKey[id];
+      if (child == null || child.value == null || child.value is! Map) continue;
 
-      final item = raw[index];
-      if (item is! Map) continue;
-
-      final value = Map<String, dynamic>.from(item);
+      final value = Map<String, dynamic>.from(child.value as Map);
       questions.add(Question.fromJson({
         'id': id,
         'category': category,
