@@ -1,27 +1,25 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
-import 'package:triviaapp/interfaces/i_user_options_service.dart';
+import 'package:triviaapp/repositories/options_repository.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/models/user_options.dart';
-import 'package:triviaapp/services/ui_options_service.dart';
-import 'package:triviaapp/services/user_options_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 
 class LoadingScreen extends StatefulWidget {
   LoadingScreen({
     super.key,
     IUIOptionsService? uiService,
-    IUserOptionsService? userService,
-  })  : _uiService = uiService ?? UIOptionsService(),
-        _userService = userService ?? UserOptionsService();
+    OptionsRepository? optionsRepository,
+  })  : _uiService = uiService ?? AppDependencies.instance.uiOptionsService,
+        _optionsRepository = optionsRepository ?? AppDependencies.instance.optionsRepository;
 
   final IUIOptionsService _uiService;
-  final IUserOptionsService _userService;
+  final OptionsRepository _optionsRepository;
 
   IUIOptionsService get uiService => _uiService;
-  IUserOptionsService get userService => _userService;
+  OptionsRepository get optionsRepository => _optionsRepository;
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
@@ -43,11 +41,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
     await _loadAssets();
     if (!mounted) return;
     await AudioManager.instance.init(_userOptions);
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser != null) {
-      AppRoute.instance.goToMainMenu(_uiOptions);
-      return;
-    }
     AppRoute.instance.goToMainMenu(_uiOptions);
   }
 
@@ -62,7 +55,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
       _uiOptions = const UIOptions();
     }
     try {
-      _userOptions = await widget.userService.getUserOptions();
+      _userOptions = await widget.optionsRepository.getUserOptions();
     } catch (e) {
       _userOptions = const UserOptions();
     }

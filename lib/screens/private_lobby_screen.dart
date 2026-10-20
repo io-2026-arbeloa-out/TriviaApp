@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
-import 'package:triviaapp/services/multiplayer_game_service.dart';
 
 class PrivateLobbyScreen extends StatefulWidget {
   const PrivateLobbyScreen({
     super.key,
+    this.dependencies,
     UIOptions? options,
     this.code,
     FirebaseSessionRepository? sessionRepository,
@@ -24,11 +24,14 @@ class PrivateLobbyScreen extends StatefulWidget {
 
   UIOptions get options => _options;
 
+  final AppDependencies? dependencies;
+
   @override
   State<PrivateLobbyScreen> createState() => _PrivateLobbyScreenState();
 }
 
 class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
+  AppDependencies get dependencies => widget.dependencies ?? AppDependencies.instance;
   UIOptions get options => widget.options;
 
   late final FirebaseSessionRepository _sessionRepository;
@@ -45,7 +48,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
   void initState() {
     super.initState();
     _sessionRepository =
-        widget._sessionRepository ?? FirebaseSessionRepository();
+        widget._sessionRepository ?? dependencies.sessionRepository;
     _joinSession();
   }
 
@@ -55,7 +58,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
       return;
     }
 
-    final user = FirebaseAuth.instance.currentUser;
+    final user = dependencies.firebaseAuth.currentUser;
     if (user == null) {
       setState(() { _connectError = 'Nie jesteś zalogowany'; _isConnecting = false; });
       return;
@@ -137,10 +140,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
     if (!mounted) return;
     AppRoute.instance.goToMultiplayer(
       options,
-      MultiplayerGameService(
-        sessionId: sessionId,
-        sessionRepository: _sessionRepository,
-      ),
+      dependencies.createMultiplayerGameService(sessionId, sessions: _sessionRepository),
     );
   }
 
@@ -149,7 +149,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
     _sessionSub = null;
 
     if (_sessionId != null) {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = dependencies.firebaseAuth.currentUser?.uid;
       if (uid != null) {
         unawaited(
           _sessionRepository
@@ -166,7 +166,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
   void dispose() {
     _sessionSub?.cancel();
     if (_sessionId != null && !_gameStarted) {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = dependencies.firebaseAuth.currentUser?.uid;
       if (uid != null) {
         unawaited(
           _sessionRepository

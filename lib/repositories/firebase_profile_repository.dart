@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:triviaapp/models/profile_data.dart';
+import 'package:triviaapp/repositories/profile_repository.dart';
 
-class FirebaseProfileRepository {
+class FirebaseProfileRepository implements ProfileRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
@@ -20,12 +21,14 @@ class FirebaseProfileRepository {
     return user.uid;
   }
 
+  @override
   Future<ProfileData> getProfileData() async {
     final doc = await _firestore.collection('users').doc(uid).get();
     if (!doc.exists) throw Exception('Profile not found for uid: $uid');
     return ProfileData.fromJson(uid, doc.data()!);
   }
 
+  @override
   Future<void> updateProfileData(ProfileData profileData) async {
     final ref = _firestore.collection('users').doc(profileData.uid);
     final editable = {
@@ -42,6 +45,7 @@ class FirebaseProfileRepository {
     });
   }
 
+  @override
   Future<String> getUIPreset() async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();

@@ -1,22 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:triviaapp/interfaces/i_login_auth_service.dart';
+import 'package:triviaapp/repositories/auth_repository.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/app_route.dart';
-import 'package:triviaapp/repositories/firebase_auth_repository.dart';
-import 'package:triviaapp/services/auth_login_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 
 class LoginScreen extends StatefulWidget {
-  final ILoginAuthService _authService;
+  final AuthRepository _authRepository;
   final UIOptions _options;
 
   LoginScreen({
     super.key,
     UIOptions? options,
-    ILoginAuthService? authService,
+    AuthRepository? authRepository,
   })  : _options = options ?? UIOptions(),
-        _authService = authService ??
-            AuthLoginService(authRepository: FirebaseAuthRepository());
+        _authRepository = authRepository ??
+            AppDependencies.instance.authRepository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -24,7 +23,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  ILoginAuthService get authService => widget._authService;
+  AuthRepository get authRepository => widget._authRepository;
   UIOptions get options => widget._options;
 
   final _emailController = TextEditingController();
@@ -92,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
-      await authService.signInWithEmail(email, password);
+      await authRepository.signInWithEmail(email, password);
       if (!mounted) return;
       AppRoute.instance.goToMainMenu(options);
     } on FirebaseAuthException catch (e) {

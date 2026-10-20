@@ -20,6 +20,17 @@ class _Questions extends Fake implements FirebaseQuestionRepository {
 }
 
 void main() {
+  test('an implicit session repository uses the supplied Firestore instance', () async {
+    final db = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'player'), signedIn: true);
+    await db.collection('users').doc('player').set({'username': 'Player'});
+    await db.collection('sessions').doc('room').set({'categoryId': 'general', 'questionIds': []});
+    final service = MultiplayerGameService(sessionId: 'room', auth: auth,
+      firestore: db, questionRepository: _Questions());
+    await expectLater(service.ready, throwsA(isA<StateError>().having(
+      (error) => error.message, 'message', 'Session has no questions')));
+  });
+
   for (final ids in [
     <String>[],
     ['missing-question'],

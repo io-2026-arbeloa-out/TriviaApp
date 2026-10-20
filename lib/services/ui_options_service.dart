@@ -1,17 +1,13 @@
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/repositories/firebase_options_repository.dart';
-import 'package:triviaapp/repositories/firebase_profile_repository.dart';
+import 'package:triviaapp/repositories/options_repository.dart';
+import 'package:triviaapp/repositories/profile_repository.dart';
 
 class UIOptionsService implements IUIOptionsService {
-  final FirebaseOptionsRepository _optionsRepository;
-  final FirebaseProfileRepository _profileRepository;
+  final OptionsRepository _optionsRepository;
+  final ProfileRepository _profileRepository;
 
-  UIOptionsService([
-    FirebaseOptionsRepository? optionsRepository,
-    FirebaseProfileRepository? profileRepository,
-  ])  : _optionsRepository = optionsRepository ?? FirebaseOptionsRepository(),
-        _profileRepository = profileRepository ?? FirebaseProfileRepository();
+  UIOptionsService(this._optionsRepository, this._profileRepository);
 
   @override
   Future<UIOptions> getUIOptions() async {

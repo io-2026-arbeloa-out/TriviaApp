@@ -4,13 +4,13 @@ import 'package:triviaapp/services/auth_register_service.dart';
 import '../fakes.dart';
 
 void main() {
-  late FakeFirebaseAuthRepository fakeAuthRepo;
-  late FakeFirebaseProfileRepository fakeProfileRepo;
+  late FakeAuthRepository fakeAuthRepo;
+  late FakeProfileRepository fakeProfileRepo;
   late AuthRegisterService service;
 
   setUp(() {
-    fakeAuthRepo = FakeFirebaseAuthRepository();
-    fakeProfileRepo = FakeFirebaseProfileRepository();
+    fakeAuthRepo = FakeAuthRepository();
+    fakeProfileRepo = FakeProfileRepository();
     service = AuthRegisterService(
       authRepository: fakeAuthRepo,
       profileRepository: fakeProfileRepo,

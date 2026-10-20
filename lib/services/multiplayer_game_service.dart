@@ -29,7 +29,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
   })  : _sessionId = sessionId,
-        _sessionRepository = sessionRepository ?? FirebaseSessionRepository(),
+        _sessionRepository = sessionRepository ?? FirebaseSessionRepository(firestore: firestore),
         _questionRepository = questionRepository ?? FirebaseQuestionRepository(),
         _auth = auth ?? FirebaseAuth.instance,
         _firestore = firestore ?? FirebaseFirestore.instance {

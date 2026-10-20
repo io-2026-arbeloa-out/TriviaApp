@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:triviaapp/interfaces/i_profile_data_service.dart';
 import 'package:triviaapp/models/profile_data.dart';
 import 'package:triviaapp/models/rank.dart';
 import 'package:triviaapp/models/ui_options.dart';
@@ -9,44 +8,18 @@ import 'package:triviaapp/screens/profile_screen.dart';
 import '../fakes.dart';
 
 // ---------------------------------------------------------------------------
-// Fake IProfileDataService
-// ---------------------------------------------------------------------------
-
-class FakeProfileDataService extends Fake implements IProfileDataService {
-  ProfileData? getResult;
-  Exception? getError;
-
-  bool updateCalled = false;
-  ProfileData? lastUpdatedProfile;
-  Exception? updateError;
-
-  @override
-  Future<ProfileData> getProfileData() async {
-    if (getError != null) throw getError!;
-    return getResult!;
-  }
-
-  @override
-  Future<void> updateProfileData(ProfileData data) async {
-    if (updateError != null) throw updateError!;
-    updateCalled = true;
-    lastUpdatedProfile = data;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 Widget buildScreen({
   required bool isLoggedIn,
-  required FakeProfileDataService service,
+  required FakeProfileRepository service,
 }) {
   return MaterialApp(
     home: ProfileScreen(
       options: UIOptions(),
-      profileDataService: service,
-      authChecker: () => isLoggedIn,
+      profileRepository: service,
+      authRepository: FakeAuthRepository()..signedIn = isLoggedIn,
     ),
   );
 }
@@ -56,10 +29,25 @@ Widget buildScreen({
 // ---------------------------------------------------------------------------
 
 void main() {
-  late FakeProfileDataService fakeService;
+  late FakeProfileRepository fakeService;
+
+  testWidgets('logout uses the injected auth repository', (tester) async {
+    final auth = FakeAuthRepository()..signedIn = true;
+    final profile = FakeProfileRepository()..getResult = makeProfile();
+    await tester.pumpWidget(MaterialApp(home: ProfileScreen(
+      profileRepository: profile, authRepository: auth,
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.logout));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Wyloguj'));
+    await tester.pumpAndSettle();
+    expect(auth.signOutCalled, true);
+    expect(find.byIcon(Icons.logout), findsNothing);
+  });
 
   setUp(() {
-    fakeService = FakeProfileDataService();
+    fakeService = FakeProfileRepository();
   });
 
   // -------------------------------------------------------------------------

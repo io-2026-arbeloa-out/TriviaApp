@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/audio_manager.dart';
@@ -15,9 +15,14 @@ class MainMenuScreen extends StatefulWidget {
     super.key,
     UIOptions? options,
     bool Function()? authChecker,
+    AppDependencies? dependencies,
   }) : _authChecker =
-      authChecker ?? (() => FirebaseAuth.instance.currentUser != null),
+      authChecker ?? (() => (dependencies ?? AppDependencies.instance).authRepository.isSignedIn),
+        _dependencies = dependencies,
         _options = options ?? UIOptions();
+
+  final AppDependencies? _dependencies;
+  AppDependencies get dependencies => _dependencies ?? AppDependencies.instance;
 
   final UIOptions _options;
   final bool Function() _authChecker;
@@ -119,6 +124,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => PrivateLobbyScreen(
+                      dependencies: widget.dependencies,
                       options: widget.options,
                       code: code,
                     ),
@@ -247,10 +253,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
                               builder: (_) => MultiplayerLobbyScreen(
-                                uid: FirebaseAuth.instance.currentUser?.uid ??
+                                dependencies: widget.dependencies,
+                                uid: widget.dependencies.firebaseAuth.currentUser?.uid ??
                                     'uid1',
                                 username:
-                                FirebaseAuth.instance.currentUser
+                                widget.dependencies.firebaseAuth.currentUser
                                     ?.displayName ??
                                     'test',
                                 settings: const OnlineGameOptions(

@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_register_auth_service.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/repositories/firebase_auth_repository.dart';
-import 'package:triviaapp/repositories/firebase_profile_repository.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/services/auth_register_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -17,10 +16,7 @@ class RegistrationScreen extends StatefulWidget {
     IRegisterAuthService? authService,
   })  : _options = options ?? UIOptions(),
         _authService = authService ??
-            AuthRegisterService(
-              authRepository: FirebaseAuthRepository(),
-              profileRepository: FirebaseProfileRepository(),
-            );
+            AppDependencies.instance.createRegistrationService();
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();

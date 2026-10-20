@@ -2,8 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/models/user_options.dart';
+import 'package:triviaapp/repositories/options_repository.dart';
 
-class FirebaseOptionsRepository {
+class FirebaseOptionsRepository implements OptionsRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
@@ -21,6 +22,7 @@ class FirebaseOptionsRepository {
 
   // ==== UserOptions ====
 
+  @override
   Future<void> saveUserOptions(UserOptions options) {
     return _firestore
         .collection('users')
@@ -28,6 +30,7 @@ class FirebaseOptionsRepository {
         .set({'user_options': options.toJson()}, SetOptions(merge: true));
   }
 
+  @override
   Future<UserOptions> getUserOptions() async {
     final snap = await _firestore.collection('users').doc(uid).get();
     if (!snap.exists) return UserOptions();
@@ -36,6 +39,7 @@ class FirebaseOptionsRepository {
 
   // ==== UIOptions ====
 
+  @override
   Future<void> saveUIOptions(String preset) async {
     try {
       await _firestore
@@ -47,6 +51,7 @@ class FirebaseOptionsRepository {
     }
   }
 
+  @override
   Future<UIOptions> getUIOptions(String preset) async {
     try {
       final snap = await _firestore.collection('ui_presets').doc(preset).get();
@@ -57,6 +62,7 @@ class FirebaseOptionsRepository {
     }
   }
 
+  @override
   Future<Map<String, UIOptions>> getUIPresets() async {
     final snap = await _firestore.collection('ui_presets').get();
     final result = <String, UIOptions>{};

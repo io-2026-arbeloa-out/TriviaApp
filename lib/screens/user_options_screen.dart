@@ -2,26 +2,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/interfaces/i_ui_options_service.dart';
-import 'package:triviaapp/interfaces/i_user_options_service.dart';
+import 'package:triviaapp/repositories/options_repository.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/models/user_options.dart';
-import 'package:triviaapp/services/ui_options_service.dart';
-import 'package:triviaapp/services/user_options_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/app_route.dart';
 
 class UserOptionsScreen extends StatefulWidget {
   final UIOptions _options;
-  final IUserOptionsService _userOptionsService;
+  final OptionsRepository _optionsRepository;
   final IUIOptionsService _uiOptionsService;
 
   UserOptionsScreen({
     super.key,
     UIOptions? options,
-    IUserOptionsService? userOptionsService,
+    OptionsRepository? optionsRepository,
     IUIOptionsService? uiOptionsService,
   })  : _options = options ?? UIOptions(),
-        _userOptionsService = userOptionsService ?? UserOptionsService(),
-        _uiOptionsService = uiOptionsService ?? UIOptionsService();
+        _optionsRepository = optionsRepository ?? AppDependencies.instance.optionsRepository,
+        _uiOptionsService = uiOptionsService ?? AppDependencies.instance.uiOptionsService;
 
   @override
   State<UserOptionsScreen> createState() => _UserOptionsScreenState();
@@ -31,7 +30,7 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
   UIOptions get options => _displayOptions;
   UIOptions get savedOptions => widget._options;
   IUIOptionsService get uiOptionsService => widget._uiOptionsService;
-  IUserOptionsService get userOptionsService => widget._userOptionsService;
+  OptionsRepository get optionsRepository => widget._optionsRepository;
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -72,7 +71,7 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
     });
     try {
       final results = await Future.wait([
-        userOptionsService.getUserOptions(),
+        optionsRepository.getUserOptions(),
         uiOptionsService.getUIPresets(),
         uiOptionsService.getCurrentPreset(),
       ]);
@@ -91,7 +90,7 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
     setState(() => _isSaving = true);
     try {
       await Future.wait([
-        userOptionsService.saveUserOptions(UserOptions(
+        optionsRepository.saveUserOptions(UserOptions(
           soundVolume: _userOptions.soundVolume,
           musicVolume: _userOptions.musicVolume,
           sfxVolume: _userOptions.sfxVolume,

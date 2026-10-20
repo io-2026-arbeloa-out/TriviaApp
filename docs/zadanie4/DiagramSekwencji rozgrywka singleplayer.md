@@ -1,3 +1,5 @@
+> Dokument historyczny projektu, sprzed refaktoru. Część pokazanych serwisów i interfejsów została usunięta; aktualny podział opisuje [etap 6](../refactor-stage6.md).
+
 ```mermaid
 sequenceDiagram
     autonumber

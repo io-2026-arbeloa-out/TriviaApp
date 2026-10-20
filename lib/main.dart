@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:triviaapp/repositories/firebase_options_repository.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'firebase_options.dart';
 import 'package:triviaapp/app_route.dart';
 
@@ -13,7 +13,9 @@ void main() async {
 }
 
 class TriviaApp extends StatelessWidget {
-  const TriviaApp({super.key});
+  const TriviaApp({super.key, this.dependencies});
+
+  final AppDependencies? dependencies;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,7 @@ class TriviaApp extends StatelessWidget {
       title: 'Trivia App',
       navigatorKey: AppRoute.instance.navigatorKey,
       initialRoute: AppRoute.loadingScreen,
-      onGenerateRoute: AppRoute.instance.onGenerateRoute,
+      onGenerateRoute: (settings) => AppRoute.instance.onGenerateRoute(settings, dependencies: dependencies),
       debugShowCheckedModeBanner: false,
     );
   }

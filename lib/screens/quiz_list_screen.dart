@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:triviaapp/interfaces/i_quiz_list_service.dart';
+import 'package:triviaapp/repositories/quiz_repository.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/models/quiz.dart';
 import 'package:triviaapp/app_route.dart';
-import 'package:triviaapp/services/quiz_list_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 
 class QuizListScreen extends StatefulWidget {
-  final IQuizListService _quizListService;
+  final QuizRepository _quizRepository;
   final UIOptions _options;
 
   QuizListScreen({
     super.key,
     UIOptions? options,
-    IQuizListService? quizListService,
+    QuizRepository? quizRepository,
   }) :  _options = options ?? UIOptions(),
-        _quizListService = quizListService ?? QuizListService();
+        _quizRepository = quizRepository ?? AppDependencies.instance.quizRepository;
 
   @override
   State<QuizListScreen> createState() => QuizListScreenState();
@@ -27,7 +27,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
   String? _errorMessage;
 
   UIOptions get options => widget._options;
-  IQuizListService get quizListService => widget._quizListService;
+  QuizRepository get quizRepository => widget._quizRepository;
 
   late AnimationController _shimmerController;
 
@@ -54,7 +54,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
     });
 
     try {
-      final quizzes = await quizListService.getQuizList();
+      final quizzes = await quizRepository.getQuizList();
       setState(() {
         _quizzes = quizzes;
         _isLoading = false;

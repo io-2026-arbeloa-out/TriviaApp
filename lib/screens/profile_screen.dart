@@ -1,25 +1,25 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:triviaapp/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
-import 'package:triviaapp/interfaces/i_profile_data_service.dart';
+import 'package:triviaapp/repositories/profile_repository.dart';
 import 'package:triviaapp/models/profile_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/services/profile_data_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/widgets/bottom_nav_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UIOptions _options;
-  final IProfileDataService _profileDataService;
-  final bool Function() _authChecker;
+  final ProfileRepository _profileRepository;
+  final AuthRepository _authRepository;
 
   ProfileScreen({
     super.key,
     UIOptions? options,
-    IProfileDataService? profileDataService,
-    bool Function()? authChecker,
+    ProfileRepository? profileRepository,
+    AuthRepository? authRepository,
   })  : _options = options ?? UIOptions(),
-        _profileDataService = profileDataService ?? ProfileDataService(null),
-        _authChecker = authChecker ?? (() => FirebaseAuth.instance.currentUser != null);
+        _profileRepository = profileRepository ?? AppDependencies.instance.profileRepository,
+        _authRepository = authRepository ?? AppDependencies.instance.authRepository;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _load() async {
-    final user = widget._authChecker();
+    final user = widget._authRepository.isSignedIn;
     if (!user) {
       setState(() {
         _isLoggedIn = false;
@@ -59,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     setState(() => _isLoggedIn = true);
     try {
-      final data = await widget._profileDataService.getProfileData();
+      final data = await widget._profileRepository.getProfileData();
       setState(() {
         _profileData = data;
         _isLoading = false;
@@ -76,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_profileData == null) return;
     final updated = _profileData!.copyWith(profilePicture: assetPath);
     try {
-      await widget._profileDataService.updateProfileData(updated);
+      await widget._profileRepository.updateProfileData(updated);
       setState(() => _profileData = updated);
     } catch (e) {
       setState(() => _errorMessage = 'Nie udało się zapisać zdjęcia profilowego.');
@@ -126,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirmed != true) return;
-    await FirebaseAuth.instance.signOut();
+    await widget._authRepository.signOut();
     if (!mounted) return;
     setState(() {
       _isLoggedIn = false;

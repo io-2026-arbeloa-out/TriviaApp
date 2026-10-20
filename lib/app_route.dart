@@ -20,7 +20,7 @@ import 'package:triviaapp/screens/singleplayer_score_table_screen.dart';
 import 'package:triviaapp/screens/singleplayer_game_screen.dart';
 import 'package:triviaapp/screens/singleplayer_options_screen.dart';
 import 'package:triviaapp/screens/user_options_screen.dart';
-import 'package:triviaapp/services/quiz_list_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 
 class AppRoute {
   AppRoute._();
@@ -45,20 +45,22 @@ class AppRoute {
   static const String privateLobbyScreen = '/privateLobby';
   static const String multiplayerScoreTableScreen = '/multiplayerScoreTable';
 
-  Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+  Route<dynamic>? onGenerateRoute(RouteSettings settings, {AppDependencies? dependencies}) {
+    final deps = dependencies ?? AppDependencies.instance;
     switch (settings.name) {
       case mainMenuScreen:
         final UIOptions? options = settings.arguments as UIOptions?;
         return MaterialPageRoute(
           builder: (_) =>
-              MainMenuScreen(options: options),
+              MainMenuScreen(options: options, dependencies: deps),
           settings: settings,
         );
 
       case profileScreen:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => ProfileScreen(options: options),
+          builder: (_) => ProfileScreen(options: options,
+            profileRepository: deps.profileRepository, authRepository: deps.authRepository),
           settings: settings,
         );
 
@@ -66,7 +68,7 @@ class AppRoute {
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
           builder: (_) => QuizListScreen(
-            quizListService: QuizListService(),
+            quizRepository: deps.quizRepository,
             options: options,
           ),
           settings: settings,
@@ -74,7 +76,7 @@ class AppRoute {
 
       case loadingScreen:
         return MaterialPageRoute(
-          builder: (_) => LoadingScreen(),
+          builder: (_) => LoadingScreen(uiService: deps.uiOptionsService, optionsRepository: deps.optionsRepository),
           settings: settings,
         );
 
@@ -100,6 +102,7 @@ class AppRoute {
           builder: (_) => SingleplayerGameScreen(
             options: options,
             sessionData: sessionData,
+            gameService: deps.createSingleplayerGameService(),
           ),
           settings: settings,
         );
@@ -128,28 +131,29 @@ class AppRoute {
       case loginScreen:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => LoginScreen(options: options),
+          builder: (_) => LoginScreen(options: options, authRepository: deps.authRepository),
           settings: settings,
         );
 
       case registrationScreen:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => RegistrationScreen(options: options),
+          builder: (_) => RegistrationScreen(options: options, authService: deps.createRegistrationService()),
           settings: settings,
         );
 
       case privateGameOptionsScreen:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => PrivateGameOptionsScreen(options: options),
+          builder: (_) => PrivateGameOptionsScreen(options: options, dependencies: deps),
           settings: settings,
         );
 
       case userOptionsScreen:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => UserOptionsScreen(options: options),
+          builder: (_) => UserOptionsScreen(options: options,
+            optionsRepository: deps.optionsRepository, uiOptionsService: deps.uiOptionsService),
           settings: settings,
         );
 
@@ -168,7 +172,7 @@ class AppRoute {
       case privateLobbyScreen:
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
-          builder: (_) => PrivateLobbyScreen(options: options),
+          builder: (_) => PrivateLobbyScreen(options: options, dependencies: deps),
           settings: settings,
         );
 
@@ -190,7 +194,7 @@ class AppRoute {
         final UIOptions options = settings.arguments as UIOptions;
         return MaterialPageRoute(
           builder: (_) =>
-              MainMenuScreen(options: options),
+              MainMenuScreen(options: options, dependencies: deps),
           settings: settings,
         );
     }

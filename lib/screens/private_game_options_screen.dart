@@ -1,20 +1,19 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/models/difficulty.dart';
 import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
-import 'package:triviaapp/services/multiplayer_connection_service.dart';
-import 'package:triviaapp/services/multiplayer_game_service.dart';
 
 class PrivateGameOptionsScreen extends StatefulWidget {
   const PrivateGameOptionsScreen({
     super.key,
+    this.dependencies,
     UIOptions? options,
     IMultiplayerConnectionService? connectionService,
     FirebaseSessionRepository? sessionRepository,
@@ -26,12 +25,15 @@ class PrivateGameOptionsScreen extends StatefulWidget {
   final IMultiplayerConnectionService? _connectionService;
   final FirebaseSessionRepository? _sessionRepository;
 
+  final AppDependencies? dependencies;
+
   @override
   State<PrivateGameOptionsScreen> createState() =>
       _PrivateGameOptionsScreenState();
 }
 
 class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
+  AppDependencies get dependencies => widget.dependencies ?? AppDependencies.instance;
   UIOptions get options => widget._options;
 
   late final IMultiplayerConnectionService _connectionService;
@@ -69,9 +71,9 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   void initState() {
     super.initState();
     _connectionService =
-        widget._connectionService ?? MultiplayerConnectionService();
+        widget._connectionService ?? dependencies.connectionService;
     _sessionRepository =
-        widget._sessionRepository ?? FirebaseSessionRepository();
+        widget._sessionRepository ?? dependencies.sessionRepository;
 
     _lobbyCode = 100000 + Random().nextInt(900000);
 
@@ -87,7 +89,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   }
 
   Future<void> _createSession() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = dependencies.firebaseAuth.currentUser;
     if (user == null) {
       if (mounted) {
         setState(() {
@@ -196,10 +198,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
     if (!mounted) return;
     AppRoute.instance.goToMultiplayer(
       options,
-      MultiplayerGameService(
-        sessionId: sessionId,
-        sessionRepository: _sessionRepository,
-      ),
+      dependencies.createMultiplayerGameService(sessionId, sessions: _sessionRepository),
     );
   }
 
@@ -207,7 +206,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   void dispose() {
     _sessionSub?.cancel();
     if (_sessionId != null && !_gameStarted) {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = dependencies.firebaseAuth.currentUser?.uid;
       if (uid != null) {
         unawaited(
           _sessionRepository

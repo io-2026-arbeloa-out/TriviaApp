@@ -1,14 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:triviaapp/models/profile_data.dart';
+import 'package:triviaapp/repositories/auth_repository.dart';
 
-class FirebaseAuthRepository {
+class FirebaseAuthRepository implements AuthRepository {
   final FirebaseAuth _auth;
 
   FirebaseAuthRepository({FirebaseAuth? auth})
       : _auth = auth ?? FirebaseAuth.instance;
 
+  @override
+  bool get isSignedIn => _auth.currentUser != null;
+
   /// Creates the account; AuthRegisterService completes the name and profile.
+  @override
   Future<ProfileData> registerWithEmail(
       String email,
       String password,
@@ -33,6 +38,7 @@ class FirebaseAuthRepository {
     }
   }
 
+  @override
   Future<void> updateDisplayName(String uid, String username) async {
     final user = _auth.currentUser;
     if (user == null || user.uid != uid) {
@@ -41,6 +47,7 @@ class FirebaseAuthRepository {
     await user.updateDisplayName(username);
   }
 
+  @override
   Future<ProfileData> signInWithEmail(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
@@ -50,8 +57,10 @@ class FirebaseAuthRepository {
     return ProfileData(uid: user.uid, username: user.displayName ?? '');
   }
 
+  @override
   Future<void> signOut() => _auth.signOut();
 
+  @override
   Stream<ProfileData?> authStateChanges() {
     return _auth.authStateChanges().map((user) {
       if (user == null) return null;

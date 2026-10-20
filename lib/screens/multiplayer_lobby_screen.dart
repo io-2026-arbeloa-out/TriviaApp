@@ -2,19 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
+import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
-import 'package:triviaapp/services/multiplayer_connection_service.dart';
-import 'package:triviaapp/services/multiplayer_game_service.dart';
 
 enum _LobbyPhase { connecting, waiting, error }
 
 class MultiplayerLobbyScreen extends StatefulWidget {
   const MultiplayerLobbyScreen({
     super.key,
+    this.dependencies,
     required this.uid,
     required this.username,
     required this.settings,
@@ -30,12 +30,15 @@ class MultiplayerLobbyScreen extends StatefulWidget {
   final IMultiplayerConnectionService? connectionService;
   final IMultiplayerGameService? gameService;
 
+  final AppDependencies? dependencies;
+
   @override
   State<MultiplayerLobbyScreen> createState() =>
       _MultiplayerLobbyScreenState();
 }
 
 class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
+  AppDependencies get dependencies => widget.dependencies ?? AppDependencies.instance;
   UIOptions get options => widget.options;
 
   late final IMultiplayerConnectionService _connectionService;
@@ -51,9 +54,9 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   @override
   void initState() {
     super.initState();
-    _sessionRepo = FirebaseSessionRepository();
+    _sessionRepo = dependencies.sessionRepository;
     _connectionService =
-        widget.connectionService ?? MultiplayerConnectionService();
+        widget.connectionService ?? dependencies.connectionService;
     _connect();
   }
 
@@ -131,10 +134,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     if (!mounted) return;
 
     final gameService = widget.gameService ??
-        MultiplayerGameService(
-          sessionId: sessionId,
-          sessionRepository: _sessionRepo,
-        );
+        dependencies.createMultiplayerGameService(sessionId, sessions: _sessionRepo);
 
     AppRoute.instance.goToMultiplayer(options, gameService);
   }

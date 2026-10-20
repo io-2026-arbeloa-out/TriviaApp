@@ -25,19 +25,19 @@ Future<void> tapLogin(WidgetTester tester) async {
 }
 
 void main() {
-  late FakeLoginAuthService fakeService;
+  late FakeAuthRepository fakeService;
 
   Widget buildSubject() => MaterialApp(
         navigatorKey: AppRoute.instance.navigatorKey,
         initialRoute: '/login-test',
         routes: {
-          '/login-test': (_) => LoginScreen(authService: fakeService),
+          '/login-test': (_) => LoginScreen(authRepository: fakeService),
           AppRoute.mainMenuScreen: (_) => MainMenuScreen(authChecker: () => true),
         },
       );
 
   setUp(() {
-    fakeService = FakeLoginAuthService();
+    fakeService = FakeAuthRepository();
   });
 
   group('LoginScreen — rendering', () {
@@ -116,7 +116,7 @@ void main() {
       // Never-completing future keeps the loading state visible.
       final hangingService = _HangingLoginService();
       await tester.pumpWidget(
-          MaterialApp(home: LoginScreen(authService: hangingService)));
+          MaterialApp(home: LoginScreen(authRepository: hangingService)));
 
       await tester.enterText(
           find.widgetWithText(TextField, 'Email'), 'a@b.com');
@@ -193,7 +193,7 @@ void main() {
 
 // Fake service whose signInWithEmail never completes — used to assert
 // loading indicator visibility.
-class _HangingLoginService extends FakeLoginAuthService {
+class _HangingLoginService extends FakeAuthRepository {
   @override
   Future<ProfileData> signInWithEmail(String email, String password) =>
       Completer<ProfileData>().future;

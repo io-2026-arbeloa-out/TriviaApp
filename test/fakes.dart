@@ -1,17 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/profile_data.dart';
-import 'package:triviaapp/repositories/firebase_auth_repository.dart';
-import 'package:triviaapp/repositories/firebase_profile_repository.dart';
-import 'package:triviaapp/interfaces/i_login_auth_service.dart';
+import 'package:triviaapp/repositories/auth_repository.dart';
+import 'package:triviaapp/repositories/profile_repository.dart';
 import 'package:triviaapp/interfaces/i_register_auth_service.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes for repositories
-// Uses Fake + implements to bypass Firebase constructors entirely.
+// Uses repository contracts without constructing Firebase clients.
 // ---------------------------------------------------------------------------
 
-class FakeFirebaseAuthRepository extends Fake
-    implements FirebaseAuthRepository {
+class FakeAuthRepository extends Fake
+    implements AuthRepository {
   // Configurable behaviour — set these before each test.
   ProfileData? signInResult;
   Exception? signInError;
@@ -24,10 +23,16 @@ class FakeFirebaseAuthRepository extends Fake
   String? updatedDisplayName;
 
   bool signOutCalled = false;
+  bool signedIn = false;
+  int signInCallCount = 0;
   Stream<ProfileData?> authStream = const Stream.empty();
 
   @override
+  bool get isSignedIn => signedIn;
+
+  @override
   Future<ProfileData> signInWithEmail(String email, String password) async {
+    signInCallCount++;
     if (signInError != null) throw signInError!;
     return signInResult!;
   }
@@ -53,20 +58,25 @@ class FakeFirebaseAuthRepository extends Fake
   @override
   Future<void> signOut() async {
     signOutCalled = true;
+    signedIn = false;
   }
 
   @override
   Stream<ProfileData?> authStateChanges() => authStream;
 }
 
-class FakeFirebaseProfileRepository extends Fake
-    implements FirebaseProfileRepository {
+class FakeProfileRepository extends Fake
+    implements ProfileRepository {
   ProfileData? getResult;
   Exception? getError;
 
   bool updateCalled = false;
   ProfileData? lastUpdatedProfile;
+  String uiPreset = 'default';
   Exception? updateError;
+
+  @override
+  Future<String> getUIPreset() async => uiPreset;
 
   @override
   Future<ProfileData> getProfileData() async {
@@ -85,28 +95,6 @@ class FakeFirebaseProfileRepository extends Fake
 // ---------------------------------------------------------------------------
 // Fakes for services (used in widget tests)
 // ---------------------------------------------------------------------------
-
-class FakeLoginAuthService extends Fake implements ILoginAuthService {
-  ProfileData? signInResult;
-  Exception? signInError;
-  int signInCallCount = 0;
-  bool signOutCalled = false;
-
-  @override
-  Future<ProfileData> signInWithEmail(String email, String password) async {
-    signInCallCount++;
-    if (signInError != null) throw signInError!;
-    return signInResult!;
-  }
-
-  @override
-  Future<void> signOut() async {
-    signOutCalled = true;
-  }
-
-  @override
-  Stream<ProfileData?> authStateChanges() => const Stream.empty();
-}
 
 class FakeRegisterAuthService extends Fake implements IRegisterAuthService {
   ProfileData? registerResult;

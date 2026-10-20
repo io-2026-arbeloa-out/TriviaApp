@@ -6,7 +6,7 @@ import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
 import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/services/singleplayer_game_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
 
 enum _Phase { loading, playing, checking, feedback, error }
 
@@ -50,7 +50,7 @@ class SingleplayerGameScreen extends StatefulWidget {
     ISingleplayerGameService? gameService,
   })  : _options = options ?? UIOptions(),
         _sessionData = sessionData,
-        _gameService = gameService ?? SingleplayerGameService();
+        _gameService = gameService ?? AppDependencies.instance.createSingleplayerGameService();
 
   @override
   State<SingleplayerGameScreen> createState() => _SingleplayerGameScreenState();
