@@ -12,6 +12,7 @@ import 'package:triviaapp/repositories/firebase_options_repository.dart';
 import 'package:triviaapp/repositories/firebase_quiz_repository.dart';
 import 'package:triviaapp/repositories/firebase_game_commands.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
+import 'package:triviaapp/repositories/session_repository.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/services/auth_register_service.dart';
 import 'package:triviaapp/services/ui_options_service.dart';
@@ -30,6 +31,7 @@ class AppDependencies {
   final ProfileRepository? _profileRepository;
   final OptionsRepository? _optionsRepository;
   final QuizRepository? _quizRepository;
+  final SessionRepository? _sessionRepository;
 
   AppDependencies({
     FirebaseAuth? auth,
@@ -40,6 +42,7 @@ class AppDependencies {
     ProfileRepository? profileRepository,
     OptionsRepository? optionsRepository,
     QuizRepository? quizRepository,
+    SessionRepository? sessionRepository,
   }) : _auth = auth,
        _firestore = firestore,
        _database = database,
@@ -47,7 +50,8 @@ class AppDependencies {
        _authRepository = authRepository,
        _profileRepository = profileRepository,
        _optionsRepository = optionsRepository,
-       _quizRepository = quizRepository;
+       _quizRepository = quizRepository,
+       _sessionRepository = sessionRepository;
 
   late final firebaseAuth = _auth ?? FirebaseAuth.instance;
   late final firestore = _firestore ?? FirebaseFirestore.instance;
@@ -68,10 +72,11 @@ class AppDependencies {
     profileRepository,
   );
   late final gameCommands = FirebaseGameCommands(functions: _functions);
-  late final sessionRepository = FirebaseSessionRepository(
-    firestore: firestore,
-    commands: gameCommands,
-  );
+  late final SessionRepository sessionRepository =
+      _sessionRepository ?? FirebaseSessionRepository(
+        firestore: firestore,
+        commands: gameCommands,
+      );
   late final questionRepository = FirebaseQuestionRepository(
     database: database,
   );
@@ -90,12 +95,12 @@ class AppDependencies {
 
   MultiplayerGameService createMultiplayerGameService(
     String sessionId, {
-    FirebaseSessionRepository? sessions,
+    SessionRepository? sessions,
   }) => MultiplayerGameService(
     sessionId: sessionId,
     sessionRepository: sessions ?? sessionRepository,
     questionRepository: questionRepository,
-    auth: firebaseAuth,
-    firestore: firestore,
+    authRepository: authRepository,
+    profileRepository: profileRepository,
   );
 }

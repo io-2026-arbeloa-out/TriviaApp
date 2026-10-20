@@ -20,7 +20,8 @@ PlayerLiveState _player({
 LiveGameState _state({
   String sessionId = 'sess1',
   String myUid = 'uid1',
-  SessionStatus status = SessionStatus.answering,
+  SessionStatus status = SessionStatus.inProgress,
+  RoundPhase phase = RoundPhase.answering,
   int currentQuestionIndex = 0,
   List<String>? questionIds,
   List<PlayerLiveState>? players,
@@ -30,6 +31,7 @@ LiveGameState _state({
       sessionId: sessionId,
       myUid: myUid,
       status: status,
+      phase: phase,
       currentQuestionIndex: currentQuestionIndex,
       questionIds: questionIds ?? const ['q0', 'q1', 'q2'],
       players: players ?? [],
@@ -337,7 +339,13 @@ void main() {
   group('LiveGameState scalar getters', () {
     test('sessionId', () => expect(_state(sessionId: 'abc').sessionId, 'abc'));
     test('myUid',    () => expect(_state(myUid: 'u99').myUid, 'u99'));
-    test('status',   () => expect(_state(status: SessionStatus.resolving).status, SessionStatus.resolving));
+    test('status',   () => expect(_state(status: SessionStatus.inProgress).status, SessionStatus.inProgress));
+    test('answering depends on both session status and round phase', () {
+      expect(_state().isAnswering, isTrue);
+      expect(_state(phase: RoundPhase.resolving).isAnswering, isFalse);
+      expect(_state(status: SessionStatus.waiting).isAnswering, isFalse);
+      expect(_state(status: SessionStatus.finished, phase: RoundPhase.finished).isAnswering, isFalse);
+    });
     test('currentQuestionIndex', () => expect(_state(currentQuestionIndex: 7).currentQuestionIndex, 7));
     test('questionIds', () {
       final ids = ['q10', 'q11', 'q12'];

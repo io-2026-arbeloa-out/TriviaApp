@@ -5,13 +5,9 @@ import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/live_game_state.dart';
 import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/models/session_status.dart';
+import 'package:triviaapp/controllers/multiplayer_controller.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/widgets/lottery_animation.dart';
-
-// ── Local UI phase ──────────────────────────────────────────────────────────
-// Finer-grained than SessionPhase — drives which widget subtree is shown.
-enum _UIPhase { loading, answering, waiting, resolving, eliminated, finished }
 
 class MultiplayerGameScreen extends StatefulWidget {
   final UIOptions _options;
@@ -32,200 +28,96 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   UIOptions get options => widget._options;
   IMultiplayerGameService get gameService => widget._gameService;
 
-  // ── Stream ──────────────────────────────────────────────────────────────
-  StreamSubscription<LiveGameState>? _subscription;
-  LiveGameState? _liveState;
-  _UIPhase _uiPhase = _UIPhase.loading;
-
-  // ── Per-question local state ────────────────────────────────────────────
-  // Reset every time currentQuestionIndex advances.
-  List<String> _shuffledAnswers = [];
-  String? _selectedAnswer;
-
-  // Filled only after the server locks and validates this player's answer.
-  // null = not answered yet, true = correct, false = wrong.
-  bool? _isAnswerCorrect;
-  List<String> _revealedAnswers = [];
-
-  // True after the first successful submitAnswer call (locks button grid).
-  bool _hasAnsweredThisRound = false;
-
-  int _displayedQuestionIndex = -1;
-
-  RoundResult? _cachedRoundResult;
-
-  //animation
+  late final MultiplayerController _controller;
+  LiveGameState? get _liveState => _controller.state;
+  MultiplayerPhase get _uiPhase => _controller.phase;
+  List<String> get _shuffledAnswers => _controller.answers;
+  String? get _selectedAnswer => _controller.selectedAnswer;
+  bool? get _isAnswerCorrect => _controller.isAnswerCorrect;
+  List<String> get _revealedAnswers => _controller.revealedAnswers;
+  bool get _hasAnsweredThisRound => _controller.hasAnswered;
+  RoundResult? get _cachedRoundResult => _controller.cachedRoundResult;
   static const Duration _lotteryAnimationLength = Duration(seconds: 4);
   bool _lotteryRevealDone = false;
-
-  // ── Navigation guard ────────────────────────────────────────────────────
-  bool _fetchingResults = false;
-  DateTime? _resolvingSince;
-  bool _resolvingStuckNotified = false;
-
-  // ── Lifecycle ───────────────────────────────────────────────────────────
+  MultiplayerPhase? _lastVisualPhase;
+  Object? _lastAnswerError, _lastConnectionError, _lastResultsError;
+  bool _stalledNotified = false;
+  bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-    _subscription = gameService
-        .buildLiveGameStateStream()
-        .listen(_onStateUpdate, onError: _onStreamError);
+    _controller = MultiplayerController(service: gameService);
+    _controller.addListener(_onControllerChanged);
+    _controller.connect();
   }
 
   @override
   void dispose() {
-    _subscription?.cancel();
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     super.dispose();
   }
 
-  // ── State update ─────────────────────────────────────────────────────────
-
-  void _onStateUpdate(LiveGameState state) {
-    if (!mounted) return;
-
-    final qIndex = state.currentQuestionIndex;
-
-    // When the question advances, reset all per-question local state.
-    if (qIndex != _displayedQuestionIndex) {
-      _displayedQuestionIndex = qIndex;
-      _selectedAnswer = null;
-      _isAnswerCorrect = null;
-      _revealedAnswers = [];
-      _hasAnsweredThisRound = false;
-
-      if (qIndex < gameService.questions.length) {
-        _shuffledAnswers = _buildShuffledAnswers(gameService.questions[qIndex]);
-      }
-    }
-
-    final uiPhase = _resolveUIPhase(state);
-    if (uiPhase == _UIPhase.resolving) {
-      _resolvingSince ??= DateTime.now();
-
-      if (_uiPhase != _UIPhase.resolving) {
-        _lotteryRevealDone = false;
-      }
-      if (!_resolvingStuckNotified &&
-          DateTime.now().difference(_resolvingSince!) > const Duration(seconds: 12)) {
-        _resolvingStuckNotified = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Runda trwa zbyt długo. Możesz opuścić grę przyciskiem wyjścia.',
-              ),
-              action: SnackBarAction(
-                label: 'Opuść',
-                onPressed: _onLeavePressed,
-              ),
-            ),
-          );
-        });
-      }
-    } else {
-      _resolvingSince = null;
-      _resolvingStuckNotified = false;
-    }
-
-    if (state.lastRoundResult != null) {
-      _cachedRoundResult = state.lastRoundResult;
-    }
-
-    setState(() {
-      _liveState = state;
-      _uiPhase = uiPhase;
+  void _showMessage(SnackBar message) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(message);
     });
-
-    if (_uiPhase == _UIPhase.finished && !_fetchingResults) {
-      _fetchingResults = true;
-      // Cancel immediately — the CF deletes the session document after
-      // archiving. Without this the deletion triggers onError on the
-      // still-active stream, producing a spurious 'session not found' snackbar.
-      _subscription?.cancel();
-      _subscription = null;
-      _navigateToResults();
-    }
   }
 
-  void _onStreamError(Object error) {
+  void _onControllerChanged() {
     if (!mounted) return;
-    // If we already received the finished status and cancelled the subscription,
-    // a deletion event may still arrive before the cancel propagates. Ignore it.
-    if (_fetchingResults) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Błąd połączenia: $error')),
-    );
-  }
-
-  _UIPhase _resolveUIPhase(LiveGameState state) {
-    switch (state.status) {
-      case SessionStatus.waiting:
-        return _UIPhase.loading;
-      case SessionStatus.finished:
-        return _UIPhase.finished;
-      case SessionStatus.resolving:
-        return _UIPhase.resolving;
-      case SessionStatus.answering:
-        if (state.amIEliminated) return _UIPhase.eliminated;
-        return _hasAnsweredThisRound ? _UIPhase.waiting : _UIPhase.answering;
-      default:
-        return _UIPhase.loading;
+    if (_lastVisualPhase != _uiPhase && _uiPhase == MultiplayerPhase.resolving) {
+      _lotteryRevealDone = false;
     }
-  }
-
-  List<String> _buildShuffledAnswers(Question q) {
-    final opts = q.answers.toList();
-    opts.shuffle();
-    return opts;
-  }
-
-  // ── Answer submission ────────────────────────────────────────────────────
-
-  Future<void> _onAnswerTapped(String answer, {int? retryRoundIndex}) async {
-    // Guards — prevent double-tap and wrong phase.
-    if (_hasAnsweredThisRound && retryRoundIndex == null) return;
-    if (_uiPhase != _UIPhase.answering &&
-        !(retryRoundIndex != null && _uiPhase == _UIPhase.waiting)) return;
-    final state = _liveState;
-    if (state == null) return;
-    final qi = state.currentQuestionIndex;
-    if (retryRoundIndex != null && qi != retryRoundIndex) return;
-    if (qi >= gameService.questions.length) return;
-
-    final question = gameService.questions[qi];
-
-    // Lock UI immediately (optimistic) before the async write.
-    setState(() {
-      _selectedAnswer = answer;
-      _isAnswerCorrect = null;
-      _hasAnsweredThisRound = true;
-      _uiPhase = _UIPhase.waiting;
-    });
-
-    try {
-      final result = await gameService.submitAnswer(
-        roundIndex: qi,
-        questionId: question.id,
-        answer: answer,
-      );
-      if (!mounted || _displayedQuestionIndex != qi) return;
-      setState(() {
-        _isAnswerCorrect = result.isCorrect;
-        _revealedAnswers = result.correctAnswers;
-      });
-    } catch (e) {
-      // A lost response may hide a committed answer; retry the same choice only.
-      if (!mounted || _displayedQuestionIndex != qi) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Błąd wysyłania odpowiedzi: $e'),
-          action: SnackBarAction(label: 'Ponów',
-            onPressed: () => _onAnswerTapped(answer, retryRoundIndex: qi))),
+    _lastVisualPhase = _uiPhase;
+    final answerError = _controller.answerError;
+    if (answerError != null && answerError != _lastAnswerError) {
+      final round = _liveState?.currentQuestionIndex;
+      _showMessage(SnackBar(
+        content: Text('Błąd wysyłania odpowiedzi: $answerError'),
+        action: SnackBarAction(
+          label: 'Ponów',
+          onPressed: () => _controller.retryAnswer(expectedRoundIndex: round),
+        ),
+      ));
+    }
+    _lastAnswerError = answerError;
+    final connectionError = _controller.connectionError;
+    if (connectionError != null && connectionError != _lastConnectionError) {
+      _showMessage(SnackBar(
+        content: Text('Błąd połączenia: $connectionError'),
+        action: SnackBarAction(label: 'Ponów', onPressed: _controller.connect),
+      ));
+    }
+    _lastConnectionError = connectionError;
+    if (_controller.resultsError != null &&
+        _controller.resultsError != _lastResultsError) {
+      _showMessage(const SnackBar(
+        content: Text('Nie udało się pobrać wyników. Spróbuj ponownie później.'),
+      ));
+    }
+    _lastResultsError = _controller.resultsError;
+    if (_controller.roundStalled && !_stalledNotified) {
+      _stalledNotified = true;
+      _showMessage(SnackBar(
+        content: const Text('Runda trwa zbyt długo. Możesz opuścić grę przyciskiem wyjścia.'),
+        action: SnackBarAction(label: 'Opuść', onPressed: _onLeavePressed),
+      ));
+    } else if (!_controller.roundStalled) {
+      _stalledNotified = false;
+    }
+    setState(() {});
+    final result = _controller.finalSession;
+    if (result != null && !_navigated) {
+      _navigated = true;
+      AppRoute.instance.goToMultiplayerScoreTable(
+        options: options, session: result, myUid: gameService.myUid,
       );
     }
   }
 
+  Future<void> _onAnswerTapped(String answer) => _controller.answer(answer);
   // ── Leave ─────────────────────────────────────────────────────────────────
 
   Future<void> _onLeavePressed() async {
@@ -264,37 +156,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     );
 
     if (confirmed != true || !mounted) return;
-    _subscription?.cancel();
-    _subscription = null;
     // Fire-and-forget — navigation must not wait on Firestore.
-    unawaited(gameService.leaveGame().catchError((_) {}));
+    unawaited(_controller.leave().catchError((_) {}));
     AppRoute.instance.goToMainMenu(options);
-  }
-
-  // ── Navigation ───────────────────────────────────────────────────────────
-
-  Future<void> _navigateToResults() async {
-    const maxAttempts = 5;
-    for (var i = 0; i < maxAttempts; i++) {
-      try {
-        final session = await gameService.fetchFinalSessionData();
-        if (!mounted) return;
-        AppRoute.instance.goToMultiplayerScoreTable(
-          options: options,
-          session: session,
-          myUid: gameService.myUid,
-        );
-        return;
-      } catch (_) {
-        await Future.delayed(const Duration(seconds: 2));
-      }
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Nie udało się pobrać wyników. Spróbuj ponownie później.'),
-      ),
-    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -317,7 +181,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   Widget _buildBody() {
     final state = _liveState;
-    if (state == null || _uiPhase == _UIPhase.loading) {
+    if (state == null || _uiPhase == MultiplayerPhase.loading) {
       return Center(child: CircularProgressIndicator(color: options.textColor));
     }
 
@@ -330,8 +194,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             _buildBottomBar(state),
           ],
         ),
-        if (_uiPhase == _UIPhase.resolving ||
-            (_uiPhase == _UIPhase.finished && _cachedRoundResult != null))
+        if (_uiPhase == MultiplayerPhase.resolving ||
+            (_uiPhase == MultiplayerPhase.finished && _cachedRoundResult != null))
           _buildResolvingOverlay(state),
       ],
     );
@@ -545,9 +409,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   Widget _buildBottomBar(LiveGameState state) {
     final message = switch (_uiPhase) {
-      _UIPhase.waiting    => 'Oczekiwanie na pozostałych graczy...',
-      _UIPhase.eliminated => 'Zostałeś wyeliminowany — oglądasz grę',
-      _UIPhase.answering  => 'Wybierz odpowiedź',
+      MultiplayerPhase.waiting    => 'Oczekiwanie na pozostałych graczy...',
+      MultiplayerPhase.eliminated => 'Zostałeś wyeliminowany — oglądasz grę',
+      MultiplayerPhase.answering  => 'Wybierz odpowiedź',
       _              => '',
     };
 
@@ -559,7 +423,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (_uiPhase == _UIPhase.waiting) ...[
+          if (_uiPhase == MultiplayerPhase.waiting) ...[
             SizedBox(
               width: 12,
               height: 12,
@@ -732,7 +596,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _uiPhase == _UIPhase.finished
+                    _uiPhase == MultiplayerPhase.finished
                         ? 'Ładowanie wyników...'
                         : 'Kolejne pytanie za chwilę...',
                     style: TextStyle(

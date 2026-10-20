@@ -254,11 +254,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             MaterialPageRoute(
                               builder: (_) => MultiplayerLobbyScreen(
                                 dependencies: widget.dependencies,
-                                uid: widget.dependencies.firebaseAuth.currentUser?.uid ??
+                                uid: widget.dependencies.authRepository.currentUser?.uid ??
                                     'uid1',
                                 username:
-                                widget.dependencies.firebaseAuth.currentUser
-                                    ?.displayName ??
+                                widget.dependencies.authRepository.currentUser
+                                    ?.username ??
                                     'test',
                                 settings: const OnlineGameOptions(
                                   categoryId: 'general',

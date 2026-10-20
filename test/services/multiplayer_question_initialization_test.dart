@@ -1,64 +1,45 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/repositories/firebase_question_repository.dart';
-import 'package:triviaapp/repositories/firebase_session_repository.dart';
-import 'package:triviaapp/services/multiplayer_game_service.dart';
+import 'package:triviaapp/app_dependencies.dart';
+import 'package:triviaapp/models/profile_data.dart';
+import '../support/session_fixtures.dart';
 
-class _Questions extends Fake implements FirebaseQuestionRepository {
-  bool called = false;
-
-  @override
-  Future<List<Question>> getQuestionsByIds({
-    required String category,
-    required List<String> ids,
-  }) async {
-    called = true;
-    throw StateError('Question $category/${ids.first} not found');
-  }
-}
+class _UnusedDatabase extends Fake implements FirebaseDatabase {}
 
 void main() {
-  test('an implicit session repository uses the supplied Firestore instance', () async {
-    final db = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(mockUser: MockUser(uid: 'player'), signedIn: true);
-    await db.collection('users').doc('player').set({'username': 'Player'});
-    await db.collection('sessions').doc('room').set({'categoryId': 'general', 'questionIds': []});
-    final service = MultiplayerGameService(sessionId: 'room', auth: auth,
-      firestore: db, questionRepository: _Questions());
-    await expectLater(service.ready, throwsA(isA<StateError>().having(
-      (error) => error.message, 'message', 'Session has no questions')));
-  });
-
-  for (final ids in [
-    <String>[],
-    ['missing-question'],
-  ]) {
-    test('initialization rejects unavailable questions: $ids', () async {
+  test(
+    'the game factory shares supplied Auth and Firestore with nested repositories',
+    () async {
       final db = FakeFirebaseFirestore();
       final auth = MockFirebaseAuth(
         mockUser: MockUser(uid: 'player'),
         signedIn: true,
       );
-      final questions = _Questions();
-      await db.collection('users').doc('player').set({'username': 'Player'});
-      await db.collection('sessions').doc('room').set({
-        'categoryId': 'general',
-        'questionIds': ids,
-      });
-      final service = MultiplayerGameService(
-        sessionId: 'room',
+      await db
+          .collection('users')
+          .doc('player')
+          .set(const ProfileData(uid: 'player', username: 'Player').toJson());
+      await db
+          .collection('sessions')
+          .doc('room')
+          .set(sessionDocument(status: 'waiting', ids: []));
+      final deps = AppDependencies(
         auth: auth,
         firestore: db,
-        questionRepository: questions,
-        sessionRepository: FirebaseSessionRepository(
-          firestore: db,
+        database: _UnusedDatabase(),
+      );
+      await expectLater(
+        deps.createMultiplayerGameService('room').ready,
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            'Session has no questions',
+          ),
         ),
       );
-
-      await expectLater(service.ready, throwsStateError);
-      expect(questions.called, ids.isNotEmpty);
-    });
-  }
+    },
+  );
 }

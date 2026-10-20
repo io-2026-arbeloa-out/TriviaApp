@@ -8,7 +8,9 @@ import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/models/difficulty.dart';
 import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/repositories/firebase_session_repository.dart';
+import 'package:triviaapp/repositories/session_repository.dart';
+import 'package:triviaapp/models/session_snapshot.dart';
+import 'package:triviaapp/models/session_status.dart';
 
 class PrivateGameOptionsScreen extends StatefulWidget {
   const PrivateGameOptionsScreen({
@@ -16,14 +18,14 @@ class PrivateGameOptionsScreen extends StatefulWidget {
     this.dependencies,
     UIOptions? options,
     IMultiplayerConnectionService? connectionService,
-    FirebaseSessionRepository? sessionRepository,
+    SessionRepository? sessionRepository,
   })  : _options = options ?? const UIOptions(),
         _connectionService = connectionService,
         _sessionRepository = sessionRepository;
 
   final UIOptions _options;
   final IMultiplayerConnectionService? _connectionService;
-  final FirebaseSessionRepository? _sessionRepository;
+  final SessionRepository? _sessionRepository;
 
   final AppDependencies? dependencies;
 
@@ -37,7 +39,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   UIOptions get options => widget._options;
 
   late final IMultiplayerConnectionService _connectionService;
-  late final FirebaseSessionRepository _sessionRepository;
+  late final SessionRepository _sessionRepository;
 
   static const List<int> _timeLimitOptions = [10, 20, 30, 60];
   static const List<int> _maxPlayerOptions = [2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -60,7 +62,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   late OnlineGameOptions _gameOptions;
 
   String? _sessionId;
-  StreamSubscription<Map<String, dynamic>>? _sessionSub;
+  StreamSubscription<SessionSnapshot>? _sessionSub;
   List<String> _playerNames = [];
   bool _isConnecting = true;
   String? _connectError;
@@ -89,7 +91,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   }
 
   Future<void> _createSession() async {
-    final user = dependencies.firebaseAuth.currentUser;
+    final user = dependencies.authRepository.currentUser;
     if (user == null) {
       if (mounted) {
         setState(() {
@@ -105,7 +107,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
     try {
       final sessionId = await _connectionService.connectPlayer(
         uid: user.uid,
-        username: user.displayName ?? user.email ?? 'Host',
+        username: user.username,
         settings: _gameOptions,
       );
 
@@ -128,16 +130,11 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
     _sessionSub = _sessionRepository.sessionDocStream(sessionId).listen(
           (data) {
         if (!mounted) return;
-        final playerUids =
-        List<String>.from(data['playerUids'] as List? ?? []);
-        final players = data['players'] as Map<String, dynamic>? ?? {};
         setState(() {
-          _playerNames = playerUids
-              .map((uid) => players[uid]?['username'] as String? ?? '$uid')
-              .toList();
+          _playerNames = data.playerNames;
         });
 
-        if (data['status'] == 'inProgress') {
+        if (data.status == SessionStatus.inProgress || (data.status == SessionStatus.finished && data.resultsReady)) {
           _sessionSub?.cancel();
           _sessionSub = null;
           _gameStarted = true;
@@ -206,7 +203,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   void dispose() {
     _sessionSub?.cancel();
     if (_sessionId != null && !_gameStarted) {
-      final uid = dependencies.firebaseAuth.currentUser?.uid;
+      final uid = dependencies.authRepository.currentUser?.uid;
       if (uid != null) {
         unawaited(
           _sessionRepository

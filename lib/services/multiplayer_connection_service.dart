@@ -1,11 +1,12 @@
 import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
+import 'package:triviaapp/repositories/session_repository.dart';
 
 class MultiplayerConnectionService implements IMultiplayerConnectionService {
-  final FirebaseSessionRepository _sessionRepository;
+  final SessionRepository _sessionRepository;
 
-  MultiplayerConnectionService({FirebaseSessionRepository? sessionRepository})
+  MultiplayerConnectionService({SessionRepository? sessionRepository})
       : _sessionRepository = sessionRepository ?? FirebaseSessionRepository();
 
   @override

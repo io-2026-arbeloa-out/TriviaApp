@@ -12,6 +12,12 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   bool get isSignedIn => _auth.currentUser != null;
 
+  @override
+  ProfileData? get currentUser {
+    final user = _auth.currentUser;
+    return user == null ? null : ProfileData(uid: user.uid, username: user.displayName ?? '');
+  }
+
   /// Creates the account; AuthRegisterService completes the name and profile.
   @override
   Future<ProfileData> registerWithEmail(

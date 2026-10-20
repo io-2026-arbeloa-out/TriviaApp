@@ -1,564 +1,229 @@
 import 'dart:async';
-
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-import 'package:triviaapp/repositories/firebase_game_commands.dart';
+import 'package:triviaapp/models/difficulty.dart';
+import 'package:triviaapp/models/game_answer.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/question.dart';
+import 'package:triviaapp/models/question_type.dart';
+import 'package:triviaapp/models/session_snapshot.dart';
 import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
-import 'package:triviaapp/repositories/firebase_session_repository.dart';
+import 'package:triviaapp/repositories/session_repository.dart';
 import 'package:triviaapp/services/multiplayer_game_service.dart';
+import '../fakes.dart';
+import '../support/session_fixtures.dart';
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-class MockFirebaseAuth extends Mock implements FirebaseAuth {}
-class MockUser extends Mock implements User {}
-class MockQuestionRepository extends Mock implements FirebaseQuestionRepository {}
-
-class _Commands extends Fake implements FirebaseGameCommands {
-  String? name;
-  Map<String, dynamic>? data;
+class _Sessions extends Fake implements SessionRepository {
+  SessionSnapshot current = sessionSnapshot();
+  final changes = StreamController<SessionSnapshot>.broadcast();
+  String? uid, sessionId, questionId, answer;
+  int? index;
+  bool failArchive = false;
   @override
-  Future<Map<String, dynamic>> call(String name, Map<String, dynamic> data) async {
-    this.name = name; this.data = data;
-    return {'isCorrect': true, 'correctAnswers': ['CorrectAnswer']};
+  Stream<SessionSnapshot> sessionDocStream(String id) async* {
+    sessionId = id;
+    yield current;
+    yield* changes.stream;
+  }
+
+  void emit(SessionSnapshot value) {
+    current = value;
+    changes.add(value);
+  }
+
+  @override
+  Future<GameAnswer> submitAnswer({
+    required String sessionId,
+    required String uid,
+    required int roundIndex,
+    required String questionId,
+    required String answer,
+  }) async {
+    this.sessionId = sessionId;
+    this.uid = uid;
+    index = roundIndex;
+    this.questionId = questionId;
+    this.answer = answer;
+    return const GameAnswer(isCorrect: true, correctAnswers: ['A']);
+  }
+
+  @override
+  Future<void> leaveGame({
+    required String sessionId,
+    required String uid,
+  }) async {
+    this.sessionId = sessionId;
+    this.uid = uid;
+  }
+
+  @override
+  Future<MultiplayerSessionData> fetchArchivedSession(String id) async {
+    if (failArchive) throw StateError('Missing archive');
+    return MultiplayerSessionData.fromJson(archiveDocument());
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const _sessionId = 'sess1';
-const _myUid = 'uid1';
-const _myUsername = 'TestUser';
-const _categoryId = 'general';
-
-Question _makeQuestion(String id) => Question.fromJson({
-      'id': id,
-      'category': _categoryId,
-      'text': 'Question $id',
-      'answers': ['CorrectAnswer', 'Wrong1', 'Wrong2', 'Wrong3'],
-
-      'difficulty': 'easy',
-      'type': 'open4',
-    });
-
-/// Minimalne dane dokumentu sesji w stanie 'answering'.
-Map<String, dynamic> _answeringSessionDoc({
-  int questionIndex = 0,
-  Map<String, dynamic>? players,
-}) =>
-    {
-      'questionIds': ['0', '1', '2'],
-      'categoryId': _categoryId,
-      'status': 'inProgress',
-      'phase': 'answering',
-      'currentQuestionIndex': questionIndex,
-      'players': players ??
-          {
-            _myUid: {
-              'username': _myUsername,
-              'profilePicture': 'avatar.png',
-              'isEliminated': false,
-              'lotteryTickets': 0,
-            }
-          },
-      'lastRoundResult': null,
-    };
-
-// ---------------------------------------------------------------------------
-// Test setup factory
-// ---------------------------------------------------------------------------
-
-/// Tworzy FakeFirestore z użytkownikiem i sesją, tworzy serwis i czeka na
-/// zakończenie inicjalizacji. Zwraca gotowy serwis oraz fake Firestore
-/// (do manipulowania dokumentami w testach strumienia).
-Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore, _Commands commands})>
-    _createService({
-  MockQuestionRepository? questionRepo,
-  Map<String, dynamic>? sessionDoc,
-  Map<String, dynamic>? archiveDoc,
-}) async {
-  final fakeFirestore = FakeFirebaseFirestore();
-  final mockAuth = MockFirebaseAuth();
-  final mockUser = MockUser();
-  final qRepo = questionRepo ?? MockQuestionRepository();
-
-  // Auth setup
-  when(() => mockAuth.currentUser).thenReturn(mockUser);
-  when(() => mockUser.uid).thenReturn(_myUid);
-
-  // Firestore data
-  await fakeFirestore
-      .collection('users')
-      .doc(_myUid)
-      .set({'username': _myUsername});
-
-  if (archiveDoc != null) {
-    await fakeFirestore.collection('sessions_archive').doc(_sessionId).set(archiveDoc);
-  } else {
-    await fakeFirestore.collection('sessions').doc(_sessionId)
-        .set(sessionDoc ?? _answeringSessionDoc());
+class _Questions extends Fake implements FirebaseQuestionRepository {
+  bool fail = false;
+  List<String>? ids;
+  String? category;
+  @override
+  Future<List<Question>> getQuestionsByIds({
+    required String category,
+    required List<String> ids,
+  }) async {
+    this.ids = ids;
+    this.category = category;
+    if (fail) throw StateError('Missing question');
+    return [
+      for (final id in ids)
+        Question(
+          id: id,
+          text: 'Q$id',
+          answers: {'A', 'B'},
+          type: QuestionType.open4,
+          difficulty: Difficulty.easy,
+        ),
+    ];
   }
-
-  // Question repository
-  if (questionRepo == null) {
-  when(() => qRepo.getQuestionsByIds(
-        category: any(named: 'category'),
-        ids: any(named: 'ids'),
-      )).thenAnswer((_) async => [
-        _makeQuestion('0'),
-        _makeQuestion('1'),
-        _makeQuestion('2'),
-      ]);
-  }
-
-  final commands = _Commands();
-  final sessionRepo = FirebaseSessionRepository(firestore: fakeFirestore, commands: commands);
-
-  final svc = MultiplayerGameService(
-    sessionId: _sessionId,
-    sessionRepository: sessionRepo,
-    questionRepository: qRepo,
-    auth: mockAuth,
-    firestore: fakeFirestore,
-  );
-
-  await svc.ready;
-  return (service: svc, firestore: fakeFirestore, commands: commands);
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 void main() {
-  // ── Initialization ─────────────────────────────────────────────────────────
-  group('_initialize / ready', () {
-    test('completes successfully with valid auth and session', () async {
-      final ctx = await _createService();
-      // If we reach this line, ready completed without throwing.
-      expect(ctx.service.sessionId, _sessionId);
-    });
-
-    test('throws StateError when no authenticated user', () async {
-      final fakeFirestore = FakeFirebaseFirestore();
-      final mockAuth = MockFirebaseAuth();
-      final mockQRepo = MockQuestionRepository();
-
-      when(() => mockAuth.currentUser).thenReturn(null); // no user
-
-      final svc = MultiplayerGameService(
-        sessionId: _sessionId,
-        sessionRepository: FirebaseSessionRepository(firestore: fakeFirestore),
-        questionRepository: mockQRepo,
-        auth: mockAuth,
-        firestore: fakeFirestore,
-      );
-
-      await expectLater(svc.ready, throwsA(isA<StateError>()));
-    });
-
-    test('throws StateError when session document does not exist', () async {
-      final fakeFirestore = FakeFirebaseFirestore();
-      final mockAuth = MockFirebaseAuth();
-      final mockUser = MockUser();
-      final mockQRepo = MockQuestionRepository();
-
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-      when(() => mockUser.uid).thenReturn(_myUid);
-
-      await fakeFirestore
-          .collection('users')
-          .doc(_myUid)
-          .set({'username': _myUsername});
-      // Session document intentionally not created.
-
-      final svc = MultiplayerGameService(
-        sessionId: 'nonexistent_session',
-        sessionRepository: FirebaseSessionRepository(firestore: fakeFirestore),
-        questionRepository: mockQRepo,
-        auth: mockAuth,
-        firestore: fakeFirestore,
-      );
-
-      await expectLater(svc.ready, throwsA(isA<StateError>()));
-    });
-
-    test('username falls back to empty string when missing in Firestore', () async {
-      final fakeFirestore = FakeFirebaseFirestore();
-      final mockAuth = MockFirebaseAuth();
-      final mockUser = MockUser();
-      final mockQRepo = MockQuestionRepository();
-
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-      when(() => mockUser.uid).thenReturn(_myUid);
-
-      // User document without 'username' field.
-      await fakeFirestore.collection('users').doc(_myUid).set({});
-      await fakeFirestore
-          .collection('sessions')
-          .doc(_sessionId)
-          .set(_answeringSessionDoc());
-
-      when(() => mockQRepo.getQuestionsByIds(
-            category: any(named: 'category'),
-            ids: any(named: 'ids'),
-          )).thenAnswer((_) async => []);
-
-      final svc = MultiplayerGameService(
-        sessionId: _sessionId,
-        sessionRepository: FirebaseSessionRepository(firestore: fakeFirestore),
-        questionRepository: mockQRepo,
-        auth: mockAuth,
-        firestore: fakeFirestore,
-      );
-
-      await svc.ready;
-      expect(svc.myUsername, '');
-    });
+  late _Sessions sessions;
+  late _Questions questions;
+  late FakeAuthRepository auth;
+  late FakeProfileRepository profile;
+  MultiplayerGameService service() => MultiplayerGameService(
+    sessionId: 'room',
+    sessionRepository: sessions,
+    questionRepository: questions,
+    authRepository: auth,
+    profileRepository: profile,
+  );
+  setUp(() {
+    sessions = _Sessions();
+    questions = _Questions();
+    auth = FakeAuthRepository()..signedIn = true;
+    profile = FakeProfileRepository()
+      ..getResult = makeProfile(uid: 'uid1', username: 'Player');
   });
+  tearDown(() => sessions.changes.close());
 
-  // ── Public property accessors ──────────────────────────────────────────────
-  group('property accessors after successful init', () {
-    test('sessionId', () async {
-      final ctx = await _createService();
-      expect(ctx.service.sessionId, _sessionId);
-    });
-
-    test('myUid', () async {
-      final ctx = await _createService();
-      expect(ctx.service.myUid, _myUid);
-    });
-
-    test('myUsername', () async {
-      final ctx = await _createService();
-      expect(ctx.service.myUsername, _myUsername);
-    });
-
-    test('questions are loaded from repository', () async {
-      final ctx = await _createService();
-      expect(ctx.service.questions.length, 3);
-      expect(ctx.service.questions.map((q) => q.id), ['0', '1', '2']);
-    });
-
-    test('getQuestionsByIds is called with the ids from the session document', () async {
-      final mockQRepo = MockQuestionRepository();
-      List<String>? capturedIds;
-
-      when(() => mockQRepo.getQuestionsByIds(
-            category: any(named: 'category'),
-            ids: captureAny(named: 'ids'),
-          )).thenAnswer((inv) async {
-        capturedIds =
-            (inv.namedArguments[const Symbol('ids')] as List).cast<String>();
-        return capturedIds!.map((id) => _makeQuestion(id)).toList();
-      });
-
-      await _createService(questionRepo: mockQRepo);
-      expect(capturedIds, ['0', '1', '2']);
-    });
+  test(
+    'initializes identity and authoritative ordered questions without Firebase',
+    () async {
+      final game = service();
+      await game.ready;
+      expect(game.sessionId, 'room');
+      expect(game.myUid, 'uid1');
+      expect(game.myUsername, 'Player');
+      expect(questions.ids, ['0', '1', '2']);
+      expect(questions.category, 'general');
+      expect(game.questions.map((q) => q.id), ['0', '1', '2']);
+      expect(() => game.questions.clear(), throwsUnsupportedError);
+    },
+  );
+  test('rejects unauthenticated initialization', () async {
+    auth.signedIn = false;
+    await expectLater(service().ready, throwsStateError);
   });
-
-  // ── buildLiveGameStateStream / _parse ──────────────────────────────────────
-  group('buildLiveGameStateStream — _parse behavior', () {
-    test('does not announce finished before the server marks results ready', () async {
-      final ctx = await _createService();
+  test('propagates profile loading failure', () async {
+    profile.getError = Exception('Profile unavailable');
+    await expectLater(service().ready, throwsException);
+  });
+  test('rejects an empty question pool', () async {
+    sessions.current = sessionSnapshot(status: 'waiting', ids: []);
+    await expectLater(service().ready, throwsStateError);
+  });
+  test('propagates an authoritative question load failure', () async {
+    questions.fail = true;
+    await expectLater(service().ready, throwsStateError);
+  });
+  test(
+    'projects typed snapshots without conflating status and phase',
+    () async {
+      sessions.current = sessionSnapshot(phase: 'resolving');
+      final state = await service().buildLiveGameStateStream().first;
+      expect(state.status, SessionStatus.inProgress);
+      expect(state.phase, RoundPhase.resolving);
+      expect(state.lastRoundResult!.eliminatedUid, 'uid2');
+      expect(state.myUid, 'uid1');
+    },
+  );
+  test(
+    'withholds finished until results are ready and allows subsequent subscription',
+    () async {
+      final game = service();
+      await game.ready;
       final states = <SessionStatus>[];
-      final first = Completer<void>();
-      final finished = Completer<void>();
-      final subscription = ctx.service.buildLiveGameStateStream().listen((state) {
+      final first = Completer<void>(), finished = Completer<void>();
+      final sub = game.buildLiveGameStateStream().listen((state) {
         states.add(state.status);
         if (!first.isCompleted) first.complete();
-        if (state.status == SessionStatus.finished && !finished.isCompleted) finished.complete();
+        if (state.status == SessionStatus.finished) finished.complete();
       });
-      addTearDown(subscription.cancel);
       await first.future;
-      await ctx.firestore.collection('sessions').doc(_sessionId)
-          .update({'status': 'finished', 'phase': 'finished', 'resultsReady': false});
+      sessions.emit(sessionSnapshot(status: 'finished', phase: 'finished'));
       await pumpEventQueue();
-      expect(states, [SessionStatus.answering]);
-      await ctx.firestore.collection('sessions').doc(_sessionId).update({'resultsReady': true});
+      expect(states, [SessionStatus.inProgress]);
+      sessions.emit(
+        sessionSnapshot(status: 'finished', phase: 'finished', ready: true),
+      );
       await finished.future;
-      expect(states, [SessionStatus.answering, SessionStatus.finished]);
-    });
-
-    test('initializes and fetches results after the live session has been cleaned up', () async {
-      final archive = <String, dynamic>{
-        'sessionId': _sessionId, 'categoryId': _categoryId, 'questionIds': ['0', '1', '2'],
-        'gameMode': 'casual', 'statsApplied': true,
-        'sessionStartTime': '2026-10-20T10:00:00Z', 'gameStartTime': '2026-10-20T10:00:00Z',
-        'endTime': '2026-10-20T10:01:00Z',
-        'playerResults': [{ 'uid': _myUid, 'username': _myUsername, 'placement': 1,
-          'correctAnswers': 1, 'totalAnswers': 1, 'lotteryTimesIn': 0 }],
-        'rounds': [{ 'roundIndex': 0, 'questionId': '0', 'playerAnswers': {_myUid: 'A'},
-          'isCorrect': {_myUid: true}, 'lotteryOccurred': false, 'lotteryPool': {}, 'eliminatedUid': null }],
-      };
-      final ctx = await _createService(archiveDoc: archive);
-      final state = await ctx.service.buildLiveGameStateStream().first;
-      expect(state.status, SessionStatus.finished);
-      expect(state.myState!.username, _myUsername);
-      expect(state.currentQuestionIndex, 0);
-      expect((await ctx.service.fetchFinalSessionData()).rounds.single.playerAnswers[_myUid], 'A');
-    });
-
-    test('emits LiveGameState with answering status', () async {
-      final ctx = await _createService();
-      final state = await ctx.service.buildLiveGameStateStream().first;
-
-      expect(state.status, SessionStatus.answering);
-      expect(state.sessionId, _sessionId);
-      expect(state.myUid, _myUid);
-      expect(state.currentQuestionIndex, 0);
-      expect(state.questionIds, ['0', '1', '2']);
-    });
-
-    test('maps inProgress+answering -> SessionStatus.answering', () async {
-      final ctx = await _createService(
-        sessionDoc: _answeringSessionDoc(),
+      await sub.cancel();
+      expect((await game.buildLiveGameStateStream().first).resultsReady, true);
+    },
+  );
+  test(
+    'forwards the authenticated profile identity and issued question when answering',
+    () async {
+      final game = service();
+      await game.ready;
+      final result = await game.submitAnswer(
+        roundIndex: 1,
+        questionId: '1',
+        answer: 'A',
       );
-      final state = await ctx.service.buildLiveGameStateStream().first;
-      expect(state.status, SessionStatus.answering);
-    });
-
-    test('maps inProgress+resolving -> SessionStatus.resolving with RoundResult', () async {
-      final ctx = await _createService();
-
-      // Update to resolving phase with a round result.
-      await ctx.firestore.collection('sessions').doc(_sessionId).set({
-        ..._answeringSessionDoc(),
-        'phase': 'resolving',
-        'lastRoundResult': {
-          'eliminatedUid': 'uid2',
-          'eliminatedUsername': 'User2',
-          'lotteryOccurred': false,
-          'lotteryPool': {},
-          'opponentLeft': false,
-        },
-      });
-
-      final state = await ctx.service.buildLiveGameStateStream().first;
-
-      expect(state.status, SessionStatus.resolving);
-      expect(state.lastRoundResult, isNotNull);
-      expect(state.lastRoundResult!.eliminatedUid, 'uid2');
-      expect(state.lastRoundResult!.lotteryOccurred, isFalse);
-      expect(state.lastRoundResult!.opponentLeft, isFalse);
-    });
-
-    test('maps finished status -> SessionStatus.finished', () async {
-      final ctx = await _createService(
-        sessionDoc: {
-          ..._answeringSessionDoc(),
-          'status': 'finished',
-          'phase': 'finished',
-          'resultsReady': true,
-        },
-      );
-      final state = await ctx.service.buildLiveGameStateStream().first;
-      expect(state.status, SessionStatus.finished);
-    });
-
-    test('maps waiting status -> SessionStatus.waiting', () async {
-      final ctx = await _createService(
-        sessionDoc: {
-          ..._answeringSessionDoc(),
-          'status': 'waiting',
-          'phase': 'answering',
-        },
-      );
-      final state = await ctx.service.buildLiveGameStateStream().first;
-      expect(state.status, SessionStatus.waiting);
-    });
-
-    test('parses players list correctly', () async {
-      final ctx = await _createService(
-        sessionDoc: _answeringSessionDoc(players: {
-          'uid1': {
-            'username': 'Alice',
-            'profilePicture': 'alice.png',
-            'isEliminated': false,
-            'lotteryTickets': 2,
-          },
-          'uid2': {
-            'username': 'Bob',
-            'profilePicture': 'bob.png',
-            'isEliminated': true,
-            'lotteryTickets': 0,
-          },
-        }),
-      );
-      final state = await ctx.service.buildLiveGameStateStream().first;
-
-      expect(state.players.length, 2);
-
-      final alice = state.players.firstWhere((p) => p.uid == 'uid1');
-      expect(alice.username, 'Alice');
-      expect(alice.isEliminated, isFalse);
-      expect(alice.lotteryTickets, 2);
-
-      final bob = state.players.firstWhere((p) => p.uid == 'uid2');
-      expect(bob.username, 'Bob');
-      expect(bob.isEliminated, isTrue);
-    });
-
-    test('RoundResult with opponentLeft=true is parsed correctly', () async {
-      final ctx = await _createService();
-
-      await ctx.firestore.collection('sessions').doc(_sessionId).set({
-        ..._answeringSessionDoc(),
-        'phase': 'resolving',
-        'lastRoundResult': {
-          'eliminatedUid': null,
-          'eliminatedUsername': null,
-          'lotteryOccurred': false,
-          'lotteryPool': {},
-          'opponentLeft': true,
-        },
-      });
-
-      final state = await ctx.service.buildLiveGameStateStream().first;
-
-      expect(state.lastRoundResult!.opponentLeft, isTrue);
-      expect(state.lastRoundResult!.eliminatedUid, isNull);
-    });
-
-    test('RoundResult lotteryOccurred and lotteryPool are parsed', () async {
-      final ctx = await _createService();
-
-      await ctx.firestore.collection('sessions').doc(_sessionId).set({
-        ..._answeringSessionDoc(),
-        'phase': 'resolving',
-        'lastRoundResult': {
-          'eliminatedUid': 'uid1',
-          'eliminatedUsername': _myUsername,
-          'lotteryOccurred': true,
-          'lotteryPool': {'uid1': 2, 'uid2': 1},
-          'opponentLeft': false,
-        },
-      });
-
-      final state = await ctx.service.buildLiveGameStateStream().first;
-
-      expect(state.lastRoundResult!.lotteryOccurred, isTrue);
-      expect(state.lastRoundResult!.lotteryPool, {'uid1': 2, 'uid2': 1});
-    });
-
-    test('throws StateError when resolving phase has no lastRoundResult', () async {
-      final ctx = await _createService(
-        sessionDoc: {
-          ..._answeringSessionDoc(),
-          'phase': 'resolving',
-          'lastRoundResult': null,
-        },
-      );
-
-      await expectLater(
-        ctx.service.buildLiveGameStateStream(),
-        emitsError(isA<StateError>()),
-      );
-    });
-
-    test('stream emits updated state when session document changes', () async {
-      final ctx = await _createService();
-      final stream = ctx.service.buildLiveGameStateStream();
-
-      // First emission: answering
-      final first = await stream.first;
-      expect(first.status, SessionStatus.answering);
-
-      // Move to question index 1
-      await ctx.firestore
-          .collection('sessions')
-          .doc(_sessionId)
-          .update({'currentQuestionIndex': 1});
-
-      final second = await ctx.service.buildLiveGameStateStream().first;
-      expect(second.currentQuestionIndex, 1);
-    });
-  });
-
-  // ── submitAnswer ───────────────────────────────────────────────────────────
-  group('submitAnswer', () {
-    test('delegates to sessionRepository.submitAnswer with correct args', () async {
-      final ctx = await _createService();
-
-      await ctx.service.submitAnswer(
-        roundIndex: 2,
-        questionId: '2',
-        answer: 'CorrectAnswer',
-      );
-
-      expect(ctx.commands.name, 'submitMultiplayerAnswer');
-      expect(ctx.commands.data, {'sessionId': _sessionId, 'roundIndex': 2,
-        'questionId': '2', 'answer': 'CorrectAnswer'});
-    });
-  });
-
-  // ── leaveGame ──────────────────────────────────────────────────────────────
-  group('leaveGame', () {
-    test('requests leave without allowing the UI to choose another identity', () async {
-      final ctx = await _createService();
-
-      await ctx.service.leaveGame();
-
-      expect(ctx.commands.name, 'leaveSession');
-      expect(ctx.commands.data, {'sessionId': _sessionId});
-    });
-  });
-
-  // ── fetchFinalSessionData ──────────────────────────────────────────────────
-  group('fetchFinalSessionData', () {
-    test('throws StateError when archive document does not exist', () async {
-      final ctx = await _createService();
-
-      // sessions_archive is empty — nothing archived yet.
-      await expectLater(
-        ctx.service.fetchFinalSessionData(),
-        throwsA(isA<StateError>()),
-      );
-    });
-
-    test('returns MultiplayerSessionData from sessions_archive', () async {
-      final ctx = await _createService();
-
-      final archiveData = {
-        'sessionId': _sessionId,
-        'categoryId': _categoryId,
-        'gameMode': 'casual',
-        'sessionStartTime': '2024-01-01T10:00:00.000Z',
-        'gameStartTime': '2024-01-01T10:01:00.000Z',
-        'endTime': '2024-01-01T10:30:00.000Z',
-        'playerResults': [
-          {
-            'uid': _myUid,
-            'username': _myUsername,
-            'placement': 1,
-            'correctAnswers': 3,
-            'totalAnswers': 3,
-            'eliminationRound': 0,
-            'lotteryTimesIn': 0,
-          }
+      expect(
+        [
+          sessions.sessionId,
+          sessions.uid,
+          sessions.index,
+          sessions.questionId,
+          sessions.answer,
         ],
-        'rounds': [],
-      };
-
-      await ctx.firestore
-          .collection('sessions_archive')
-          .doc(_sessionId)
-          .set(archiveData);
-
-      final result = await ctx.service.fetchFinalSessionData();
-
-      expect(result, isA<MultiplayerSessionData>());
-      expect(result.sessionId, _sessionId);
-      expect(result.winner?.uid, _myUid);
-    });
+        ['room', 'uid1', 1, '1', 'A'],
+      );
+      expect(result.isCorrect, true);
+    },
+  );
+  test(
+    'leaving awaits initialization and uses the authenticated identity',
+    () async {
+      final game = service();
+      await game.leaveGame();
+      expect(sessions.sessionId, 'room');
+      expect(sessions.uid, 'uid1');
+    },
+  );
+  test('fetches a complete archive and preserves read failures', () async {
+    final game = service();
+    await game.ready;
+    expect(
+      (await game.fetchFinalSessionData()).rounds.single.playerAnswers['uid1'],
+      'A',
+    );
+    sessions.failArchive = true;
+    await expectLater(game.fetchFinalSessionData(), throwsStateError);
+  });
+  test('initializes from an archived snapshot after live cleanup', () async {
+    sessions.current = SessionSnapshot.fromArchive('room', archiveDocument());
+    final game = service();
+    await game.ready;
+    expect(
+      (await game.buildLiveGameStateStream().first).status,
+      SessionStatus.finished,
+    );
+    expect(game.questions.length, 3);
   });
 }

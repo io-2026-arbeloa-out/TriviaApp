@@ -29,6 +29,8 @@ class FakeAuthRepository extends Fake
 
   @override
   bool get isSignedIn => signedIn;
+  @override
+  ProfileData? get currentUser => signedIn ? (signInResult ?? registerResult ?? makeProfile()) : null;
 
   @override
   Future<ProfileData> signInWithEmail(String email, String password) async {

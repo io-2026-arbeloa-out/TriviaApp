@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'package:triviaapp/controllers/singleplayer_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/interfaces/i_singleplayer_game_service.dart';
@@ -7,36 +7,6 @@ import 'package:triviaapp/models/singleplayer_game_options.dart';
 import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/app_dependencies.dart';
-
-enum _Phase { loading, playing, checking, feedback, error }
-
-class _QuestionState {
-  final List<String> answers;
-  final String? selectedAnswer;
-  final bool? isCorrect;
-  final List<String> correctAnswers;
-
-  const _QuestionState({
-    required this.answers,
-    this.selectedAnswer,
-    this.isCorrect,
-    this.correctAnswers = const [],
-  });
-
-  _QuestionState copyWith({
-    List<String>? answers,
-    String? selectedAnswer,
-    bool? isCorrect,
-    List<String>? correctAnswers,
-  }) {
-    return _QuestionState(
-      answers: answers ?? this.answers,
-      selectedAnswer: selectedAnswer ?? this.selectedAnswer,
-      isCorrect: isCorrect ?? this.isCorrect,
-      correctAnswers: correctAnswers ?? this.correctAnswers,
-    );
-  }
-}
 
 class SingleplayerGameScreen extends StatefulWidget {
   final UIOptions _options;
@@ -61,135 +31,61 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   UIOptions get options => widget._options;
   SingleplayerGameOptions get gameOptions => widget._sessionData.options;
   ISingleplayerGameService get gameService => widget._gameService;
-  String get category => widget._sessionData.category;
   SingleplayerSessionData get sessionData => widget._sessionData;
-  List<bool> get results => widget._sessionData.results;
 
-  _Phase _phase = _Phase.loading;
-  String _errorMessage = '';
-
-  List<Question> _questions = [];
-  int _currentIndex = 0;
-  int _answeredQuestions = 0;
-
-  late _QuestionState _questionState;
-
+  late final SingleplayerController _controller;
   AnimationController? _timerController;
-  String _pendingAnswer = '';
-  bool _validationFailed = false;
+  int _timerQuestion = -1;
+  bool _navigated = false;
+  SingleplayerPhase get _phase => _controller.phase;
+  String get _errorMessage => _controller.errorMessage;
+  List<Question> get _questions => _controller.questions;
+  int get _currentIndex => _controller.currentIndex;
+  int get _answeredQuestions => _controller.answeredQuestions;
+  SingleplayerQuestionState get _questionState => _controller.questionState;
+  bool get _validationFailed => _controller.validationFailed;
 
   @override
   void initState() {
     super.initState();
-    _loadQuestions();
+    _controller = SingleplayerController(service: gameService, session: sessionData);
+    _controller.addListener(_onControllerChanged);
+    _controller.load();
   }
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    if (_phase == SingleplayerPhase.playing && _timerQuestion != _currentIndex) {
+      _timerQuestion = _currentIndex;
+      _timerController?.dispose();
+      _timerController = null;
+      if (gameOptions.timePerQuestion > 0) {
+        _timerController = AnimationController(vsync: this,
+          duration: Duration(seconds: gameOptions.timePerQuestion))
+          ..addListener(() { if (mounted) setState(() {}); })
+          ..forward();
+      }
+    } else if (_phase != SingleplayerPhase.playing) {
+      _timerController?.stop();
+    }
+    setState(() {});
+    if (_phase == SingleplayerPhase.finished && !_navigated) {
+      _navigated = true;
+      AppRoute.instance.goToSingleplayerScoreTable(options, sessionData);
+    }
+  }
+
+  void _onAnswerTapped(String answer) => _controller.answer(answer);
+  void _nextQuestion() => _controller.next();
+  int _correctAnswers() => _controller.correctAnswers;
 
   @override
   void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     _timerController?.dispose();
     super.dispose();
   }
-
-  // ── Loading ────────────────────────────────────────────────────────────────
-
-  Future<void> _loadQuestions() async {
-    try {
-      final questions = await gameService.loadQuestions(gameOptions, category);
-      if (!mounted) return;
-      if (questions.isEmpty) {
-        setState(() {
-          _phase = _Phase.error;
-          _errorMessage = 'Brak pytań dla wybranej kategorii i typu.';
-        });
-        return;
-      }
-      _questions = questions;
-      _startQuestion();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _phase = _Phase.error;
-        _errorMessage = 'Nie udało się załadować pytań.';
-      });
-    }
-  }
-
-  // ── Question flow ──────────────────────────────────────────────────────────
-
-  void _startQuestion() {
-    _timerController?.dispose();
-    _timerController = null;
-
-    // ← ZMIANA: pobierz pytanie pod aktualnym indeksem (bez inkrementacji)
-    final question = _questions[_currentIndex];
-
-    setState(() {
-      _questionState = _QuestionState(
-        answers: gameService.getAnswerOptions(question),
-      );
-      _phase = _Phase.playing;
-    });
-
-    if (gameOptions.timePerQuestion > 0) {
-      _timerController = AnimationController(
-        vsync: this,
-        duration: Duration(seconds: gameOptions.timePerQuestion),
-      )
-        ..addListener(() => setState(() {}))
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) _onTimeOut();
-        })
-        ..forward();
-    }
-  }
-
-  void _onTimeOut() {
-    if (_phase != _Phase.playing) return;
-    _registerAnswer('', _questions[_currentIndex]);
-  }
-
-  void _onAnswerTapped(String answer) {
-    if (_phase != _Phase.playing) return;
-    _timerController?.stop();
-    _registerAnswer(answer, _questions[_currentIndex]);
-  }
-
-  Future<void> _registerAnswer(String answer, Question question) async {
-    _pendingAnswer = answer;
-    setState(() {
-      _phase = _Phase.checking;
-      _validationFailed = false;
-    });
-    try {
-      final result = await gameService.checkAnswer(question, answer);
-      if (!mounted) return;
-      _answeredQuestions++;
-      results.add(result.isCorrect);
-      setState(() {
-        _questionState = _questionState.copyWith(
-          selectedAnswer: answer.isEmpty ? '—' : answer,
-          isCorrect: result.isCorrect, correctAnswers: result.correctAnswers,
-        );
-        _phase = _Phase.feedback;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _validationFailed = true);
-    }
-  }
-
-  void _nextQuestion() {
-    if (_currentIndex + 1 >= _questions.length) {
-      AppRoute.instance.goToSingleplayerScoreTable(options, sessionData);
-      return;
-    }
-    // ← ZMIANA: inkrementacja przed przejściem do następnego pytania
-    _currentIndex++;
-    _startQuestion();
-  }
-
-  int _correctAnswers() => results.where((e) => e).length;
-
   Future<void> _onClosePressed() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -256,10 +152,10 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
         ),
         child: SafeArea(
           child: switch (_phase) {
-            _Phase.loading => _buildLoading(),
-            _Phase.error => _buildError(),
-            _Phase.checking => _buildChecking(),
-            _Phase.playing || _Phase.feedback => _buildGame(context),
+            SingleplayerPhase.loading || SingleplayerPhase.finished => _buildLoading(),
+            SingleplayerPhase.error => _buildError(),
+            SingleplayerPhase.checking => _buildChecking(),
+            SingleplayerPhase.playing || SingleplayerPhase.feedback => _buildGame(context),
           },
         ),
       ),
@@ -275,7 +171,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       if (_validationFailed) ...[
         Text('Nie udało się sprawdzić odpowiedzi.', style: TextStyle(color: options.textColor)),
         ElevatedButton(
-          onPressed: () => _registerAnswer(_pendingAnswer, _questions[_currentIndex]),
+          onPressed: _controller.retryAnswer,
           child: const Text('Ponów sprawdzenie'),
         ),
       ] else CircularProgressIndicator(color: options.textColor),
@@ -312,7 +208,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
 
   Widget _buildGame(BuildContext context) {
     final question = _questions[_currentIndex];
-    final inFeedback = _phase == _Phase.feedback;
+    final inFeedback = _phase == SingleplayerPhase.feedback;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -451,7 +347,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
 
   Widget _buildAnswerButton(String answer, Question question) {
     final selected = _questionState.selectedAnswer == answer;
-    final inFeedback = _phase == _Phase.feedback;
+    final inFeedback = _phase == SingleplayerPhase.feedback;
     final isCorrectAnswer = _questionState.correctAnswers.any(
           (c) => c.trim().toLowerCase() == answer.trim().toLowerCase(),
     );
@@ -501,7 +397,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
 
   Widget _buildFeedbackBar(BuildContext context) {
     final isCorrect = _questionState.isCorrect ?? false;
-    final correctAnswer = _phase == _Phase.feedback
+    final correctAnswer = _phase == SingleplayerPhase.feedback
         ? _questionState.correctAnswers.join(', ')
         : '';
 

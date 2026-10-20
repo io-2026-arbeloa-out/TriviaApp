@@ -7,7 +7,9 @@ import 'package:triviaapp/interfaces/i_multiplayer_connection_service.dart';
 import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/repositories/firebase_session_repository.dart';
+import 'package:triviaapp/repositories/session_repository.dart';
+import 'package:triviaapp/models/session_snapshot.dart';
+import 'package:triviaapp/models/session_status.dart';
 
 enum _LobbyPhase { connecting, waiting, error }
 
@@ -42,14 +44,15 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   UIOptions get options => widget.options;
 
   late final IMultiplayerConnectionService _connectionService;
-  late final FirebaseSessionRepository _sessionRepo;
+  late final SessionRepository _sessionRepo;
 
   _LobbyPhase _phase = _LobbyPhase.connecting;
   String _errorMessage = '';
   String? _sessionId;
   int _currentPlayerCount = 0;
-  StreamSubscription<Map<String, dynamic>>? _sessionSub;
+  StreamSubscription<SessionSnapshot>? _sessionSub;
   bool _leaveRequested = false;
+  bool _gameStarted = false;
 
   @override
   void initState() {
@@ -65,7 +68,8 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
     _sessionSub?.cancel();
     if (_phase == _LobbyPhase.waiting &&
         _sessionId != null &&
-        !_leaveRequested) {
+        !_leaveRequested &&
+        !_gameStarted) {
       unawaited(
         _connectionService
             .disconnectPlayer(sessionId: _sessionId!, uid: widget.uid)
@@ -83,7 +87,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
         settings: widget.settings,
       );
 
-      if (_leaveRequested) {
+      if (_leaveRequested || !mounted) {
         unawaited(
           _connectionService.disconnectPlayer(
             sessionId: sessionId,
@@ -107,14 +111,12 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
   void _listenToSession(String sessionId) {
     _sessionSub = _sessionRepo.sessionDocStream(sessionId).listen(
-          (data) async {
-        final status = data['status'] as String? ?? 'waiting';
-        final playerUids = data['playerUids'] as List? ?? [];
-
+      (data) async {
         if (!mounted) return;
-        setState(() => _currentPlayerCount = playerUids.length);
+        setState(() => _currentPlayerCount = data.playerUids.length);
 
-        if (status == 'inProgress') {
+        if (data.status == SessionStatus.inProgress ||
+            (data.status == SessionStatus.finished && data.resultsReady)) {
           await _sessionSub?.cancel();
           _sessionSub = null;
           _onGameStarted(sessionId);
@@ -131,20 +133,24 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
   }
 
   void _onGameStarted(String sessionId) {
-    if (!mounted) return;
+    if (!mounted || _leaveRequested || _gameStarted) return;
 
     final gameService = widget.gameService ??
-        dependencies.createMultiplayerGameService(sessionId, sessions: _sessionRepo);
+        dependencies.createMultiplayerGameService(
+          sessionId, sessions: _sessionRepo,
+        );
 
+    _gameStarted = true;
     AppRoute.instance.goToMultiplayer(options, gameService);
   }
 
   Future<void> _onLeave() async {
+    if (_leaveRequested || _gameStarted) return;
+    _leaveRequested = true;
     await _sessionSub?.cancel();
     _sessionSub = null;
 
     if (_phase == _LobbyPhase.connecting) {
-      _leaveRequested = true;
       if (mounted) AppRoute.instance.goToMainMenu(options);
       return;
     }

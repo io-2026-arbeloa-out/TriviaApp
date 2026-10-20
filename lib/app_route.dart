@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
-import 'package:triviaapp/models/singleplayer_game_options.dart';
+import 'package:triviaapp/models/game_route_arguments.dart';
 import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/screens/achievement_screen.dart';
@@ -95,9 +95,9 @@ class AppRoute {
         );
 
       case singleplayerGameScreen:
-        final args = settings.arguments as Map<String, dynamic>;
-        final UIOptions options = args['options'];
-        final SingleplayerSessionData sessionData = args['sessionData'];
+        final args = settings.arguments as SingleplayerSessionArguments;
+        final options = args.options;
+        final sessionData = args.sessionData;
         return MaterialPageRoute(
           builder: (_) => SingleplayerGameScreen(
             options: options,
@@ -108,18 +108,18 @@ class AppRoute {
         );
 
       case singleplayerOptionsScreen:
-        final args = settings.arguments as Map<String, dynamic>;
-        final String category = args['category'];
-        final UIOptions options = args['options'];
+        final args = settings.arguments as SingleplayerOptionsArguments;
+        final category = args.category;
+        final options = args.options;
         return MaterialPageRoute(
           builder: (_) => SingleplayerOptionsScreen(category: category, options: options),
           settings: settings,
         );
 
       case multiplayerGameScreen:
-        final args = settings.arguments as Map<String, dynamic>;
-        final UIOptions options = args['options'] as UIOptions;
-        final gameService = args['gameService'] as IMultiplayerGameService;
+        final args = settings.arguments as MultiplayerGameArguments;
+        final options = args.options;
+        final gameService = args.gameService;
         return MaterialPageRoute(
           builder: (_) => MultiplayerGameScreen(
             options: options,
@@ -158,9 +158,9 @@ class AppRoute {
         );
 
       case singleplayerScoreTableScreen:
-        final args = settings.arguments as Map<String, dynamic>;
-        final UIOptions options = args['options'];
-        final SingleplayerSessionData sessionData = args['sessionData'];
+        final args = settings.arguments as SingleplayerSessionArguments;
+        final options = args.options;
+        final sessionData = args.sessionData;
         return MaterialPageRoute(
           builder: (_) => SingleplayerScoreTableScreen(
             options: options,
@@ -177,10 +177,10 @@ class AppRoute {
         );
 
       case multiplayerScoreTableScreen:
-        final args = settings.arguments as Map<String, dynamic>;
-        final UIOptions options = args['options'];
-        final MultiplayerSessionData session = args['session'];
-        final String myUid = args['myUid'];
+        final args = settings.arguments as MultiplayerScoreArguments;
+        final options = args.options;
+        final session = args.session;
+        final myUid = args.myUid;
         return MaterialPageRoute(
           builder: (_) => MultiplayerScoreTableScreen(
             options: options,
@@ -239,20 +239,14 @@ class AppRoute {
   void goToSingleplayerGame(UIOptions options, SingleplayerSessionData sessionData) {
     navigatorKey.currentState?.pushNamed(
       singleplayerGameScreen,
-      arguments: {
-        'options': options,
-        'sessionData': sessionData,
-      },
+      arguments: SingleplayerSessionArguments(options, sessionData),
     );
   }
 
   void goToSingleplayerOptions(String quizId, UIOptions options) {
     navigatorKey.currentState?.pushNamed(
       singleplayerOptionsScreen,
-      arguments: {
-        'category': quizId,
-        'options': options,
-      },
+      arguments: SingleplayerOptionsArguments(quizId, options),
     );
   }
 
@@ -262,10 +256,7 @@ class AppRoute {
   ) {
     navigatorKey.currentState?.pushReplacementNamed(
       multiplayerGameScreen,
-      arguments: {
-        'options': options,
-        'gameService': gameService,
-      },
+      arguments: MultiplayerGameArguments(options, gameService),
     );
   }
 
@@ -303,10 +294,7 @@ class AppRoute {
       ) {
     navigatorKey.currentState?.pushNamed(
       singleplayerScoreTableScreen,
-      arguments: {
-        'options': options,
-        'sessionData': sessionData,
-      },
+      arguments: SingleplayerSessionArguments(options, sessionData),
     );
   }
 
@@ -324,11 +312,7 @@ class AppRoute {
   }) {
     navigatorKey.currentState?.pushReplacementNamed(
       multiplayerScoreTableScreen,
-      arguments: {
-        'options': options,
-        'session': session,
-        'myUid': myUid,
-      },
+      arguments: MultiplayerScoreArguments(options, session, myUid),
     );
   }
 

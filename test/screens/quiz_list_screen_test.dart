@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/models/quiz.dart';
+import 'package:triviaapp/models/game_route_arguments.dart';
 import 'package:triviaapp/repositories/quiz_repository.dart';
 import 'package:triviaapp/screens/quiz_list_screen.dart';
 
@@ -21,7 +22,7 @@ void main() {
     'loads quizzes through a repository and opens the chosen category',
     (tester) async {
       final repo = _Quizzes();
-      Map<String, dynamic>? arguments;
+      SingleplayerOptionsArguments? arguments;
       await tester.pumpWidget(
         MaterialApp(
           navigatorKey: AppRoute.instance.navigatorKey,
@@ -30,7 +31,7 @@ void main() {
             AppRoute.singleplayerOptionsScreen: (context) {
               arguments =
                   ModalRoute.of(context)!.settings.arguments
-                      as Map<String, dynamic>;
+                      as SingleplayerOptionsArguments;
               return const Scaffold(body: Text('Options'));
             },
           },
@@ -39,7 +40,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Science'));
       await tester.pump(const Duration(milliseconds: 500));
-      expect(arguments!['category'], 'science');
+      expect(arguments!.category, 'science');
       expect(repo.calls, 1);
     },
   );

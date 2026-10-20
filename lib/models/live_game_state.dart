@@ -6,6 +6,8 @@ class LiveGameState {
   final String _sessionId;
   final String _myUid;
   final SessionStatus _status;
+  final RoundPhase phase;
+  final bool resultsReady;
   final int _currentQuestionIndex;
   final List<String> _questionIds;
   final List<PlayerLiveState> _players;
@@ -15,6 +17,8 @@ class LiveGameState {
     required String sessionId,
     required String myUid,
     required SessionStatus status,
+    this.phase = RoundPhase.answering,
+    this.resultsReady = false,
     required int currentQuestionIndex,
     required List<String> questionIds,
     required List<PlayerLiveState> players,
@@ -30,6 +34,7 @@ class LiveGameState {
   String get sessionId => _sessionId;
   String get myUid => _myUid;
   SessionStatus get status => _status;
+  bool get isAnswering => status == SessionStatus.inProgress && phase == RoundPhase.answering;
   int get currentQuestionIndex => _currentQuestionIndex;
   List<String> get questionIds => _questionIds;
   List<PlayerLiveState> get players => _players;

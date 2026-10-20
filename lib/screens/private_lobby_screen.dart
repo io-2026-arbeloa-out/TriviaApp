@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
 import 'package:triviaapp/app_dependencies.dart';
 import 'package:triviaapp/models/ui_options.dart';
-import 'package:triviaapp/repositories/firebase_session_repository.dart';
+import 'package:triviaapp/models/online_game_options.dart';
+import 'package:triviaapp/repositories/session_repository.dart';
+import 'package:triviaapp/models/session_snapshot.dart';
+import 'package:triviaapp/models/session_status.dart';
 
 class PrivateLobbyScreen extends StatefulWidget {
   const PrivateLobbyScreen({
@@ -12,7 +15,7 @@ class PrivateLobbyScreen extends StatefulWidget {
     this.dependencies,
     UIOptions? options,
     this.code,
-    FirebaseSessionRepository? sessionRepository,
+    SessionRepository? sessionRepository,
   })  : _options = options ?? const UIOptions(),
         _sessionRepository = sessionRepository;
 
@@ -20,7 +23,7 @@ class PrivateLobbyScreen extends StatefulWidget {
 
   /// 6-digit code entered by the guest. Null only when accessed via legacy route.
   final int? code;
-  final FirebaseSessionRepository? _sessionRepository;
+  final SessionRepository? _sessionRepository;
 
   UIOptions get options => _options;
 
@@ -34,12 +37,12 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
   AppDependencies get dependencies => widget.dependencies ?? AppDependencies.instance;
   UIOptions get options => widget.options;
 
-  late final FirebaseSessionRepository _sessionRepository;
+  late final SessionRepository _sessionRepository;
 
   String? _sessionId;
-  StreamSubscription<Map<String, dynamic>>? _sessionSub;
+  StreamSubscription<SessionSnapshot>? _sessionSub;
   List<String> _playerNames = [];
-  Map<String, dynamic> _settings = {};
+  OnlineGameOptions? _settings;
   bool _isConnecting = true;
   String? _connectError;
   bool _gameStarted = false;
@@ -58,7 +61,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
       return;
     }
 
-    final user = dependencies.firebaseAuth.currentUser;
+    final user = dependencies.authRepository.currentUser;
     if (user == null) {
       setState(() { _connectError = 'Nie jesteś zalogowany'; _isConnecting = false; });
       return;
@@ -107,22 +110,12 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
     _sessionSub = _sessionRepository.sessionDocStream(sessionId).listen(
           (data) {
         if (!mounted) return;
-        final playerUids =
-        List<String>.from(data['playerUids'] as List? ?? []);
-        final players = data['players'] as Map<String, dynamic>? ?? {};
         setState(() {
-          _playerNames = playerUids
-              .map((uid) => players[uid]?['username'] as String? ?? '$uid')
-              .toList();
-          _settings = {
-            'questionTimeLimit': data['questionTimeLimit'] ?? 30,
-            'maxPlayers': data['maxPlayers'] ?? '—',
-            'categoryId': data['categoryId'] ?? '—',
-            'difficulty': data['difficulty'] ?? '—',
-          };
+          _playerNames = data.playerNames;
+          _settings = data.options;
         });
 
-        if (data['status'] == 'inProgress') {
+        if (data.status == SessionStatus.inProgress || (data.status == SessionStatus.finished && data.resultsReady)) {
           _sessionSub?.cancel();
           _sessionSub = null;
           _gameStarted = true;
@@ -149,7 +142,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
     _sessionSub = null;
 
     if (_sessionId != null) {
-      final uid = dependencies.firebaseAuth.currentUser?.uid;
+      final uid = dependencies.authRepository.currentUser?.uid;
       if (uid != null) {
         unawaited(
           _sessionRepository
@@ -166,7 +159,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
   void dispose() {
     _sessionSub?.cancel();
     if (_sessionId != null && !_gameStarted) {
-      final uid = dependencies.firebaseAuth.currentUser?.uid;
+      final uid = dependencies.authRepository.currentUser?.uid;
       if (uid != null) {
         unawaited(
           _sessionRepository
@@ -351,10 +344,10 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
 
   Widget _buildSettingsSection() {
     final rows = [
-      ['Czas na pytanie', '${_settings['questionTimeLimit'] ?? 30} s'],
-      ['Maks. graczy',    '${_settings['maxPlayers'] ?? '—'}'],
-      ['Kategoria',       '${_settings['categoryId'] ?? '—'}'],
-      ['Trudność',        _difficultyLabel('${_settings['difficulty'] ?? ''}')],
+      ['Czas na pytanie', '${_settings?.questionTimeLimit ?? 30} s'],
+      ['Maks. graczy',    '${_settings?.maxPlayers ?? '—'}'],
+      ['Kategoria',       '${_settings?.categoryId ?? '—'}'],
+      ['Trudność',        _difficultyLabel('${_settings?.difficulty.name ?? ''}')],
     ];
 
     return Column(
