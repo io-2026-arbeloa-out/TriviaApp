@@ -8,6 +8,7 @@ class FirebaseAuthRepository {
   FirebaseAuthRepository({FirebaseAuth? auth})
       : _auth = auth ?? FirebaseAuth.instance;
 
+  /// Creates the account; AuthRegisterService completes the name and profile.
   Future<ProfileData> registerWithEmail(
       String email,
       String password,
@@ -18,7 +19,6 @@ class FirebaseAuthRepository {
         email: email,
         password: password,
       );
-      await credential.user!.updateDisplayName(username);
 
       return ProfileData(
         uid: credential.user!.uid,
@@ -31,6 +31,14 @@ class FirebaseAuthRepository {
       debugPrint('CREDENTIAL: ${e.credential}');
       rethrow;
     }
+  }
+
+  Future<void> updateDisplayName(String uid, String username) async {
+    final user = _auth.currentUser;
+    if (user == null || user.uid != uid) {
+      throw StateError('Registration user is no longer signed in');
+    }
+    await user.updateDisplayName(username);
   }
 
   Future<ProfileData> signInWithEmail(String email, String password) async {

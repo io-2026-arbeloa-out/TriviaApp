@@ -49,6 +49,29 @@ void main() {
 
   // ── signInWithEmail ─────────────────────────────────────────────────────────
 
+  group('updateDisplayName', () {
+    test('updates the authenticated registration user', () async {
+      final user = MockUser(uid: tUid, email: tEmail);
+      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+      final repo = FirebaseAuthRepository(auth: auth);
+
+      await repo.updateDisplayName(tUid, tUsername);
+
+      expect(auth.currentUser!.displayName, tUsername);
+    });
+
+    test('rejects a signed out or different user', () async {
+      final auth = MockFirebaseAuth(mockUser: tUser, signedIn: true);
+      final repo = FirebaseAuthRepository(auth: auth);
+
+      await expectLater(repo.updateDisplayName('another-uid', 'Other'),
+          throwsStateError);
+      await auth.signOut();
+      await expectLater(repo.updateDisplayName(tUid, tUsername),
+          throwsStateError);
+    });
+  });
+
   group('signInWithEmail', () {
     late MockFirebaseAuth mockAuth;
     late FirebaseAuthRepository repo;

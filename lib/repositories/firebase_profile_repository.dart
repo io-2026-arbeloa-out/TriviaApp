@@ -27,16 +27,10 @@ class FirebaseProfileRepository {
   }
 
   Future<void> updateProfileData(ProfileData profileData) async {
-    try {
-      await _firestore
-          .collection('users')
-          .doc(profileData.uid)
-          .set(profileData.toJson(), SetOptions(merge: true));
-    } on FirebaseException catch (e) {
-      print('Firestore error: ${e.message}');
-    } catch (e) {
-      print('Unexpected error: $e');
-    }
+    await _firestore
+        .collection('users')
+        .doc(profileData.uid)
+        .set(profileData.toJson(), SetOptions(merge: true));
   }
 
   Future<String> getUIPreset() async {

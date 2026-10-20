@@ -89,6 +89,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   Future<void> _loadQuestions() async {
     try {
       final questions = await gameService.loadQuestions(gameOptions, category);
+      if (!mounted) return;
       if (questions.isEmpty) {
         setState(() {
           _phase = _Phase.error;
@@ -99,6 +100,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       _questions = questions;
       _startQuestion();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _phase = _Phase.error;
         _errorMessage = 'Nie udało się załadować pytań.';

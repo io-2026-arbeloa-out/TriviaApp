@@ -59,16 +59,64 @@ void main() {
       expect(fakeProfileRepo.updateCalled, isFalse);
     });
 
-    test('propagates exception from profile repository', () async {
+    test('reports incomplete registration when profile write fails', () async {
       fakeAuthRepo.registerResult = makeProfile();
-      fakeProfileRepo.updateError = Exception('firestore-write-failed');
+      final error = Exception('firestore-write-failed');
+      fakeProfileRepo.updateError = error;
 
-      expect(
-        () => service.register('a@b.com', 'pass', 'User'),
-        throwsA(predicate<Exception>(
-          (e) => e.toString().contains('firestore-write-failed'),
-        )),
+      await expectLater(
+        service.register('a@b.com', 'pass', 'User'),
+        throwsA(isA<IncompleteRegistrationException>()
+            .having((e) => e.cause, 'cause', same(error))),
       );
+    });
+
+    test('retries display name without creating another account', () async {
+      fakeAuthRepo.registerResult = makeProfile();
+      fakeAuthRepo.displayNameError = Exception('name-write-failed');
+
+      await expectLater(service.register('a@b.com', 'pass', 'User'),
+          throwsA(isA<IncompleteRegistrationException>()));
+      expect(fakeProfileRepo.updateCalled, isFalse);
+      fakeAuthRepo.displayNameError = null;
+
+      final result = await service.register('a@b.com', 'pass', 'User');
+
+      expect(fakeAuthRepo.registerCallCount, 1);
+      expect(fakeAuthRepo.displayNameCallCount, 2);
+      expect(fakeAuthRepo.updatedDisplayName, 'User');
+      expect(fakeProfileRepo.lastUpdatedProfile?.uid, result.uid);
+    });
+
+    test('retries profile write without creating another account', () async {
+      fakeAuthRepo.registerResult = makeProfile();
+      fakeProfileRepo.updateError = Exception('profile-write-failed');
+
+      await expectLater(service.register('a@b.com', 'pass', 'User'),
+          throwsA(isA<IncompleteRegistrationException>()));
+      fakeProfileRepo.updateError = null;
+
+      await service.register('a@b.com', 'pass', 'New name');
+
+      expect(fakeAuthRepo.registerCallCount, 1);
+      expect(fakeAuthRepo.updatedDisplayName, 'New name');
+      expect(fakeProfileRepo.lastUpdatedProfile?.username, 'New name');
+    });
+
+    test('does not attach another email to pending registration', () async {
+      fakeAuthRepo.registerResult = makeProfile();
+      fakeProfileRepo.updateError = Exception('profile-write-failed');
+
+      await expectLater(service.register('a@b.com', 'pass', 'User'),
+          throwsA(isA<IncompleteRegistrationException>()));
+      fakeProfileRepo.updateError = null;
+      await expectLater(service.register('other@b.com', 'pass', 'Other'),
+          throwsA(isA<IncompleteRegistrationException>()));
+
+      expect(fakeAuthRepo.registerCallCount, 1);
+      expect(fakeProfileRepo.updateCalled, isFalse);
+      await service.register('a@b.com', 'pass', 'User');
+      expect(fakeProfileRepo.updateCalled, isTrue);
     });
 
     test('does not call profile repository when auth throws', () async {

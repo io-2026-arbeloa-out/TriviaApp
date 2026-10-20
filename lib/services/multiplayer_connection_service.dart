@@ -45,14 +45,14 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
         );
 
         if (existingId != null) {
-          return _sessionRepository.joinSession(
+          return await _sessionRepository.joinSession(
             sessionId: existingId,
             uid: uid,
             username: username,
           );
         }
 
-        return _createNewSession(uid: uid, username: username, settings: settings);
+        return await _createNewSession(uid: uid, username: username, settings: settings);
       } on StateError catch (e) {
         lastError = e;
         if (attempt == _maxMatchmakingAttempts - 1) rethrow;

@@ -114,6 +114,11 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       await authService.register(email, password, username);
       if (!mounted) return;
       AppRoute.instance.goToMainMenu(options);
+    } on IncompleteRegistrationException catch (_) {
+      _showMessage(
+        'Konto zostało utworzone. Nie udało się dokończyć rejestracji. '
+        'Ponów próbę z tym samym adresem email.',
+      );
     } on FirebaseAuthException catch (e) {
       _showMessage(_mapFirebaseError(e.code));
     } catch (_) {
@@ -125,8 +130,10 @@ class _RegistrationScreenState extends State<RegistrationScreen>
 
   void _onClickClose() => AppRoute.instance.goBack();
 
-  void _showMessage(String message) =>
-      setState(() => _errorMessage = message);
+  void _showMessage(String message) {
+    if (!mounted) return;
+    setState(() => _errorMessage = message);
+  }
 
   String _mapFirebaseError(String code) {
     switch (code) {

@@ -26,18 +26,24 @@ class _FakeSessionRepo extends Fake implements FirebaseSessionRepository {
   String createdSessionId = 'new_session';
 
   int joinCallCount = 0;
+  int findCallCount = 0;
   int createCallCount = 0;
   int removeCallCount = 0;
 
   /// [joinSession] rzuca [StateError] dla pierwszych [throwOnJoinCount] wywołań.
   int throwOnJoinCount = 0;
+  Exception? joinException;
+  int throwOnCreateCount = 0;
+  Exception? createException;
 
   @override
   Future<String?> findWaitingSession({
     required String categoryId,
     required int maxPlayers,
-  }) async =>
-      waitingSessionId;
+  }) async {
+    findCallCount++;
+    return waitingSessionId;
+  }
 
   @override
   Future<String?> findPrivateSession({required int entryCode}) async =>
@@ -50,6 +56,7 @@ class _FakeSessionRepo extends Fake implements FirebaseSessionRepository {
     required String username,
   }) async {
     joinCallCount++;
+    if (joinException != null) throw joinException!;
     if (joinCallCount <= throwOnJoinCount) {
       throw StateError('Session $sessionId is full');
     }
@@ -64,6 +71,10 @@ class _FakeSessionRepo extends Fake implements FirebaseSessionRepository {
     required String username,
   }) async {
     createCallCount++;
+    if (createException != null) throw createException!;
+    if (createCallCount <= throwOnCreateCount) {
+      throw StateError('Session creation failed');
+    }
     return createdSessionId;
   }
 
@@ -574,6 +585,7 @@ void main() {
 
       expect(result, 'busy_session');
       expect(sessionRepo.joinCallCount, 2);
+      expect(sessionRepo.findCallCount, 2);
     });
 
     test('exhausts retries: joinCallCount == 3 (maxMatchmakingAttempts)', () async {
@@ -590,6 +602,61 @@ void main() {
       );
 
       expect(sessionRepo.joinCallCount, 3);
+      expect(sessionRepo.findCallCount, 3);
+    });
+
+    test('does not retry other asynchronous join errors', () async {
+      final error = Exception('Connection failed');
+      sessionRepo.waitingSessionId = 'existing_session';
+      sessionRepo.joinException = error;
+
+      await expectLater(
+        service.connectPlayer(
+          uid: _uid,
+          username: _username,
+          settings: _publicSettings,
+        ),
+        throwsA(same(error)),
+      );
+
+      expect(sessionRepo.joinCallCount, 1);
+      expect(sessionRepo.findCallCount, 1);
+      expect(sessionRepo.createCallCount, 0);
+    });
+
+    test('retries asynchronous creation failure and searches again', () async {
+      sessionRepo.throwOnCreateCount = 1;
+
+      final result = await service.connectPlayer(
+        uid: _uid, username: _username, settings: _publicSettings,
+      );
+
+      expect(result, sessionRepo.createdSessionId);
+      expect(sessionRepo.createCallCount, 2);
+      expect(sessionRepo.findCallCount, 2);
+    });
+
+    test('stops after three asynchronous creation failures', () async {
+      sessionRepo.throwOnCreateCount = 3;
+
+      await expectLater(service.connectPlayer(
+        uid: _uid, username: _username, settings: _publicSettings,
+      ), throwsStateError);
+
+      expect(sessionRepo.createCallCount, 3);
+      expect(sessionRepo.findCallCount, 3);
+    });
+
+    test('does not retry other asynchronous creation errors', () async {
+      final error = Exception('Connection failed');
+      sessionRepo.createException = error;
+
+      await expectLater(service.connectPlayer(
+        uid: _uid, username: _username, settings: _publicSettings,
+      ), throwsA(same(error)));
+
+      expect(sessionRepo.createCallCount, 1);
+      expect(sessionRepo.findCallCount, 1);
     });
   });
 

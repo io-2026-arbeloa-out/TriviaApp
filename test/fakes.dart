@@ -18,6 +18,10 @@ class FakeFirebaseAuthRepository extends Fake
 
   ProfileData? registerResult;
   Exception? registerError;
+  int registerCallCount = 0;
+  int displayNameCallCount = 0;
+  Exception? displayNameError;
+  String? updatedDisplayName;
 
   bool signOutCalled = false;
   Stream<ProfileData?> authStream = const Stream.empty();
@@ -34,8 +38,16 @@ class FakeFirebaseAuthRepository extends Fake
     String password,
     String displayName,
   ) async {
+    registerCallCount++;
     if (registerError != null) throw registerError!;
     return registerResult!;
+  }
+
+  @override
+  Future<void> updateDisplayName(String uid, String username) async {
+    displayNameCallCount++;
+    if (displayNameError != null) throw displayNameError!;
+    updatedDisplayName = username;
   }
 
   @override
