@@ -1,6 +1,7 @@
 'use strict';
 
 const { FieldValue } = require('firebase-admin/firestore');
+const { roundTiming, newCounter } = require('./game_lifecycle');
 
 class CommandError extends Error {
   constructor(code, message) { super(message); this.code = code; }
@@ -29,14 +30,11 @@ function hostWaiting(session, uid) {
   if (session.hostUid !== uid) fail('permission-denied', 'Only the host may do this');
   if (!session.isPrivate || session.status !== 'waiting') fail('failed-precondition', 'Lobby is not configurable');
 }
-function counter(count) {
-  return { validatedCount: 0, targetCount: count, incorrectUids: [], validatedUids: [], resolved: false };
-}
 function activeCount(players) {
   return Object.values(players).filter(p => !p.isEliminated).length;
 }
 
-function createGameCommands({ db, rtdb, random = Math.random }) {
+function createGameCommands({ db, rtdb, random = Math.random, now = Date.now }) {
   const sessionRef = id => db.collection('sessions').doc(key(id));
   async function player(uid) {
     const profile = (await db.collection('users').doc(uid).get()).data();
@@ -86,7 +84,8 @@ function createGameCommands({ db, rtdb, random = Math.random }) {
         players: { [uid]: entry }, activePlayerCount: 1, status: 'waiting', phase: 'answering',
         isPrivate, entryCode: data.entryCode ?? null, settingsVersion: 0,
         questionIds: questions.map(q => q.id), currentQuestionIndex: 0,
-        rounds: [], lastRoundResult: null, createdAt: FieldValue.serverTimestamp(), gameStartTime: null, endTime: null });
+        rounds: [], lastRoundResult: null, resultsReady: false,
+        createdAt: FieldValue.serverTimestamp(), gameStartTime: null, endTime: null });
       return { sessionId: ref.id };
     },
     async findPrivateSession(uid, data) {
@@ -111,7 +110,8 @@ function createGameCommands({ db, rtdb, random = Math.random }) {
         if (!s.isPrivate && uids.length === s.maxPlayers) {
           if (s.questionIds.length < (s.maxPlayers - 1) * 3) fail('failed-precondition', 'Incomplete question pool');
           updates.status = 'inProgress'; updates.gameStartTime = FieldValue.serverTimestamp();
-          tx.set(ref.collection('roundCounters').doc('0'), counter(uids.length));
+          Object.assign(updates, roundTiming(now(), s.questionTimeLimit));
+          tx.set(ref.collection('roundCounters').doc('0'), newCounter(uids));
         }
         tx.update(ref, updates);
       });
@@ -136,8 +136,9 @@ function createGameCommands({ db, rtdb, random = Math.random }) {
         const s = (await tx.get(ref)).data(); hostWaiting(s, uid);
         if (s.settingsVersion !== initial.settingsVersion) fail('failed-precondition', 'Settings changed; retry starting');
         if (s.playerUids.length < 2 || s.playerUids.length > s.maxPlayers) fail('failed-precondition', 'Invalid player count');
-        tx.update(ref, { questionIds: questions.map(q => q.id), status: 'inProgress', gameStartTime: FieldValue.serverTimestamp() });
-        tx.set(ref.collection('roundCounters').doc('0'), counter(s.playerUids.length));
+        tx.update(ref, { questionIds: questions.map(q => q.id), status: 'inProgress',
+          gameStartTime: FieldValue.serverTimestamp(), ...roundTiming(now(), s.questionTimeLimit) });
+        tx.set(ref.collection('roundCounters').doc('0'), newCounter(s.playerUids));
       });
       return {};
     },
@@ -149,12 +150,12 @@ function createGameCommands({ db, rtdb, random = Math.random }) {
         if (!s.participantUids.includes(uid)) fail('permission-denied', 'Not a participant');
         if (!s.playerUids.includes(uid) || s.status === 'finished') return;
         const remaining = s.playerUids.filter(id => id !== uid);
-        if (!remaining.length || (s.status === 'waiting' && s.isPrivate && s.hostUid === uid)) { tx.delete(ref); return; }
+        if (s.status === 'waiting' && (!remaining.length || (s.isPrivate && s.hostUid === uid))) { tx.delete(ref); return; }
         if (s.status === 'waiting') {
           tx.update(ref, { playerUids: remaining, [`players.${uid}`]: FieldValue.delete(), activePlayerCount: remaining.length });
         } else {
           const p = s.players[uid];
-          const departed = { ...p, isEliminated: true, voluntaryExit: true,
+          const departed = { ...p, isEliminated: true, voluntaryExit: p.voluntaryExit === true || !p.isEliminated,
             eliminationRound: p.eliminationRound ?? s.currentQuestionIndex };
           tx.update(ref, { playerUids: remaining, [`players.${uid}`]: departed,
             activePlayerCount: activeCount({ ...s.players, [uid]: departed }) });
@@ -187,6 +188,7 @@ function createGameCommands({ db, rtdb, random = Math.random }) {
         if (!s || s.status !== 'inProgress' || s.phase !== 'answering' || s.currentQuestionIndex !== index
           || s.questionIds[index] !== id || s.categoryId !== initial.categoryId || !s.playerUids.includes(uid)
           || s.players[uid]?.isEliminated) fail('failed-precondition', 'Round is not accepting answers');
+        if (now() >= s.roundDeadline.toMillis()) fail('failed-precondition', 'Round deadline has elapsed');
         const c = cSnap.data();
         if (!c || c.resolved || c.validatedUids.includes(uid)) fail('failed-precondition', 'Round is already resolved');
         tx.create(answerRef, { uid, roundIndex: index, questionId: id, answer: data.answer,

@@ -1,5 +1,7 @@
 # Etap 4 — uprawnienia i serwerowa walidacja odpowiedzi
 
+> Przebieg rund, finalizację i cleanup opisuje teraz [etap 5](refactor-stage5.md). Poniższy dokument zachowuje stan i wyniki weryfikacji etapu 4.
+
 Stan implementacji: 20.10.2026. Zmiany przygotowane do review; nie wdrożono funkcji, reguł ani danych.
 
 ## Granice dostępu

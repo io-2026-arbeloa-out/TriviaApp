@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/online_game_options.dart';
@@ -59,5 +61,27 @@ void main() {
   test('session streams still read server documents', () async {
     await db.collection('sessions').doc('room').set({'status': 'waiting'});
     expect(await repo.sessionDocStream('room').first, {'status': 'waiting'});
+  });
+  test('session stream falls back to a settled archive after live document deletion', () async {
+    await db.collection('sessions').doc('room').set({'status': 'inProgress'});
+    final stream = StreamIterator(repo.sessionDocStream('room'));
+    addTearDown(stream.cancel);
+    expect(await stream.moveNext(), true);
+    expect(stream.current['status'], 'inProgress');
+    await db.collection('sessions_archive').doc('room').set({
+      'statsApplied': true, 'categoryId': 'general', 'questionIds': ['01'],
+      'rounds': [{}], 'playerResults': [{ 'uid': 'host', 'username': 'Host',
+        'placement': 1, 'lotteryTimesIn': 2 }],
+    });
+    await db.collection('sessions').doc('room').delete();
+    expect(await stream.moveNext(), true);
+    final result = stream.current;
+    expect(result['status'], 'finished'); expect(result['resultsReady'], true);
+    expect(result['questionIds'], ['01']); expect(result['currentQuestionIndex'], 0);
+    expect(result['players']['host']['lotteryTickets'], 2);
+  });
+  test('an archive without settlement proof is not announced as a completed live game', () async {
+    await db.collection('sessions_archive').doc('room').set({'statsApplied': false});
+    await expectLater(repo.sessionDocStream('room').first, throwsStateError);
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,6 +83,7 @@ Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore, _Comma
     _createService({
   MockQuestionRepository? questionRepo,
   Map<String, dynamic>? sessionDoc,
+  Map<String, dynamic>? archiveDoc,
 }) async {
   final fakeFirestore = FakeFirebaseFirestore();
   final mockAuth = MockFirebaseAuth();
@@ -97,10 +100,12 @@ Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore, _Comma
       .doc(_myUid)
       .set({'username': _myUsername});
 
-  await fakeFirestore
-      .collection('sessions')
-      .doc(_sessionId)
-      .set(sessionDoc ?? _answeringSessionDoc());
+  if (archiveDoc != null) {
+    await fakeFirestore.collection('sessions_archive').doc(_sessionId).set(archiveDoc);
+  } else {
+    await fakeFirestore.collection('sessions').doc(_sessionId)
+        .set(sessionDoc ?? _answeringSessionDoc());
+  }
 
   // Question repository
   if (questionRepo == null) {
@@ -263,6 +268,46 @@ void main() {
 
   // ── buildLiveGameStateStream / _parse ──────────────────────────────────────
   group('buildLiveGameStateStream — _parse behavior', () {
+    test('does not announce finished before the server marks results ready', () async {
+      final ctx = await _createService();
+      final states = <SessionStatus>[];
+      final first = Completer<void>();
+      final finished = Completer<void>();
+      final subscription = ctx.service.buildLiveGameStateStream().listen((state) {
+        states.add(state.status);
+        if (!first.isCompleted) first.complete();
+        if (state.status == SessionStatus.finished && !finished.isCompleted) finished.complete();
+      });
+      addTearDown(subscription.cancel);
+      await first.future;
+      await ctx.firestore.collection('sessions').doc(_sessionId)
+          .update({'status': 'finished', 'phase': 'finished', 'resultsReady': false});
+      await pumpEventQueue();
+      expect(states, [SessionStatus.answering]);
+      await ctx.firestore.collection('sessions').doc(_sessionId).update({'resultsReady': true});
+      await finished.future;
+      expect(states, [SessionStatus.answering, SessionStatus.finished]);
+    });
+
+    test('initializes and fetches results after the live session has been cleaned up', () async {
+      final archive = <String, dynamic>{
+        'sessionId': _sessionId, 'categoryId': _categoryId, 'questionIds': ['0', '1', '2'],
+        'gameMode': 'casual', 'statsApplied': true,
+        'sessionStartTime': '2026-10-20T10:00:00Z', 'gameStartTime': '2026-10-20T10:00:00Z',
+        'endTime': '2026-10-20T10:01:00Z',
+        'playerResults': [{ 'uid': _myUid, 'username': _myUsername, 'placement': 1,
+          'correctAnswers': 1, 'totalAnswers': 1, 'lotteryTimesIn': 0 }],
+        'rounds': [{ 'roundIndex': 0, 'questionId': '0', 'playerAnswers': {_myUid: 'A'},
+          'isCorrect': {_myUid: true}, 'lotteryOccurred': false, 'lotteryPool': {}, 'eliminatedUid': null }],
+      };
+      final ctx = await _createService(archiveDoc: archive);
+      final state = await ctx.service.buildLiveGameStateStream().first;
+      expect(state.status, SessionStatus.finished);
+      expect(state.myState!.username, _myUsername);
+      expect(state.currentQuestionIndex, 0);
+      expect((await ctx.service.fetchFinalSessionData()).rounds.single.playerAnswers[_myUid], 'A');
+    });
+
     test('emits LiveGameState with answering status', () async {
       final ctx = await _createService();
       final state = await ctx.service.buildLiveGameStateStream().first;
@@ -313,6 +358,7 @@ void main() {
           ..._answeringSessionDoc(),
           'status': 'finished',
           'phase': 'finished',
+          'resultsReady': true,
         },
       );
       final state = await ctx.service.buildLiveGameStateStream().first;

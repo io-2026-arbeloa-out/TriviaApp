@@ -16,6 +16,10 @@ service cloud.firestore {
         && validOptions(data.user_options);
     }
     match /sessions/{sessionId} {
+      // Cleanup may remove the live document before a participant reconnects.
+      allow get: if signedIn()
+        && !exists(/databases/$(database)/documents/sessions/$(sessionId))
+        && participant(get(/databases/$(database)/documents/sessions_archive/$(sessionId)).data);
       allow read: if signedIn() && (
         (resource.data.status == 'waiting' && resource.data.isPrivate == false)
         || participant(resource.data));

@@ -44,12 +44,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
     final userSnap = await _firestore.collection('users').doc(_myUid).get();
     _myUsername = userSnap.data()?['username'] as String? ?? '';
 
-    final sessionSnap = await _firestore.collection('sessions').doc(_sessionId).get();
-    if (!sessionSnap.exists) {
-      throw StateError('Session $_sessionId not found');
-    }
-
-    final data = sessionSnap.data()!;
+    final data = await _sessionRepository.sessionDocStream(_sessionId).first;
     final questionIds = List<String>.from(data['questionIds'] as List? ?? []);
     if (questionIds.isEmpty) throw StateError('Session has no questions');
     final categoryId = data['categoryId'] as String;
@@ -75,7 +70,9 @@ class MultiplayerGameService implements IMultiplayerGameService {
   @override
   Stream<LiveGameState> buildLiveGameStateStream() async* {
     await ready;
-    yield* _sessionRepository.sessionDocStream(_sessionId).map(_parse);
+    yield* _sessionRepository.sessionDocStream(_sessionId)
+        .where((data) => data['status'] != 'finished' || data['resultsReady'] == true)
+        .map(_parse);
   }
 
   LiveGameState _parse(Map<String, dynamic> data) {
