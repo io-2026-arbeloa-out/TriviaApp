@@ -40,7 +40,7 @@ class _SingleplayerOptionsScreenState
   String _typeLabel(QuestionType? type) {
     if (type == null) return 'Mieszane';
     switch (type) {
-      case QuestionType.true_false:
+      case QuestionType.trueFalse:
         return 'Prawda / Fałsz';
       case QuestionType.open4:
         return '4 opcje';
@@ -186,9 +186,9 @@ class _SingleplayerOptionsScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: options.mainButtonColor.withOpacity(0.15),
+          color: options.mainButtonColor.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: options.mainButtonColor.withOpacity(0.4)),
+          border: Border.all(color: options.mainButtonColor.withValues(alpha: 0.4)),
         ),
         child: Text(
           category,
@@ -235,12 +235,12 @@ class _SingleplayerOptionsScreenState
         decoration: BoxDecoration(
           color: selected
               ? options.mainButtonColor
-              : options.secondaryColor.withOpacity(0.3),
+              : options.secondaryColor.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected
                 ? options.mainButtonColor
-                : options.mainButtonColor.withOpacity(0.3),
+                : options.mainButtonColor.withValues(alpha: 0.3),
             width: 2,
           ),
         ),

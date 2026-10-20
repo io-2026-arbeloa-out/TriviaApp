@@ -219,7 +219,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.4),
+              color: options.secondaryColor.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -235,7 +235,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 Text(
                   'graczy w lobby',
                   style: TextStyle(
-                    color: options.textColor.withOpacity(0.7),
+                    color: options.textColor.withValues(alpha: 0.7),
                     fontSize: 13,
                   ),
                 ),
@@ -246,7 +246,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
           Text(
             'Kod sesji: ${_sessionId!.substring(0, 6).toUpperCase()}',
             style: TextStyle(
-              color: options.textColor.withOpacity(0.5),
+              color: options.textColor.withValues(alpha: 0.5),
               fontSize: 12,
             ),
           ),

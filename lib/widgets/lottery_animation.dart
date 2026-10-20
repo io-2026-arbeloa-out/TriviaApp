@@ -118,9 +118,9 @@ class _LotteryState extends State<LotteryWidget>
             // so the highlighted card renders immediately on completion.
             ValueListenableBuilder<bool>(
               valueListenable: _done,
-              builder: (_, done, __) => AnimatedBuilder(
+              builder: (_, done, _) => AnimatedBuilder(
                 animation: _scroll!,
-                builder: (_, __) => ClipRect(
+                builder: (_, _) => ClipRect(
                   child: OverflowBox(
                     alignment: Alignment.centerLeft,
                     maxWidth: double.infinity,
@@ -164,7 +164,7 @@ class _LotteryState extends State<LotteryWidget>
                 borderRadius: BorderRadius.circular(2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.amber.withOpacity(0.55),
+                    color: Colors.amber.withValues(alpha: 0.55),
                     blurRadius: 14,
                     spreadRadius: 3,
                   ),
@@ -206,19 +206,19 @@ class _TapeCard extends StatelessWidget {
       margin: EdgeInsets.only(right: gap, top: 4, bottom: 4),
       decoration: BoxDecoration(
         color: highlighted
-            ? Colors.white.withOpacity(0.14)
-            : Colors.white.withOpacity(0.07),
+            ? Colors.white.withValues(alpha: 0.14)
+            : Colors.white.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: highlighted
               ? highlightColor
-              : Colors.white.withOpacity(0.18),
+              : Colors.white.withValues(alpha: 0.18),
           width: highlighted ? 2.5 : 1.5,
         ),
         boxShadow: highlighted
             ? [
           BoxShadow(
-            color: highlightColor.withOpacity(0.45),
+            color: highlightColor.withValues(alpha: 0.45),
             blurRadius: 18,
             spreadRadius: 2,
           ),
@@ -240,7 +240,7 @@ class _TapeCard extends StatelessWidget {
               boxShadow: highlighted
                   ? [
                 BoxShadow(
-                  color: highlightColor.withOpacity(0.45),
+                  color: highlightColor.withValues(alpha: 0.45),
                   blurRadius: 8,
                 ),
               ]
@@ -261,7 +261,7 @@ class _TapeCard extends StatelessWidget {
             child: Text(
               player.username,
               style: TextStyle(
-                color: Colors.white.withOpacity(highlighted ? 1.0 : 0.7),
+                color: Colors.white.withValues(alpha: highlighted ? 1.0 : 0.7),
                 fontWeight:
                 highlighted ? FontWeight.bold : FontWeight.normal,
                 fontSize: 11,
@@ -296,8 +296,8 @@ class _EdgeFade extends StatelessWidget {
             begin: Alignment.centerLeft,
             end:   Alignment.centerRight,
             colors: fadeRight
-                ? [Colors.transparent, Colors.black.withOpacity(0.7)]
-                : [Colors.black.withOpacity(0.7), Colors.transparent],
+                ? [Colors.transparent, Colors.black.withValues(alpha: 0.7)]
+                : [Colors.black.withValues(alpha: 0.7), Colors.transparent],
           ),
         ),
       ),

@@ -260,7 +260,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
               Text(
                 'Wynik: ${_correctAnswers()} / $_answeredQuestions',
                 style: TextStyle(
-                  color: options.textColor.withOpacity(0.7),
+                  color: options.textColor.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -290,7 +290,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
           child: LinearProgressIndicator(
             value: fraction,
             minHeight: 8,
-            backgroundColor: options.secondaryColor.withOpacity(0.3),
+            backgroundColor: options.secondaryColor.withValues(alpha: 0.3),
             valueColor: AlwaysStoppedAnimation(barColor),
           ),
         ),
@@ -312,7 +312,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: options.secondaryColor.withOpacity(0.35),
+          color: options.secondaryColor.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
@@ -352,22 +352,22 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
           (c) => c.trim().toLowerCase() == answer.trim().toLowerCase(),
     );
 
-    Color bgColor = options.secondaryColor.withOpacity(0.3);
-    Color borderColor = options.mainButtonColor.withOpacity(0.3);
+    Color bgColor = options.secondaryColor.withValues(alpha: 0.3);
+    Color borderColor = options.mainButtonColor.withValues(alpha: 0.3);
 
     if (inFeedback && selected) {
       if (isCorrectAnswer) {
-        bgColor = Colors.green.withOpacity(0.3);
+        bgColor = Colors.green.withValues(alpha: 0.3);
         borderColor = Colors.green;
       } else {
-        bgColor = Colors.red.withOpacity(0.3);
+        bgColor = Colors.red.withValues(alpha: 0.3);
         borderColor = Colors.red;
       }
     } else if (inFeedback && isCorrectAnswer) {
-      bgColor = Colors.green.withOpacity(0.3);
+      bgColor = Colors.green.withValues(alpha: 0.3);
       borderColor = Colors.green;
     } else if (!inFeedback && selected) {
-      bgColor = options.mainButtonColor.withOpacity(0.3);
+      bgColor = options.mainButtonColor.withValues(alpha: 0.3);
       borderColor = options.mainButtonColor;
     }
 
@@ -405,8 +405,8 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isCorrect
-            ? Colors.green.withOpacity(0.15)
-            : Colors.red.withOpacity(0.15),
+            ? Colors.green.withValues(alpha: 0.15)
+            : Colors.red.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCorrect ? Colors.green : Colors.red,
@@ -435,7 +435,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
                   Text(
                     'Prawidłowa: $correctAnswer',
                     style: TextStyle(
-                      color: options.textColor.withOpacity(0.8),
+                      color: options.textColor.withValues(alpha: 0.8),
                       fontSize: 13,
                     ),
                   ),

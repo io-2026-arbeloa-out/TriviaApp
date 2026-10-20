@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
-import 'package:triviaapp/models/singleplayer_game_options.dart';
 import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 
@@ -72,7 +71,7 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: options.secondaryColor.withOpacity(0.35),
+        color: options.secondaryColor.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -88,7 +87,7 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
           Text(
             'Skuteczność: $pct%',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: options.textColor.withOpacity(0.8),
+              color: options.textColor.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 12),
@@ -97,7 +96,7 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: _accuracy,
               minHeight: 8,
-              backgroundColor: options.secondaryColor.withOpacity(0.3),
+              backgroundColor: options.secondaryColor.withValues(alpha: 0.3),
               valueColor: AlwaysStoppedAnimation(
                 _accuracy >= 0.7 ? Colors.green : Colors.orange,
               ),
@@ -111,18 +110,18 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
   Widget _buildResultList(BuildContext context) {
     return ListView.separated(
       itemCount: sessionData.results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         final isCorrect = sessionData.results[index];
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: options.secondaryColor.withOpacity(0.3),
+            color: options.secondaryColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isCorrect
-                  ? Colors.green.withOpacity(0.6)
-                  : Colors.red.withOpacity(0.6),
+                  ? Colors.green.withValues(alpha: 0.6)
+                  : Colors.red.withValues(alpha: 0.6),
               width: 1.5,
             ),
           ),
@@ -175,7 +174,7 @@ class SingleplayerScoreTableScreen extends StatelessWidget {
         const SizedBox(height: 10),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: options.secondaryColor.withOpacity(0.5),
+            backgroundColor: options.secondaryColor.withValues(alpha: 0.5),
             foregroundColor: options.textColor,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(

@@ -60,14 +60,14 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
           Text(
             'Koniec gry',
             style: TextStyle(
-              color: options.textColor.withOpacity(0.6),
+              color: options.textColor.withValues(alpha: 0.6),
               fontSize: 13,
               letterSpacing: 2,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            isWinner ? 'Wygrałeś!' : 'Zająłeś ${myPlace}. miejsce',
+            isWinner ? 'Wygrałeś!' : 'Zająłeś $myPlace. miejsce',
             style: TextStyle(
               color: options.textColor,
               fontSize: 26,
@@ -78,7 +78,7 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
           Text(
             'Kategoria: ${session.categoryId}',
             style: TextStyle(
-              color: options.textColor.withOpacity(0.5),
+              color: options.textColor.withValues(alpha: 0.5),
               fontSize: 12,
             ),
           ),
@@ -89,9 +89,9 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
             height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _placeColor(myPlace).withOpacity(0.15),
+              color: _placeColor(myPlace).withValues(alpha: 0.15),
               border: Border.all(
-                color: _placeColor(myPlace).withOpacity(0.6),
+                color: _placeColor(myPlace).withValues(alpha: 0.6),
                 width: 2,
               ),
             ),
@@ -117,20 +117,20 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
         final player = session.playerByUid(uid);
         if (player == null) return const SizedBox.shrink();
         final isMe = uid == myUid;
-        final isWinner = uid == session.winner;
+        final isWinner = uid == session.winner?.uid;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: isMe
-                ? options.mainButtonColor.withOpacity(0.15)
-                : options.secondaryColor.withOpacity(0.35),
+                ? options.mainButtonColor.withValues(alpha: 0.15)
+                : options.secondaryColor.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isMe
-                  ? options.mainButtonColor.withOpacity(0.5)
-                  : _placeColor(place).withOpacity(0.25),
+                  ? options.mainButtonColor.withValues(alpha: 0.5)
+                  : _placeColor(place).withValues(alpha: 0.25),
               width: isMe ? 1.5 : 1,
             ),
           ),
@@ -168,7 +168,7 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: options.mainButtonColor.withOpacity(0.2),
+                              color: options.mainButtonColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -191,7 +191,7 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
                       Text(
                         'Losowania: ${player.lotteryTimesIn}',
                         style: TextStyle(
-                          color: options.textColor.withOpacity(0.45),
+                          color: options.textColor.withValues(alpha: 0.45),
                           fontSize: 11,
                         ),
                       ),
@@ -214,7 +214,7 @@ class MultiplayerScoreTableScreen extends StatelessWidget {
                   Text(
                     'poprawnych',
                     style: TextStyle(
-                      color: options.textColor.withOpacity(0.5),
+                      color: options.textColor.withValues(alpha: 0.5),
                       fontSize: 11,
                     ),
                   ),

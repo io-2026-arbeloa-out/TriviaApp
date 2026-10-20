@@ -253,7 +253,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Tworzenie sesji...',
-                  style: TextStyle(color: options.textColor.withOpacity(0.7)),
+                  style: TextStyle(color: options.textColor.withValues(alpha: 0.7)),
                 ),
               ],
             ),
@@ -295,7 +295,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
                       'Wróć',
-                      style: TextStyle(color: options.textColor.withOpacity(0.7)),
+                      style: TextStyle(color: options.textColor.withValues(alpha: 0.7)),
                     ),
                   ),
                 ],
@@ -346,7 +346,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(Icons.arrow_back,
-                color: options.textColor.withOpacity(0.7)),
+                color: options.textColor.withValues(alpha: 0.7)),
           ),
           const SizedBox(width: 4),
           Text(
@@ -367,16 +367,16 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
-        color: options.secondaryColor.withOpacity(0.4),
+        color: options.secondaryColor.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: options.textColor.withOpacity(0.15)),
+        border: Border.all(color: options.textColor.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
           Text(
             'Kod pokoju',
             style: TextStyle(
-                color: options.textColor.withOpacity(0.6), fontSize: 13),
+                color: options.textColor.withValues(alpha: 0.6), fontSize: 13),
           ),
           const SizedBox(height: 6),
           Text(
@@ -392,7 +392,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
           Text(
             'Udostępnij ten kod pozostałym graczom',
             style: TextStyle(
-                color: options.textColor.withOpacity(0.45), fontSize: 11),
+                color: options.textColor.withValues(alpha: 0.45), fontSize: 11),
           ),
         ],
       ),
@@ -460,9 +460,9 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: options.secondaryColor.withOpacity(0.25),
+        color: options.secondaryColor.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: options.textColor.withOpacity(0.12)),
+        border: Border.all(color: options.textColor.withValues(alpha: 0.12)),
       ),
       child: Row(
         children: [
@@ -476,7 +476,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
             style: TextStyle(color: options.textColor, fontSize: 14),
             underline: const SizedBox.shrink(),
             icon: Icon(Icons.keyboard_arrow_down,
-                color: options.textColor.withOpacity(0.6), size: 20),
+                color: options.textColor.withValues(alpha: 0.6), size: 20),
             items: items
                 .map((e) => DropdownMenuItem<T>(
               value: e,
@@ -511,7 +511,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
             Text(
               '${names.length} / ${_gameOptions.maxPlayers}',
               style: TextStyle(
-                  color: options.textColor.withOpacity(0.5), fontSize: 13),
+                  color: options.textColor.withValues(alpha: 0.5), fontSize: 13),
             ),
           ],
         ),
@@ -522,15 +522,15 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
             padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.25),
+              color: options.secondaryColor.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(12),
               border:
-              Border.all(color: options.textColor.withOpacity(0.12)),
+              Border.all(color: options.textColor.withValues(alpha: 0.12)),
             ),
             child: Row(
               children: [
                 Icon(Icons.person,
-                    color: options.textColor.withOpacity(0.6), size: 18),
+                    color: options.textColor.withValues(alpha: 0.6), size: 18),
                 const SizedBox(width: 10),
                 Text(name,
                     style:
@@ -552,7 +552,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: options.textColor,
-                side: BorderSide(color: options.textColor.withOpacity(0.4)),
+                side: BorderSide(color: options.textColor.withValues(alpha: 0.4)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),

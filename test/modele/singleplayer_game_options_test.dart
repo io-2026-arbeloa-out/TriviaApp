@@ -66,8 +66,8 @@ void main() {
       });
 
       test('returns new instance with updated questionType', () {
-        final updated = base.copyWith(questionType: QuestionType.true_false);
-        expect(updated.questionType, QuestionType.true_false);
+        final updated = base.copyWith(questionType: QuestionType.trueFalse);
+        expect(updated.questionType, QuestionType.trueFalse);
       });
 
       test('preserves all fields when no parameters provided', () {

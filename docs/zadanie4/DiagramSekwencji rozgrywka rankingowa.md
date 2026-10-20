@@ -1,3 +1,5 @@
+> Historyczny projekt przepływu rankingowego. UI rankingu pozostaje prototypem; aktualny przebieg multiplayera opisuje [architektura po refaktorze](../architecture.md).
+
 ```mermaid
 sequenceDiagram
     autonumber

@@ -30,13 +30,15 @@ class FirebaseQuestionRepository {
       final value = Map<String, dynamic>.from(child.value as Map);
 
       final type = QuestionType.values.firstWhere(
-            (e) => e.name == value['type'],
+            (e) => e.toJson() == value['type'],
         orElse: () => QuestionType.values.first,
       );
 
       if (!questionTypes.contains(type)) continue;
       if (difficulty != Difficulty.random &&
-          value['difficulty'] != difficulty.name) continue;
+          value['difficulty'] != difficulty.name) {
+        continue;
+      }
 
       validItems.add((id: child.key!, value: value));
     }

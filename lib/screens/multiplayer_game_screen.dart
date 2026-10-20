@@ -131,14 +131,14 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         ),
         content: Text(
           'Czy na pewno chcesz opuścić rozgrywkę?',
-          style: TextStyle(color: options.textColor.withOpacity(0.8)),
+          style: TextStyle(color: options.textColor.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               'Zostań',
-              style: TextStyle(color: options.textColor.withOpacity(0.7)),
+              style: TextStyle(color: options.textColor.withValues(alpha: 0.7)),
             ),
           ),
           TextButton(
@@ -213,7 +213,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         children: [
           IconButton(
             onPressed: _onLeavePressed,
-            icon: Icon(Icons.exit_to_app, color: options.textColor.withOpacity(0.7)),
+            icon: Icon(Icons.exit_to_app, color: options.textColor.withValues(alpha: 0.7)),
             tooltip: 'Opuść grę',
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -222,7 +222,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           Text(
             'Pytanie $current / $total',
             style: TextStyle(
-              color: options.textColor.withOpacity(0.8),
+              color: options.textColor.withValues(alpha: 0.8),
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -231,13 +231,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.4),
+              color: options.secondaryColor.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '${state.activeCount} ${state.activeCount == 1 ? 'gracz' : 'graczy'}',
               style: TextStyle(
-                color: options.textColor.withOpacity(0.7),
+                color: options.textColor.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
@@ -277,9 +277,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: options.secondaryColor.withOpacity(0.3),
+        color: options.secondaryColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: options.textColor.withOpacity(0.15)),
+        border: Border.all(color: options.textColor.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -288,7 +288,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
+                color: Colors.red.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -333,38 +333,38 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     if (!_hasAnsweredThisRound) {
       // Unanswered state.
-      bgColor = options.secondaryColor.withOpacity(0.25);
-      borderColor = options.textColor.withOpacity(0.2);
+      bgColor = options.secondaryColor.withValues(alpha: 0.25);
+      borderColor = options.textColor.withValues(alpha: 0.2);
       textColor = options.textColor;
     } else if (isSelected) {
       // The option the player tapped.
       if (_isAnswerCorrect == true) {
-        bgColor = Colors.green.withOpacity(0.25);
+        bgColor = Colors.green.withValues(alpha: 0.25);
         borderColor = Colors.green;
         textColor = Colors.green.shade200;
         trailingIcon = const Icon(Icons.check_circle, color: Colors.green, size: 20);
       } else if (_isAnswerCorrect == false) {
-        bgColor = Colors.red.withOpacity(0.2);
+        bgColor = Colors.red.withValues(alpha: 0.2);
         borderColor = Colors.red.shade400;
         textColor = Colors.red.shade200;
         trailingIcon = const Icon(Icons.cancel, color: Colors.redAccent, size: 20);
       } else {
-        bgColor = options.secondaryColor.withOpacity(0.25);
+        bgColor = options.secondaryColor.withValues(alpha: 0.25);
         borderColor = options.mainButtonColor;
         textColor = options.textColor;
       }
     } else if (isCorrectOption && _isAnswerCorrect == false) {
       // Reveal correct answer when player was wrong.
-      bgColor = Colors.green.withOpacity(0.12);
-      borderColor = Colors.green.withOpacity(0.6);
+      bgColor = Colors.green.withValues(alpha: 0.12);
+      borderColor = Colors.green.withValues(alpha: 0.6);
       textColor = Colors.green.shade300;
       trailingIcon =
           Icon(Icons.check_circle_outline, color: Colors.green.shade300, size: 20);
     } else {
       // Other wrong options — dimmed.
-      bgColor = options.secondaryColor.withOpacity(0.1);
-      borderColor = options.textColor.withOpacity(0.08);
-      textColor = options.textColor.withOpacity(0.35);
+      bgColor = options.secondaryColor.withValues(alpha: 0.1);
+      borderColor = options.textColor.withValues(alpha: 0.08);
+      textColor = options.textColor.withValues(alpha: 0.35);
     }
 
     return GestureDetector(
@@ -419,7 +419,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: options.secondaryColor.withOpacity(0.2),
+      color: options.secondaryColor.withValues(alpha: 0.2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -429,7 +429,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               height: 12,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: options.textColor.withOpacity(0.5),
+                color: options.textColor.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(width: 8),
@@ -437,7 +437,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           Text(
             message,
             style: TextStyle(
-              color: options.textColor.withOpacity(0.65),
+              color: options.textColor.withValues(alpha: 0.65),
               fontSize: 13,
             ),
           ),
@@ -505,7 +505,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     // ── Layout ─────────────────────────────────────────────────────────────────
     return Container(
-      color: Colors.black.withOpacity(0.78),
+      color: Colors.black.withValues(alpha: 0.78),
       child: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 28),
@@ -514,7 +514,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             color: options.mainColor,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: accentColor.withOpacity(0.5),
+              color: accentColor.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -556,7 +556,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                   key: ValueKey(subtitle),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: options.textColor.withOpacity(0.65),
+                    color: options.textColor.withValues(alpha: 0.65),
                     fontSize: 14,
                   ),
                 ),
@@ -591,7 +591,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                     height: 12,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: options.textColor.withOpacity(0.4),
+                      color: options.textColor.withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -600,7 +600,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                         ? 'Ładowanie wyników...'
                         : 'Kolejne pytanie za chwilę...',
                     style: TextStyle(
-                      color: options.textColor.withOpacity(0.4),
+                      color: options.textColor.withValues(alpha: 0.4),
                       fontSize: 12,
                     ),
                   ),

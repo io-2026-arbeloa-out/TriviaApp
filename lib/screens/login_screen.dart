@@ -134,8 +134,8 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.bottomRight,
             end: Alignment.topLeft,
             colors: [
-              options.mainButtonColor.withOpacity(0.7),
-              options.secondaryColor.withOpacity(0.7)
+              options.mainButtonColor.withValues(alpha: 0.7),
+              options.secondaryColor.withValues(alpha: 0.7)
             ],
           ),
         ),
@@ -169,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    options.mainButtonColor.withOpacity(0.85),
+                    options.mainButtonColor.withValues(alpha: 0.85),
                     options.secondaryColor
                   ],
                 ),
@@ -200,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen>
               height: 130,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: options.textColor.withOpacity(0.07),
+                color: options.textColor.withValues(alpha: 0.07),
               ),
             ),
           ),
@@ -213,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen>
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: options.textColor.withOpacity(0.05),
+                color: options.textColor.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -224,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen>
             child: Icon(
               Icons.person,
               size: 72,
-              color: options.textColor.withOpacity(0.2),
+              color: options.textColor.withValues(alpha: 0.2),
             ),
           ),
 
@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen>
         padding:
         const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.red.shade800.withOpacity(0.85),
+          color: Colors.red.shade800.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -289,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen>
     final inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide:
-      BorderSide(color: options.mainButtonColor.withOpacity(0.4)),
+      BorderSide(color: options.mainButtonColor.withValues(alpha: 0.4)),
     );
     final focusedBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
@@ -297,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen>
       BorderSide(color: options.mainButtonColor, width: 2),
     );
     final labelStyle =
-    TextStyle(color: options.textColor.withOpacity(0.7));
+    TextStyle(color: options.textColor.withValues(alpha: 0.7));
     final inputStyle = TextStyle(color: options.textColor);
 
     return Padding(
@@ -307,11 +307,11 @@ class _LoginScreenState extends State<LoginScreen>
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.6),
+              color: options.secondaryColor.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: options.mainButtonColor.withOpacity(0.4),
+                  color: options.mainButtonColor.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 0),
                 ),
@@ -351,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen>
                         _passwordVisible
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: options.textColor.withOpacity(0.6),
+                        color: options.textColor.withValues(alpha: 0.6),
                       ),
                       onPressed: () => setState(() =>
                       _passwordVisible = !_passwordVisible),
@@ -375,12 +375,12 @@ class _LoginScreenState extends State<LoginScreen>
                 gradient: LinearGradient(
                   colors: [
                     options.mainButtonColor,
-                    options.mainButtonColor.withOpacity(0.6),
+                    options.mainButtonColor.withValues(alpha: 0.6),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: options.mainButtonColor.withOpacity(0.4),
+                    color: options.mainButtonColor.withValues(alpha: 0.4),
                     blurRadius: 15,
                     offset: const Offset(0, 0),
                   ),
@@ -409,14 +409,14 @@ class _LoginScreenState extends State<LoginScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  options.secondaryButtonColor.withOpacity(0.40),
-                  options.secondaryButtonColor.withOpacity(0.50),
+                  options.secondaryButtonColor.withValues(alpha: 0.40),
+                  options.secondaryButtonColor.withValues(alpha: 0.50),
                 ],
               ),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: options.mainButtonColor.withOpacity(0.1),
+                  color: options.mainButtonColor.withValues(alpha: 0.1),
                   blurRadius: 5,
                   offset: const Offset(0, 0),
                 ),

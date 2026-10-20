@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/question.dart';
+import 'package:triviaapp/models/question_type.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
 import 'package:triviaapp/repositories/firebase_game_commands.dart';
 import 'package:triviaapp/services/singleplayer_game_service.dart';
@@ -16,6 +17,13 @@ class _Commands extends Fake implements FirebaseGameCommands {
   }
 }
 void main() {
+  test('true/false requests retain the server type name', () async {
+    final commands = _Commands();
+    await SingleplayerGameService(commands: commands).loadQuestions(
+      const SingleplayerGameOptions(questionType: QuestionType.trueFalse), 'general',
+    );
+    expect(commands.lastData!['types'], ['true_false']);
+  });
   test('uses the issued session and server feedback, not local answer labels', () async {
     final commands = _Commands();
     final service = SingleplayerGameService(commands: commands);

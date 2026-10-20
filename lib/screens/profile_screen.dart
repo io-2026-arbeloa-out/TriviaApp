@@ -294,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       CircleAvatar(
                         radius: 40,
                         backgroundColor:
-                        options.secondaryButtonColor.withOpacity(0.2),
+                        options.secondaryButtonColor.withValues(alpha: 0.2),
                         backgroundImage:
                         _profileData?.profilePicture.isNotEmpty == true
                             ? AssetImage(_profileData!.profilePicture)
@@ -427,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: options.secondaryColor.withOpacity(0.3),
+        color: options.secondaryColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

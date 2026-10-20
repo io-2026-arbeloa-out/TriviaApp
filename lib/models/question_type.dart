@@ -1,23 +1,26 @@
 enum QuestionType {
-  true_false,
+  trueFalse,
   open4,
   open6,
   open,
   mixed;
 
+  // Preserve the Firebase/callable representation independently of Dart names.
+  String toJson() => this == trueFalse ? 'true_false' : name;
+
   static QuestionType fromJson(String? json) {
     if (json == null) return QuestionType.mixed; // wartość domyślna
 
     return QuestionType.values.firstWhere(
-          (type) => type.name == json,
+      (type) => type.toJson() == json,
       orElse: () => QuestionType.mixed, // wartość domyślna gdy nie znaleziono
     );
   }
 
   List<QuestionType> toList() {
     switch (this) {
-      case QuestionType.true_false:
-        return [QuestionType.true_false];
+      case QuestionType.trueFalse:
+        return [QuestionType.trueFalse];
       case QuestionType.open:
         return [QuestionType.open4, QuestionType.open6];
       case QuestionType.open4:

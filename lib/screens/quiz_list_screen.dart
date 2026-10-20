@@ -205,7 +205,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
                 borderRadius: BorderRadius.circular(16),
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: options.secondaryColor.withOpacity(0.4),
+                    color: options.secondaryColor.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Padding(
@@ -219,7 +219,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color:
-                            options.mainButtonColor.withOpacity(0.2),
+                            options.mainButtonColor.withValues(alpha: 0.2),
                           ),
                           child: Icon(
                             quiz.getIcon(),
@@ -280,7 +280,7 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
       builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
-            color: options.secondaryColor.withOpacity(0.3),
+            color: options.secondaryColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Padding(
@@ -293,8 +293,8 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
                   height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: options.mainButtonColor.withOpacity(
-                      0.15 + (_shimmerController.value * 0.1),
+                    color: options.mainButtonColor.withValues(
+                      alpha: 0.15 + (_shimmerController.value * 0.1),
                     ),
                   ),
                 ),
@@ -303,8 +303,8 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
                   height: 16,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: options.mainButtonColor.withOpacity(
-                      0.15 + (_shimmerController.value * 0.1),
+                    color: options.mainButtonColor.withValues(
+                      alpha: 0.15 + (_shimmerController.value * 0.1),
                     ),
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -314,8 +314,8 @@ class QuizListScreenState extends State<QuizListScreen> with SingleTickerProvide
                   height: 16,
                   width: 80,
                   decoration: BoxDecoration(
-                    color: options.mainButtonColor.withOpacity(
-                      0.15 + (_shimmerController.value * 0.1),
+                    color: options.mainButtonColor.withValues(
+                      alpha: 0.15 + (_shimmerController.value * 0.1),
                     ),
                     borderRadius: BorderRadius.circular(4),
                   ),

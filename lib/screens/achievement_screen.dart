@@ -57,13 +57,13 @@ class AchievementScreen extends StatelessWidget {
                 Expanded(
                   child: ListView.separated(
                     itemCount: 10,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color:
-                          options.secondaryColor.withOpacity(0.5),
+                          options.secondaryColor.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -89,7 +89,7 @@ class AchievementScreen extends StatelessWidget {
                                     'Opis osiągnięcia',
                                     style: TextStyle(
                                       color: options.textColor
-                                          .withOpacity(0.8),
+                                          .withValues(alpha: 0.8),
                                     ),
                                   ),
                                 ],

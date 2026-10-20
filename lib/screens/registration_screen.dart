@@ -159,8 +159,8 @@ class _RegistrationScreenState extends State<RegistrationScreen>
             begin: Alignment.bottomRight,
             end: Alignment.topLeft,
             colors: [
-              options.mainButtonColor.withOpacity(0.7),
-              options.secondaryColor.withOpacity(0.7),
+              options.mainButtonColor.withValues(alpha: 0.7),
+              options.secondaryColor.withValues(alpha: 0.7),
             ],
           ),
         ),
@@ -194,7 +194,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    options.mainButtonColor.withOpacity(0.85),
+                    options.mainButtonColor.withValues(alpha: 0.85),
                     options.secondaryColor,
                   ],
                 ),
@@ -225,7 +225,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: options.textColor.withOpacity(0.07),
+                color: options.textColor.withValues(alpha: 0.07),
               ),
             ),
           ),
@@ -236,7 +236,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
             child: Icon(
               Icons.person_add,
               size: 72,
-              color: options.textColor.withOpacity(0.2),
+              color: options.textColor.withValues(alpha: 0.2),
             ),
           ),
 
@@ -272,7 +272,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
         padding:
         const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.red.shade800.withOpacity(0.85),
+          color: Colors.red.shade800.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -301,7 +301,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     final inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide:
-      BorderSide(color: options.mainButtonColor.withOpacity(0.4)),
+      BorderSide(color: options.mainButtonColor.withValues(alpha: 0.4)),
     );
     final focusedBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
@@ -309,7 +309,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
       BorderSide(color: options.mainButtonColor, width: 2),
     );
     final labelStyle =
-    TextStyle(color: options.textColor.withOpacity(0.7));
+    TextStyle(color: options.textColor.withValues(alpha: 0.7));
     final inputStyle = TextStyle(color: options.textColor);
 
     return Padding(
@@ -319,11 +319,11 @@ class _RegistrationScreenState extends State<RegistrationScreen>
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.6),
+              color: options.secondaryColor.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: options.mainButtonColor.withOpacity(0.4),
+                  color: options.mainButtonColor.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 0),
                 ),
@@ -377,7 +377,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                         _passwordVisible
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: options.textColor.withOpacity(0.6),
+                        color: options.textColor.withValues(alpha: 0.6),
                       ),
                       onPressed: () => setState(() =>
                       _passwordVisible = !_passwordVisible),
@@ -402,7 +402,7 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                         _confirmPasswordVisible
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: options.textColor.withOpacity(0.6),
+                        color: options.textColor.withValues(alpha: 0.6),
                       ),
                       onPressed: () => setState(() =>
                       _confirmPasswordVisible =
@@ -427,12 +427,12 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                 gradient: LinearGradient(
                   colors: [
                     options.mainButtonColor,
-                    options.mainButtonColor.withOpacity(0.6),
+                    options.mainButtonColor.withValues(alpha: 0.6),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: options.mainButtonColor.withOpacity(0.4),
+                    color: options.mainButtonColor.withValues(alpha: 0.4),
                     blurRadius: 15,
                     offset: const Offset(0, 0),
                   ),

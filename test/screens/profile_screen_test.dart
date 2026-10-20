@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/profile_data.dart';
-import 'package:triviaapp/models/rank.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/screens/profile_screen.dart';
 

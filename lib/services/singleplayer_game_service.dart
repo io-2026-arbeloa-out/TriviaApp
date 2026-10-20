@@ -18,7 +18,7 @@ class SingleplayerGameService implements ISingleplayerGameService {
   Future<List<Question>> loadQuestions(SingleplayerGameOptions options, String category) async {
     final data = await _commands.call('startSingleplayer', {
       'categoryId': category, 'count': options.numQuestions,
-      'types': options.questionType.toList().map((t) => t.name).toList(),
+      'types': options.questionType.toList().map((t) => t.toJson()).toList(),
     });
     final questions = (data['questions'] as List)
         .map((q) => Question.fromJson(Map<String, dynamic>.from(q as Map))).toList();

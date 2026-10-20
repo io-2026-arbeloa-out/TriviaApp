@@ -34,7 +34,7 @@ class LoginRegisterPopUp extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -61,7 +61,7 @@ class LoginRegisterPopUp extends StatelessWidget {
               IconButton(
                 onPressed: onClose,
                 icon: const Icon(Icons.close, size: 20),
-                color: options.textColor.withOpacity(0.6),
+                color: options.textColor.withValues(alpha: 0.6),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 tooltip: 'Zamknij',

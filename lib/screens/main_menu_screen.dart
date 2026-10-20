@@ -1,7 +1,6 @@
 import 'package:triviaapp/app_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:triviaapp/app_route.dart';
-import 'package:triviaapp/audio_manager.dart';
 import 'package:triviaapp/models/difficulty.dart';
 import 'package:triviaapp/models/online_game_options.dart';
 import 'package:triviaapp/models/ui_options.dart';
@@ -74,16 +73,16 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             decoration: InputDecoration(
               labelText: 'Kod pokoju',
               labelStyle: TextStyle(
-                color: widget.options.textColor.withOpacity(0.7),
+                color: widget.options.textColor.withValues(alpha: 0.7),
               ),
               errorText: errorText,
               counterStyle: TextStyle(
-                color: widget.options.textColor.withOpacity(0.5),
+                color: widget.options.textColor.withValues(alpha: 0.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: widget.options.textColor.withOpacity(0.4),
+                  color: widget.options.textColor.withValues(alpha: 0.4),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -106,7 +105,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               child: Text(
                 'Anuluj',
                 style: TextStyle(
-                  color: widget.options.textColor.withOpacity(0.7),
+                  color: widget.options.textColor.withValues(alpha: 0.7),
                 ),
               ),
             ),

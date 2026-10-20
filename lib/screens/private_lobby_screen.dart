@@ -213,7 +213,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
           const SizedBox(height: 16),
           Text(
             'Dołączanie do lobby...',
-            style: TextStyle(color: options.textColor.withOpacity(0.7)),
+            style: TextStyle(color: options.textColor.withValues(alpha: 0.7)),
           ),
         ],
       ),
@@ -280,7 +280,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
         children: [
           IconButton(
             onPressed: _leave,
-            icon: Icon(Icons.arrow_back, color: options.textColor.withOpacity(0.7)),
+            icon: Icon(Icons.arrow_back, color: options.textColor.withValues(alpha: 0.7)),
           ),
           const SizedBox(width: 4),
           Text(
@@ -295,7 +295,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.18),
+              color: Colors.orange.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -317,15 +317,15 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
-        color: options.secondaryColor.withOpacity(0.4),
+        color: options.secondaryColor.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: options.textColor.withOpacity(0.15)),
+        border: Border.all(color: options.textColor.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
           Text(
             'Kod pokoju',
-            style: TextStyle(color: options.textColor.withOpacity(0.6), fontSize: 13),
+            style: TextStyle(color: options.textColor.withValues(alpha: 0.6), fontSize: 13),
           ),
           const SizedBox(height: 6),
           Text(
@@ -346,8 +346,8 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
     final rows = [
       ['Czas na pytanie', '${_settings?.questionTimeLimit ?? 30} s'],
       ['Maks. graczy',    '${_settings?.maxPlayers ?? '—'}'],
-      ['Kategoria',       '${_settings?.categoryId ?? '—'}'],
-      ['Trudność',        _difficultyLabel('${_settings?.difficulty.name ?? ''}')],
+      ['Kategoria',       (_settings?.categoryId ?? '—')],
+      ['Trudność',        _difficultyLabel(_settings?.difficulty.name ?? '')],
     ];
 
     return Column(
@@ -363,13 +363,13 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.25),
+              color: options.secondaryColor.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: options.textColor.withOpacity(0.12)),
+              border: Border.all(color: options.textColor.withValues(alpha: 0.12)),
             ),
             child: Row(
               children: [
-                Text(row[0], style: TextStyle(color: options.textColor.withOpacity(0.65), fontSize: 13)),
+                Text(row[0], style: TextStyle(color: options.textColor.withValues(alpha: 0.65), fontSize: 13)),
                 const Spacer(),
                 Text(row[1], style: TextStyle(color: options.textColor, fontWeight: FontWeight.bold, fontSize: 13)),
               ],
@@ -395,13 +395,13 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: options.secondaryColor.withOpacity(0.25),
+              color: options.secondaryColor.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: options.textColor.withOpacity(0.12)),
+              border: Border.all(color: options.textColor.withValues(alpha: 0.12)),
             ),
             child: Row(
               children: [
-                Icon(Icons.person, color: options.textColor.withOpacity(0.6), size: 18),
+                Icon(Icons.person, color: options.textColor.withValues(alpha: 0.6), size: 18),
                 const SizedBox(width: 10),
                 Text(name, style: TextStyle(color: options.textColor, fontSize: 14)),
                 const Spacer(),
@@ -410,7 +410,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: options.textColor.withOpacity(0.3),
+                    color: options.textColor.withValues(alpha: 0.3),
                   ),
                 ),
               ],
@@ -428,7 +428,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
         onPressed: _leave,
         child: Text(
           'Opuść lobby',
-          style: TextStyle(color: options.textColor.withOpacity(0.7)),
+          style: TextStyle(color: options.textColor.withValues(alpha: 0.7)),
         ),
       ),
     );

@@ -1,4 +1,4 @@
-> Dokument historyczny projektu, sprzed refaktoru. Część pokazanych serwisów i interfejsów została usunięta; aktualny podział opisuje [etap 6](../refactor-stage6.md).
+> Dokument historyczny projektu, sprzed refaktoru. Część pokazanych serwisów i interfejsów została usunięta; aktualne zależności i przepływy opisuje [architektura po refaktorze](../architecture.md).
 
 # Zasady SOLID i wzorce projektowe w architekturze aplikacji quizowej
 

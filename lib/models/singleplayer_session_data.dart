@@ -2,7 +2,7 @@ import 'package:triviaapp/models/singleplayer_game_options.dart';
 
 class SingleplayerSessionData {
   final String _category;
-  List<bool> _results;
+  final List<bool> _results;
   final SingleplayerGameOptions _options;
 
   SingleplayerSessionData({

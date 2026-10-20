@@ -11,7 +11,7 @@ class UIOptionsService implements IUIOptionsService {
 
   @override
   Future<UIOptions> getUIOptions() async {
-    final preset = await this.getCurrentPreset();
+    final preset = await getCurrentPreset();
     if (preset == 'default') return UIOptions();
     return _optionsRepository.getUIOptions(preset);
   }

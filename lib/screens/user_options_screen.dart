@@ -340,7 +340,7 @@ class _UserOptionsScreenState extends State<UserOptionsScreen> {
           min: 0,
           max: 100,
           activeColor: options.mainButtonColor,
-          inactiveColor: options.mainButtonColor.withOpacity(0.3),
+          inactiveColor: options.mainButtonColor.withValues(alpha: 0.3),
           onChanged: onChanged,
         ),
       ],

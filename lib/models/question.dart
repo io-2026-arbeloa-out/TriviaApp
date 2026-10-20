@@ -21,5 +21,5 @@ class Question {
   );
 
   Map<String, dynamic> toJson() => {'id': id, 'text': text, 'answers': answers.toList(),
-    'type': type.name, 'difficulty': difficulty.name};
+    'type': type.toJson(), 'difficulty': difficulty.name};
 }
