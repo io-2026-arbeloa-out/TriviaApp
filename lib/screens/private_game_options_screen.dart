@@ -63,6 +63,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   bool _isConnecting = true;
   String? _connectError;
   bool _gameStarted = false;
+  bool _isStarting = false;
 
   @override
   void initState() {
@@ -151,12 +152,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
   Future<void> _applyChanges() async {
     if (_sessionId == null) return;
     try {
-      await _sessionRepository.updateSessionSettings(
-        sessionId: _sessionId!,
-        questionTimeLimit: _gameOptions.questionTimeLimit,
-        maxPlayers: _gameOptions.maxPlayers,
-        categoryId: _gameOptions.categoryId,
-      );
+      await _saveSettings();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Zapisano zmiany')),
@@ -171,9 +167,19 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
     }
   }
 
+  Future<void> _saveSettings() => _sessionRepository.updateSessionSettings(
+        sessionId: _sessionId!,
+        questionTimeLimit: _gameOptions.questionTimeLimit,
+        maxPlayers: _gameOptions.maxPlayers,
+        categoryId: _gameOptions.categoryId,
+        difficulty: _gameOptions.difficulty,
+      );
+
   Future<void> _startGame() async {
-    if (_sessionId == null) return;
+    if (_sessionId == null || _isStarting) return;
+    setState(() => _isStarting = true);
     try {
+      await _saveSettings();
       await _sessionRepository.startSession(sessionId: _sessionId!);
     } catch (e) {
       if (mounted) {
@@ -181,6 +187,8 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
           SnackBar(content: Text('Błąd startu gry: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isStarting = false);
     }
   }
 
@@ -567,7 +575,7 @@ class _PrivateGameOptionsScreenState extends State<PrivateGameOptionsScreen> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
-              onPressed: _startGame,
+                          onPressed: _isStarting ? null : _startGame,
               child: const Text('Rozpocznij grę',
                   style: TextStyle(fontWeight: FontWeight.bold)),
             ),

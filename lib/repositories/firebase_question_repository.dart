@@ -48,16 +48,14 @@ class FirebaseQuestionRepository {
 
     return selected.map((item) {
       return Question.fromJson({
+        ...item.value,
         'id': item.id,
         'category': category,
-        ...item.value,
       });
     }).toList();
   }
 
-  /// Fetches specific questions by their index-based IDs.
-  /// IDs are the string-encoded array indices stored in the session's
-  /// [questionIds] field. Preserves the original [ids] ordering.
+  /// Fetches RTDB keys in session order; a missing question invalidates the session.
   Future<List<Question>> getQuestionsByIds({
     required String category,
     required List<String> ids,
@@ -67,7 +65,9 @@ class FirebaseQuestionRepository {
     final ref = _database.ref('questions/$category');
     final snapshot = await ref.get();
 
-    if (!snapshot.exists || snapshot.value == null) return [];
+    if (!snapshot.exists || snapshot.value == null) {
+      throw StateError('Question category $category not found');
+    }
 
     // Budujemy słownik key → child, tak jak getQuestions używa child.key
     final Map<String, DataSnapshot> childByKey = {
@@ -79,13 +79,15 @@ class FirebaseQuestionRepository {
 
     for (final id in ids) {
       final child = childByKey[id];
-      if (child == null || child.value == null || child.value is! Map) continue;
+      if (child == null || child.value == null || child.value is! Map) {
+        throw StateError('Question $category/$id not found or invalid');
+      }
 
       final value = Map<String, dynamic>.from(child.value as Map);
       questions.add(Question.fromJson({
+        ...value,
         'id': id,
         'category': category,
-        ...value,
       }));
     }
 

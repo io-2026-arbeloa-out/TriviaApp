@@ -1,4 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:triviaapp/models/difficulty.dart';
@@ -39,6 +41,12 @@ class _FakeDataSnapshot extends Fake implements DataSnapshot {
           yield _FakeDataSnapshot(values[i], key: '$i');
         }
       }
+    } else if (values is Map) {
+      for (final entry in values.entries) {
+        if (entry.value != null) {
+          yield _FakeDataSnapshot(entry.value, key: entry.key as String);
+        }
+      }
     }
   }
 }
@@ -54,7 +62,7 @@ class _FakeDatabaseReference extends Fake implements DatabaseReference {
 /// Mapuje ścieżki RTDB (np. 'questions/general') na surowe listy danych.
 class _FakeFirebaseDatabase extends Fake implements FirebaseDatabase {
   _FakeFirebaseDatabase(this._data);
-  final Map<String, List<Object?>> _data;
+  final Map<String, Object?> _data;
 
   @override
   DatabaseReference ref([String? path]) =>
@@ -87,7 +95,7 @@ List<Map<String, dynamic>> _buildList(int count, {String type = 'open4', String 
     List.generate(count, (i) => _entry(text: 'Question $i', type: type, difficulty: difficulty));
 
 /// Skrót do tworzenia repozytorium z fake RTDB.
-FirebaseQuestionRepository _repoWith(Map<String, List<Object?>> data) =>
+FirebaseQuestionRepository _repoWith(Map<String, Object?> data) =>
     FirebaseQuestionRepository(database: _FakeFirebaseDatabase(data));
 
 /// Konfiguruje mocktail tak, żeby ref(path).get() zwracał snapshot z zadaną wartością.
@@ -119,6 +127,20 @@ const _path     = 'questions/$_category';
 // ---------------------------------------------------------------------------
 
 void main() {
+  test('reads the shared contract with exact RTDB keys and session order', () async {
+    final fixture = jsonDecode(File('test/fixtures/question_contract.json').readAsStringSync()) as Map;
+    final repo = _repoWith({'questions/general': fixture['questions']['general']});
+    final selected = await repo.getQuestions(
+      limit: 3, category: 'general',
+      questionTypes: QuestionType.values, difficulty: Difficulty.medium,
+    );
+    expect(selected.map((q) => q.id).toSet(), {'01', '1', 'question-alpha'});
+    final ordered = await repo.getQuestionsByIds(
+      category: 'general', ids: ['question-alpha', '01', '1'],
+    );
+    expect(ordered.map((q) => q.id), ['question-alpha', '01', '1']);
+    expect(ordered.map((q) => q.correctAnswers.single), ['8', '4', '6']);
+  });
   // ══════════════════════════════════════════════════════════════════════════
   // Sekcja A — getQuestions [mocktail]
   // Granularne testy: snapshot existence, id format, QuestionType filtering,
@@ -609,24 +631,20 @@ void main() {
       repo     = FirebaseQuestionRepository(database: mockDb);
     });
 
-    test('returns empty list when snapshot does not exist', () async {
+    test('rejects a missing category', () async {
       _setupSnapshot(mockDb, mockRef, mockSnap,
           path: _path, exists: false, value: null);
 
-      final result = await repo.getQuestionsByIds(
-          category: _category, ids: ['0', '1']);
-
-      expect(result, isEmpty);
+      await expectLater(repo.getQuestionsByIds(
+          category: _category, ids: ['0', '1']), throwsStateError);
     });
 
-    test('returns empty list when snapshot.value is null', () async {
+    test('rejects an empty category', () async {
       _setupSnapshot(mockDb, mockRef, mockSnap,
           path: _path, exists: true, value: null);
 
-      final result = await repo.getQuestionsByIds(
-          category: _category, ids: ['0']);
-
-      expect(result, isEmpty);
+      await expectLater(repo.getQuestionsByIds(
+          category: _category, ids: ['0']), throwsStateError);
     });
   });
 
@@ -670,21 +688,17 @@ void main() {
 
 
 
-    test('skips ids that are non-integer strings', () async {
-      final result = await repo.getQuestionsByIds(
-          category: _category, ids: ['0', 'not_an_int', '2']);
-
-      expect(result.map((q) => q.id).toList(), ['0', '2']);
+    test('rejects an absent string key', () async {
+      await expectLater(repo.getQuestionsByIds(
+          category: _category, ids: ['0', 'not_an_int', '2']), throwsStateError);
     });
 
-    test('skips ids that are out of bounds', () async {
-      final result = await repo.getQuestionsByIds(
-          category: _category, ids: ['0', '99', '2']);
-
-      expect(result.map((q) => q.id).toList(), ['0', '2']);
+    test('rejects an absent numeric key', () async {
+      await expectLater(repo.getQuestionsByIds(
+          category: _category, ids: ['0', '99', '2']), throwsStateError);
     });
 
-    test('skips null entries at the specified index', () async {
+    test('rejects a null entry without shifting session indices', () async {
       final dataWithNull = <Object?>[
         _entry(text: 'Q0'),
         null, // index 1 is null
@@ -692,10 +706,8 @@ void main() {
       ];
       when(() => mockSnap.value).thenReturn(dataWithNull);
 
-      final result = await repo.getQuestionsByIds(
-          category: _category, ids: ['0', '1', '2']);
-
-      expect(result.map((q) => q.id).toList(), ['0', '2']);
+      await expectLater(repo.getQuestionsByIds(
+          category: _category, ids: ['0', '1', '2']), throwsStateError);
     });
 
     test('reads from questions/<category> path', () async {
@@ -728,28 +740,22 @@ void main() {
       expect(results[1].text, 'Q0');
     });
 
-    test('skips ids that are out of array bounds', () async {
+    test('rejects missing array keys', () async {
       final repo = _repoWith({
         'questions/general': [_entry(text: 'Q0', difficulty: 'easy')],
       });
 
-      final results = await repo.getQuestionsByIds(
-          category: 'general', ids: ['0', '99']);
-
-      expect(results.length, 1);
-      expect(results.first.id, '0');
+      await expectLater(repo.getQuestionsByIds(
+          category: 'general', ids: ['0', '99']), throwsStateError);
     });
 
-    test('skips non-numeric ids', () async {
+    test('rejects missing non-numeric keys', () async {
       final repo = _repoWith({
         'questions/general': [_entry(text: 'Q0', difficulty: 'easy')],
       });
 
-      final results = await repo.getQuestionsByIds(
-          category: 'general', ids: ['not_a_number', '0']);
-
-      expect(results.length, 1);
-      expect(results.first.id, '0');
+      await expectLater(repo.getQuestionsByIds(
+          category: 'general', ids: ['not_a_number', '0']), throwsStateError);
     });
 
     test('does not filter by difficulty — returns question regardless of difficulty', () async {

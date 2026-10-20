@@ -22,6 +22,7 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
     required String username,
     required OnlineGameOptions settings,
   }) async {
+    settings.validate();
     if (settings.isPrivate) {
       return _connectPrivate(uid: uid, username: username, settings: settings);
     }
@@ -92,8 +93,13 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
     required String username,
     required OnlineGameOptions settings,
   }) async {
+    if (settings.isPrivate) {
+      return _sessionRepository.createSession(
+        settings: settings, questionIds: [], uid: uid, username: username,
+      );
+    }
     final questions = await _questionRepository.getQuestions(
-      limit: (settings.maxPlayers - 1) * 3,
+      limit: settings.requiredQuestionCount,
       category: settings.categoryId,
       questionTypes: QuestionType.values,
       difficulty: settings.difficulty,
@@ -104,6 +110,10 @@ class MultiplayerConnectionService implements IMultiplayerConnectionService {
         'No questions available for category "${settings.categoryId}" '
             'and difficulty "${settings.difficulty.name}"',
       );
+    }
+
+    if (questions.length < settings.requiredQuestionCount) {
+      throw StateError('Not enough questions for the selected settings');
     }
 
     return _sessionRepository.createSession(

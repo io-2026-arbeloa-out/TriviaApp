@@ -46,4 +46,19 @@ class OnlineGameOptions {
   int? get entryCode => _entryCode;
 
   bool get isPrivate => _entryCode != null;
+
+  int get requiredQuestionCount => (_maxPlayers - 1) * 3;
+
+  void validate() {
+    if (_categoryId.trim().isEmpty ||
+        RegExp(r'[.#$\[\]/\x00-\x1f\x7f]').hasMatch(_categoryId)) {
+      throw ArgumentError.value(_categoryId, 'categoryId');
+    }
+    if (_maxPlayers < 2 || _maxPlayers > 10) {
+      throw ArgumentError.value(_maxPlayers, 'maxPlayers');
+    }
+    if (![10, 20, 30, 60].contains(_questionTimeLimit)) {
+      throw ArgumentError.value(_questionTimeLimit, 'questionTimeLimit');
+    }
+  }
 }

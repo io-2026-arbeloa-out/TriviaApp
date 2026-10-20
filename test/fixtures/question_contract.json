@@ -1,0 +1,28 @@
+{
+  "questions": {
+    "general": {
+      "01": {
+        "id": "ignored-payload-id",
+        "text": "What is two plus two?",
+        "correctAnswers": ["4"],
+        "wrongAnswers": ["3", "5", "6"],
+        "type": "open4",
+        "difficulty": "medium"
+      },
+      "1": {
+        "text": "What is three plus three?",
+        "correctAnswers": ["6"],
+        "wrongAnswers": ["4", "5", "7"],
+        "type": "open4",
+        "difficulty": "medium"
+      },
+      "question-alpha": {
+        "text": "What is four plus four?",
+        "correctAnswers": ["8"],
+        "wrongAnswers": ["6", "7", "9"],
+        "type": "open4",
+        "difficulty": "medium"
+      }
+    }
+  }
+}

@@ -1,6 +1,10 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/online_game_options.dart';
+import 'package:triviaapp/models/difficulty.dart';
+import 'package:triviaapp/models/question.dart';
+import 'package:triviaapp/models/question_type.dart';
+import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/models/profile_data.dart';
 import 'package:triviaapp/repositories/firebase_profile_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
@@ -17,6 +21,17 @@ class _FakeProfileRepo extends Fake implements FirebaseProfileRepository {
     }
     return profileToReturn!;
   }
+}
+
+class _FakeQuestionRepo extends Fake implements FirebaseQuestionRepository {
+  @override
+  Future<List<Question>> getQuestions({
+    required int limit, required String category,
+    required List<QuestionType> questionTypes, required Difficulty difficulty,
+  }) async => List.generate(limit, (i) => Question(
+    id: '$i', text: 'Q$i', correctAnswers: {'A'}, wrongAnswers: {'B'},
+    type: QuestionType.open4, difficulty: difficulty,
+  ));
 }
 
 // ── Seed helpers ──────────────────────────────────────────────────────────────
@@ -75,7 +90,9 @@ void main() {
     fakeFirestore = FakeFirebaseFirestore();
     repo = FirebaseSessionRepository(
       firestore: fakeFirestore,
-      profileRepo: _FakeProfileRepo(),
+      profileRepo: _FakeProfileRepo()
+        ..profileToReturn = const ProfileData(uid: 'host', username: 'Host'),
+      questionRepository: _FakeQuestionRepo(),
     );
   });
 
@@ -166,7 +183,7 @@ void main() {
 
       final id = await repo.createSession(
         settings: settings,
-        questionIds: ['q1'],
+        questionIds: ['q1', 'q2', 'q3'],
         uid: 'u1',
         username: 'Alice',
       );
@@ -181,7 +198,7 @@ void main() {
 
       final id = await repo.createSession(
         settings: settings,
-        questionIds: ['q1'],
+        questionIds: ['q1', 'q2', 'q3'],
         uid: 'u1',
         username: 'Alice',
       );
@@ -359,9 +376,10 @@ void main() {
 
   group('updateSessionSettings', () {
     test('updates all mutable lobby fields', () async {
-      final id = await _seedSession(fakeFirestore);
+      final id = await _seedSession(fakeFirestore, isPrivate: true);
 
       await repo.updateSessionSettings(
+        difficulty: Difficulty.hard,
         sessionId: id,
         questionTimeLimit: 60,
         maxPlayers: 8,

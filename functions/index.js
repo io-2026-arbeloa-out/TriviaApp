@@ -5,6 +5,7 @@ const { onTaskDispatched }                      = require('firebase-functions/v2
 const { setGlobalOptions }                      = require('firebase-functions/v2');
 const admin                                     = require('firebase-admin');
 const { getFunctions }                          = require('firebase-admin/functions');
+const { validateRoundAnswer }                    = require('./question_contract');
 
 setGlobalOptions({ region: 'europe-central2' });
 
@@ -48,18 +49,6 @@ function normalizeIncorrectUids(raw) {
     }
   }
   return [...new Set(out)];
-}
-
-async function validateAnswerViaRtdb(categoryId, questionId, answer) {
-  const index = parseInt(questionId, 10);
-  if (!categoryId || Number.isNaN(index)) return false;
-
-  const snap = await rtdb.ref(`${categoryId}/questions/${index}`).get();
-  if (!snap.exists()) return false;
-
-  const question = snap.val();
-  const correct  = question?.correctAnswers || [];
-  return correct.includes(answer);
 }
 
 async function deleteAnswersForRound(sessionRef, roundIndex) {
@@ -164,9 +153,11 @@ exports.onAnswerCreate = onDocumentCreated(
     const player = session.players?.[uid];
     if (!player || player.isEliminated) return;
 
-    const isCorrect = await validateAnswerViaRtdb(
-      session.categoryId,
-      String(questionId),
+    const isCorrect = await validateRoundAnswer(
+      rtdb,
+      session,
+      roundIndex,
+      questionId,
       answer,
     );
 

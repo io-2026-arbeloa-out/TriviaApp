@@ -50,6 +50,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
 
     final data = sessionSnap.data()!;
     final questionIds = List<String>.from(data['questionIds'] as List? ?? []);
+    if (questionIds.isEmpty) throw StateError('Session has no questions');
     final categoryId = data['categoryId'] as String;
 
     _questions = await _questionRepository.getQuestionsByIds(

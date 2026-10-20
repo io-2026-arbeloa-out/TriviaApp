@@ -734,6 +734,7 @@ void main() {
 
     test('creates a new private session when no session with the code exists', () async {
       sessionRepo.privateSessionId = null;
+      questionRepo.questionsToReturn = [];
 
       final result = await service.connectPlayer(
         uid: _uid,
