@@ -1,0 +1,9 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "public_questions": { ".read": "auth != null" },
+    "answer_keys": { ".read": false },
+    "questions": { ".read": false }
+  }
+}

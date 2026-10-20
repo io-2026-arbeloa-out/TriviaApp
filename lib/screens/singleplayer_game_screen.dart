@@ -8,28 +8,32 @@ import 'package:triviaapp/models/singleplayer_session_data.dart';
 import 'package:triviaapp/models/ui_options.dart';
 import 'package:triviaapp/services/singleplayer_game_service.dart';
 
-enum _Phase { loading, playing, feedback, error }
+enum _Phase { loading, playing, checking, feedback, error }
 
 class _QuestionState {
   final List<String> answers;
   final String? selectedAnswer;
   final bool? isCorrect;
+  final List<String> correctAnswers;
 
   const _QuestionState({
     required this.answers,
     this.selectedAnswer,
     this.isCorrect,
+    this.correctAnswers = const [],
   });
 
   _QuestionState copyWith({
     List<String>? answers,
     String? selectedAnswer,
     bool? isCorrect,
+    List<String>? correctAnswers,
   }) {
     return _QuestionState(
       answers: answers ?? this.answers,
       selectedAnswer: selectedAnswer ?? this.selectedAnswer,
       isCorrect: isCorrect ?? this.isCorrect,
+      correctAnswers: correctAnswers ?? this.correctAnswers,
     );
   }
 }
@@ -71,6 +75,8 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   late _QuestionState _questionState;
 
   AnimationController? _timerController;
+  String _pendingAnswer = '';
+  bool _validationFailed = false;
 
   @override
   void initState() {
@@ -148,19 +154,28 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
     _registerAnswer(answer, _questions[_currentIndex]);
   }
 
-  void _registerAnswer(String answer, Question question) {
-    final isCorrect =
-        answer.isNotEmpty && gameService.checkAnswer(question, answer);
-    _answeredQuestions++;
-    results.add(isCorrect);
-
+  Future<void> _registerAnswer(String answer, Question question) async {
+    _pendingAnswer = answer;
     setState(() {
-      _questionState = _questionState.copyWith(
-        selectedAnswer: answer.isEmpty ? '—' : answer,
-        isCorrect: isCorrect,
-      );
-      _phase = _Phase.feedback;
+      _phase = _Phase.checking;
+      _validationFailed = false;
     });
+    try {
+      final result = await gameService.checkAnswer(question, answer);
+      if (!mounted) return;
+      _answeredQuestions++;
+      results.add(result.isCorrect);
+      setState(() {
+        _questionState = _questionState.copyWith(
+          selectedAnswer: answer.isEmpty ? '—' : answer,
+          isCorrect: result.isCorrect, correctAnswers: result.correctAnswers,
+        );
+        _phase = _Phase.feedback;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _validationFailed = true);
+    }
   }
 
   void _nextQuestion() {
@@ -243,6 +258,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
           child: switch (_phase) {
             _Phase.loading => _buildLoading(),
             _Phase.error => _buildError(),
+            _Phase.checking => _buildChecking(),
             _Phase.playing || _Phase.feedback => _buildGame(context),
           },
         ),
@@ -253,6 +269,19 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   Widget _buildLoading() {
     return Center(child: CircularProgressIndicator(color: options.textColor));
   }
+
+  Widget _buildChecking() => Center(
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      if (_validationFailed) ...[
+        Text('Nie udało się sprawdzić odpowiedzi.', style: TextStyle(color: options.textColor)),
+        ElevatedButton(
+          onPressed: () => _registerAnswer(_pendingAnswer, _questions[_currentIndex]),
+          child: const Text('Ponów sprawdzenie'),
+        ),
+      ] else CircularProgressIndicator(color: options.textColor),
+      TextButton(onPressed: _onClosePressed, child: const Text('Opuść grę')),
+    ]),
+  );
 
   Widget _buildError() {
     return Center(
@@ -423,7 +452,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   Widget _buildAnswerButton(String answer, Question question) {
     final selected = _questionState.selectedAnswer == answer;
     final inFeedback = _phase == _Phase.feedback;
-    final isCorrectAnswer = question.correctAnswers.any(
+    final isCorrectAnswer = _questionState.correctAnswers.any(
           (c) => c.trim().toLowerCase() == answer.trim().toLowerCase(),
     );
 
@@ -473,7 +502,7 @@ class _SingleplayerGameScreenState extends State<SingleplayerGameScreen>
   Widget _buildFeedbackBar(BuildContext context) {
     final isCorrect = _questionState.isCorrect ?? false;
     final correctAnswer = _phase == _Phase.feedback
-        ? _questions[_currentIndex].correctAnswers.first
+        ? _questionState.correctAnswers.join(', ')
         : '';
 
     return Container(

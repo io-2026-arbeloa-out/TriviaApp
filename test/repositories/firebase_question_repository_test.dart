@@ -59,7 +59,7 @@ class _FakeDatabaseReference extends Fake implements DatabaseReference {
   Future<DataSnapshot> get() async => _snapshot;
 }
 
-/// Mapuje ścieżki RTDB (np. 'questions/general') na surowe listy danych.
+/// Mapuje ścieżki RTDB (np. 'public_questions/general') na surowe listy danych.
 class _FakeFirebaseDatabase extends Fake implements FirebaseDatabase {
   _FakeFirebaseDatabase(this._data);
   final Map<String, Object?> _data;
@@ -84,8 +84,7 @@ Map<String, dynamic> _entry({
 }) =>
     {
       'text': text,
-      'correctAnswers': correctAnswers,
-      'wrongAnswers': wrongAnswers,
+      'answers': [...correctAnswers, ...wrongAnswers],
       'difficulty': difficulty,
       'type': type,
     };
@@ -120,7 +119,7 @@ void _setupSnapshot(
 // ---------------------------------------------------------------------------
 
 const _category = 'general';
-const _path     = 'questions/$_category';
+const _path     = 'public_questions/$_category';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -128,8 +127,8 @@ const _path     = 'questions/$_category';
 
 void main() {
   test('reads the shared contract with exact RTDB keys and session order', () async {
-    final fixture = jsonDecode(File('test/fixtures/question_contract.json').readAsStringSync()) as Map;
-    final repo = _repoWith({'questions/general': fixture['questions']['general']});
+    final fixture = jsonDecode(File('test/fixtures/public_question_contract.json').readAsStringSync()) as Map;
+    final repo = _repoWith({'public_questions/general': fixture['public_questions']['general']});
     final selected = await repo.getQuestions(
       limit: 3, category: 'general',
       questionTypes: QuestionType.values, difficulty: Difficulty.medium,
@@ -139,7 +138,7 @@ void main() {
       category: 'general', ids: ['question-alpha', '01', '1'],
     );
     expect(ordered.map((q) => q.id), ['question-alpha', '01', '1']);
-    expect(ordered.map((q) => q.correctAnswers.single), ['8', '4', '6']);
+    expect(ordered.map((q) => q.answers.length), [4, 4, 4]);
   });
   // ══════════════════════════════════════════════════════════════════════════
   // Sekcja A — getQuestions [mocktail]
@@ -379,12 +378,12 @@ void main() {
       repo   = FirebaseQuestionRepository(database: mockDb);
     });
 
-    test('reads from questions/<category>', () async {
+    test('reads from public_questions/<category>', () async {
       const customCategory = 'sports';
       final customRef  = MockDatabaseReference();
       final customSnap = MockDataSnapshot();
 
-      when(() => mockDb.ref('questions/$customCategory')).thenReturn(customRef);
+      when(() => mockDb.ref('public_questions/$customCategory')).thenReturn(customRef);
       when(() => customRef.get()).thenAnswer((_) async => customSnap);
       when(() => customSnap.exists).thenReturn(false);
       when(() => customSnap.value).thenReturn(null);
@@ -396,7 +395,7 @@ void main() {
         difficulty: Difficulty.easy,
       );
 
-      verify(() => mockDb.ref('questions/$customCategory')).called(1);
+      verify(() => mockDb.ref('public_questions/$customCategory')).called(1);
     });
   });
 
@@ -408,7 +407,7 @@ void main() {
   group('getQuestions [fakes] — difficulty filtering', () {
     test('returns only questions matching the requested difficulty', () async {
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           _entry(text: 'Easy Q',   difficulty: 'easy'),
           _entry(text: 'Medium Q', difficulty: 'medium'),
           _entry(text: 'Hard Q',   difficulty: 'hard'),
@@ -428,7 +427,7 @@ void main() {
 
     test('returns multiple questions when several match difficulty', () async {
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           _entry(text: 'M1', difficulty: 'medium'),
           _entry(text: 'E1', difficulty: 'easy'),
           _entry(text: 'M2', difficulty: 'medium'),
@@ -448,7 +447,7 @@ void main() {
 
     test('returns empty list when no question matches the difficulty', () async {
       final repo = _repoWith({
-        'questions/general': [_entry(text: 'Hard Q', difficulty: 'hard')],
+        'public_questions/general': [_entry(text: 'Hard Q', difficulty: 'hard')],
       });
 
       final results = await repo.getQuestions(
@@ -463,7 +462,7 @@ void main() {
 
     test('respects the limit parameter after difficulty filter', () async {
       final repo = _repoWith({
-        'questions/general': _buildList(20, difficulty: 'medium'),
+        'public_questions/general': _buildList(20, difficulty: 'medium'),
       });
 
       final results = await repo.getQuestions(
@@ -478,7 +477,7 @@ void main() {
 
     test('returns fewer than limit when fewer questions match difficulty', () async {
       final repo = _repoWith({
-        'questions/general': [_entry(text: 'Easy Q', difficulty: 'easy')],
+        'public_questions/general': [_entry(text: 'Easy Q', difficulty: 'easy')],
       });
 
       final results = await repo.getQuestions(
@@ -493,7 +492,7 @@ void main() {
 
     test('skips null entries in the raw array', () async {
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           null,
           _entry(text: 'Valid', difficulty: 'medium'),
           null,
@@ -513,7 +512,7 @@ void main() {
 
     test('filters by QuestionType alongside difficulty', () async {
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           _entry(text: 'Open4 Medium', difficulty: 'medium', type: 'open4'),
         ],
       });
@@ -532,8 +531,8 @@ void main() {
   group('getQuestions [fakes] — path and id correctness', () {
     test('uses the correct RTDB path based on category', () async {
       final repo = _repoWith({
-        'questions/science': [_entry(text: 'Science Q', difficulty: 'easy')],
-        // 'questions/general' intentionally absent
+        'public_questions/science': [_entry(text: 'Science Q', difficulty: 'easy')],
+        // 'public_questions/general' intentionally absent
       });
 
       final general = await repo.getQuestions(
@@ -564,7 +563,7 @@ void main() {
     });
 
     test('returns empty list for an empty question array', () async {
-      final repo = _repoWith({'questions/general': []});
+      final repo = _repoWith({'public_questions/general': []});
 
       final results = await repo.getQuestions(
         limit: 10,
@@ -578,7 +577,7 @@ void main() {
 
     test('assigns index-based string id to each question', () async {
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           _entry(text: 'Q0', difficulty: 'easy'),
           _entry(text: 'Q1', difficulty: 'easy'),
         ],
@@ -710,7 +709,7 @@ void main() {
           category: _category, ids: ['0', '1', '2']), throwsStateError);
     });
 
-    test('reads from questions/<category> path', () async {
+    test('reads from public_questions/<category> path', () async {
       await repo.getQuestionsByIds(category: _category, ids: ['0']);
       verify(() => mockDb.ref(_path)).called(1);
     });
@@ -725,7 +724,7 @@ void main() {
   group('getQuestionsByIds [fakes]', () {
     test('returns questions in the order of the provided ids', () async {
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           _entry(text: 'Q0', difficulty: 'easy'),
           _entry(text: 'Q1', difficulty: 'medium'),
           _entry(text: 'Q2', difficulty: 'hard'),
@@ -742,7 +741,7 @@ void main() {
 
     test('rejects missing array keys', () async {
       final repo = _repoWith({
-        'questions/general': [_entry(text: 'Q0', difficulty: 'easy')],
+        'public_questions/general': [_entry(text: 'Q0', difficulty: 'easy')],
       });
 
       await expectLater(repo.getQuestionsByIds(
@@ -751,7 +750,7 @@ void main() {
 
     test('rejects missing non-numeric keys', () async {
       final repo = _repoWith({
-        'questions/general': [_entry(text: 'Q0', difficulty: 'easy')],
+        'public_questions/general': [_entry(text: 'Q0', difficulty: 'easy')],
       });
 
       await expectLater(repo.getQuestionsByIds(
@@ -762,7 +761,7 @@ void main() {
       // getQuestionsByIds jest używane po utworzeniu sesji, gdy pytania są już
       // ustalone. Filtrowanie po difficulty dotyczy tylko getQuestions.
       final repo = _repoWith({
-        'questions/general': [
+        'public_questions/general': [
           _entry(text: 'Any Difficulty', difficulty: 'hard'),
         ],
       });

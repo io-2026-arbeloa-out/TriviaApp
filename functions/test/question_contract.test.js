@@ -2,7 +2,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fixture = require('../../test/fixtures/question_contract.json');
+const fixture = require('../../test/fixtures/public_question_contract.json');
 const { validateRoundAnswer } = require('../question_contract');
 
 function database(data = fixture) {
@@ -21,11 +21,11 @@ function session(id) {
   return { categoryId: 'general', questionIds: [id], currentQuestionIndex: 0 };
 }
 
-for (const [id, question] of Object.entries(fixture.questions.general)) {
+for (const [id, question] of Object.entries(fixture.answer_keys.general)) {
   test(`validates exact RTDB key ${id}`, async () => {
     const db = database();
     assert.equal(await validateRoundAnswer(db, session(id), 0, id, question.correctAnswers[0]), true);
-    assert.deepEqual(db.paths, [`questions/general/${id}`]);
+    assert.deepEqual(db.paths, [`answer_keys/general/${id}`]);
     assert.equal(await validateRoundAnswer(db, session(id), 0, id, 'incorrect'), false);
   });
 }
@@ -41,6 +41,6 @@ test('rejects a different question, round or unsafe key before reading RTDB', as
 
 test('missing or malformed question is a contract error', async () => {
   await assert.rejects(validateRoundAnswer(database(), session('missing'), 0, 'missing', '4'), /Missing question/);
-  const db = database({ questions: { general: { broken: { text: 'No answer key' } } } });
+  const db = database({ answer_keys: { general: { broken: { text: 'No answer key' } } } });
   await assert.rejects(validateRoundAnswer(db, session('broken'), 0, 'broken', '4'), /Invalid question/);
 });

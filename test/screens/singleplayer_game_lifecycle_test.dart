@@ -23,15 +23,15 @@ class _PendingGameService extends Fake implements ISingleplayerGameService {
   @override
   List<String> getAnswerOptions(Question question) {
     answerOptionsCalls++;
-    return [...question.correctAnswers, ...?question.wrongAnswers];
+    return [...question.answers];
   }
 }
 
 const _question = Question(
   id: '0',
   text: 'Question?',
-  correctAnswers: {'Yes'},
-  wrongAnswers: {'No'},
+  answers: {'Yes', 'No'},
+
   type: QuestionType.open4,
   difficulty: Difficulty.easy,
 );

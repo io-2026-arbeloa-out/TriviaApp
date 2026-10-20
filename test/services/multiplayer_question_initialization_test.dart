@@ -2,7 +2,6 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triviaapp/models/question.dart';
-import 'package:triviaapp/repositories/firebase_profile_repository.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
 import 'package:triviaapp/services/multiplayer_game_service.dart';
@@ -44,7 +43,6 @@ void main() {
         questionRepository: questions,
         sessionRepository: FirebaseSessionRepository(
           firestore: db,
-          profileRepo: FirebaseProfileRepository(firestore: db, auth: auth),
         ),
       );
 

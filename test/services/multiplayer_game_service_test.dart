@@ -2,7 +2,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:triviaapp/models/live_game_state.dart';
+import 'package:triviaapp/repositories/firebase_game_commands.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/question.dart';
 import 'package:triviaapp/models/session_status.dart';
@@ -18,6 +18,16 @@ class MockFirebaseAuth extends Mock implements FirebaseAuth {}
 class MockUser extends Mock implements User {}
 class MockQuestionRepository extends Mock implements FirebaseQuestionRepository {}
 
+class _Commands extends Fake implements FirebaseGameCommands {
+  String? name;
+  Map<String, dynamic>? data;
+  @override
+  Future<Map<String, dynamic>> call(String name, Map<String, dynamic> data) async {
+    this.name = name; this.data = data;
+    return {'isCorrect': true, 'correctAnswers': ['CorrectAnswer']};
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -31,8 +41,8 @@ Question _makeQuestion(String id) => Question.fromJson({
       'id': id,
       'category': _categoryId,
       'text': 'Question $id',
-      'correctAnswers': ['CorrectAnswer'],
-      'wrongAnswers': ['Wrong1', 'Wrong2', 'Wrong3'],
+      'answers': ['CorrectAnswer', 'Wrong1', 'Wrong2', 'Wrong3'],
+
       'difficulty': 'easy',
       'type': 'open4',
     });
@@ -67,7 +77,7 @@ Map<String, dynamic> _answeringSessionDoc({
 /// Tworzy FakeFirestore z użytkownikiem i sesją, tworzy serwis i czeka na
 /// zakończenie inicjalizacji. Zwraca gotowy serwis oraz fake Firestore
 /// (do manipulowania dokumentami w testach strumienia).
-Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore})>
+Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore, _Commands commands})>
     _createService({
   MockQuestionRepository? questionRepo,
   Map<String, dynamic>? sessionDoc,
@@ -93,6 +103,7 @@ Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore})>
       .set(sessionDoc ?? _answeringSessionDoc());
 
   // Question repository
+  if (questionRepo == null) {
   when(() => qRepo.getQuestionsByIds(
         category: any(named: 'category'),
         ids: any(named: 'ids'),
@@ -101,8 +112,10 @@ Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore})>
         _makeQuestion('1'),
         _makeQuestion('2'),
       ]);
+  }
 
-  final sessionRepo = FirebaseSessionRepository(firestore: fakeFirestore);
+  final commands = _Commands();
+  final sessionRepo = FirebaseSessionRepository(firestore: fakeFirestore, commands: commands);
 
   final svc = MultiplayerGameService(
     sessionId: _sessionId,
@@ -113,7 +126,7 @@ Future<({MultiplayerGameService service, FakeFirebaseFirestore firestore})>
   );
 
   await svc.ready;
-  return (service: svc, firestore: fakeFirestore);
+  return (service: svc, firestore: fakeFirestore, commands: commands);
 }
 
 // ---------------------------------------------------------------------------
@@ -436,39 +449,21 @@ void main() {
         answer: 'CorrectAnswer',
       );
 
-      // Verify the answer was written to Firestore 'answers' subcollection.
-      final snap = await ctx.firestore
-          .collection('sessions')
-          .doc(_sessionId)
-          .collection('answers')
-          .doc('${_myUid}_2')
-          .get();
-
-      expect(snap.exists, isTrue);
-      expect(snap.data()!['uid'], _myUid);
-      expect(snap.data()!['roundIndex'], 2);
-      expect(snap.data()!['questionId'], '2');
-      expect(snap.data()!['answer'], 'CorrectAnswer');
+      expect(ctx.commands.name, 'submitMultiplayerAnswer');
+      expect(ctx.commands.data, {'sessionId': _sessionId, 'roundIndex': 2,
+        'questionId': '2', 'answer': 'CorrectAnswer'});
     });
   });
 
   // ── leaveGame ──────────────────────────────────────────────────────────────
   group('leaveGame', () {
-    test('marks uid as eliminated in Firestore session document', () async {
+    test('requests leave without allowing the UI to choose another identity', () async {
       final ctx = await _createService();
 
       await ctx.service.leaveGame();
 
-      final snap = await ctx.firestore
-          .collection('sessions')
-          .doc(_sessionId)
-          .get();
-
-      // After leaveGame the player should be marked as eliminated
-      // (FirebaseSessionRepository.leaveGame sets isEliminated: true).
-      final playerData =
-          (snap.data()!['players'] as Map)[_myUid] as Map<String, dynamic>;
-      expect(playerData['isEliminated'], isTrue);
+      expect(ctx.commands.name, 'leaveSession');
+      expect(ctx.commands.data, {'sessionId': _sessionId});
     });
   });
 

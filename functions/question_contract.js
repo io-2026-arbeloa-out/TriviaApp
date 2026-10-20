@@ -12,7 +12,7 @@ async function validateRoundAnswer(rtdb, session, roundIndex, questionId, answer
     || !isDatabaseKey(session.categoryId) || !isDatabaseKey(expectedId)
     || questionId !== expectedId || typeof answer !== 'string') return false;
 
-  const snap = await rtdb.ref(`questions/${session.categoryId}/${expectedId}`).get();
+  const snap = await rtdb.ref(`answer_keys/${session.categoryId}/${expectedId}`).get();
   if (!snap.exists()) throw new Error(`Missing question: ${session.categoryId}/${expectedId}`);
   const correct = snap.val()?.correctAnswers;
   if (!Array.isArray(correct)) throw new Error(`Invalid question: ${expectedId}`);

@@ -1,90 +1,55 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function participant(data) { return signedIn() && request.auth.uid in data.participantUids; }
+    function validOptions(data) {
+      return data is map && data.keys().hasOnly(['soundVolume', 'musicVolume', 'sfxVolume'])
+        && data.soundVolume is int && data.soundVolume >= 0 && data.soundVolume <= 100
+        && data.musicVolume is int && data.musicVolume >= 0 && data.musicVolume <= 100
+        && data.sfxVolume is int && data.sfxVolume >= 0 && data.sfxVolume <= 100;
     }
-
-    function sessionDoc(sessionId) {
-      return get(/databases/$(database)/documents/sessions/$(sessionId)).data;
+    function editableProfile(data) {
+      return data.username is string && data.username.size() > 0 && data.username.size() <= 64
+        && data.profilePicture is string && data.profilePicture.size() <= 256
+        && data.ui_options is string && data.ui_options.size() <= 64
+        && validOptions(data.user_options);
     }
-
-    function isPlayerInSession(sessionId) {
-      return isSignedIn() && request.auth.uid in sessionDoc(sessionId).playerUids;
-    }
-
     match /sessions/{sessionId} {
-      // Matchmaking queries need read on open waiting sessions.
-      allow read: if isSignedIn()
-        && (resource.data.status == 'waiting'
-            || request.auth.uid in resource.data.playerUids);
-
-      allow create: if isSignedIn()
-        && request.resource.data.status == 'waiting'
-        && request.resource.data.playerUids.size() == 1
-        && request.auth.uid in request.resource.data.playerUids;
-
-      allow update: if isSignedIn()
-        && (
-          resource.data.status == 'waiting'
-          && request.resource.data.playerUids.size() <= resource.data.maxPlayers
-          && (
-            request.auth.uid in request.resource.data.playerUids
-            || request.auth.uid in resource.data.playerUids
-          )
-        )
-        || (
-          resource.data.status == 'inProgress'
-          && request.auth.uid in resource.data.playerUids
-          && !(request.auth.uid in request.resource.data.playerUids)
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['playerUids', 'players', 'activePlayerCount'])
-        );
-
-      allow delete: if isSignedIn()
-        && resource.data.status == 'waiting'
-        && request.auth.uid in resource.data.playerUids;
-
-      match /answers/{answerId} {
-        allow read: if isSignedIn() && isPlayerInSession(sessionId);
-
-        allow create: if isSignedIn()
-          && isPlayerInSession(sessionId)
-          && request.auth.uid == request.resource.data.uid
-          && sessionDoc(sessionId).status == 'inProgress'
-          && sessionDoc(sessionId).phase == 'answering'
-          && request.resource.data.roundIndex
-            == sessionDoc(sessionId).currentQuestionIndex
-          && answerId
-            == request.auth.uid + '_' + string(request.resource.data.roundIndex)
-          && !exists(/databases/$(database)/documents/sessions/$(sessionId)/answers/$(answerId));
-
-        allow update, delete: if false;
-      }
-
-      match /roundCounters/{roundId} {
-        allow read: if isSignedIn() && isPlayerInSession(sessionId);
-        // First counter is created by joinSession (Dart) when the lobby fills.
-        allow create: if isSignedIn()
-          && isPlayerInSession(sessionId)
-          && roundId == '0'
-          && request.resource.data.validatedCount == 0
-          && request.resource.data.resolved == false;
-        allow update, delete: if false;
-      }
+      allow read: if signedIn() && (
+        (resource.data.status == 'waiting' && resource.data.isPrivate == false)
+        || participant(resource.data));
+      allow write: if false;
+      match /{document=**} { allow read, write: if false; }
     }
-
     match /sessions_archive/{sessionId} {
-      allow read: if isSignedIn()
-        && exists(/databases/$(database)/documents/sessions/$(sessionId))
-        && request.auth.uid in sessionDoc(sessionId).playerUids;
+      allow read: if participant(resource.data);
       allow write: if false;
     }
-
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    match /singleplayer_sessions/{sessionId} {
+      allow read: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow write: if false;
+      match /answers/{roundId} {
+        allow read: if signedIn() && get(/databases/$(database)/documents/singleplayer_sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+        allow write: if false;
+      }
     }
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['username', 'profilePicture', 'user_options', 'ui_options',
+          'totalQuestionsAnswered', 'correctAnswers', 'rank', 'ratingPoints', 'rankedGamesPlayed', 'rankedGamesWon'])
+        && editableProfile(request.resource.data)
+        && request.resource.data.totalQuestionsAnswered == 0
+        && request.resource.data.correctAnswers == 0 && request.resource.data.rank == 'unranked'
+        && request.resource.data.ratingPoints == 0 && request.resource.data.rankedGamesPlayed == 0
+        && request.resource.data.rankedGamesWon == 0;
+      allow update: if signedIn() && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username', 'profilePicture', 'user_options', 'ui_options'])
+        && editableProfile(request.resource.data);
+      allow delete: if false;
+    }
+    match /quizzes/{quizId} { allow read: if signedIn(); allow write: if false; }
+    match /ui_presets/{presetId} { allow read: if signedIn(); allow write: if false; }
   }
 }

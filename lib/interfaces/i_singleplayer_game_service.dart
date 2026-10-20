@@ -1,4 +1,5 @@
 import 'package:triviaapp/models/question.dart';
+import 'package:triviaapp/models/game_answer.dart';
 import 'package:triviaapp/models/singleplayer_game_options.dart';
 
 abstract class ISingleplayerGameService {
@@ -9,5 +10,5 @@ abstract class ISingleplayerGameService {
 
   List<String> getAnswerOptions(Question question);
 
-  bool checkAnswer(Question question, String answer);
+  Future<GameAnswer> checkAnswer(Question question, String answer);
 }

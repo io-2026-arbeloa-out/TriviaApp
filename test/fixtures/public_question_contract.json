@@ -1,0 +1,58 @@
+{
+  "public_questions": {
+    "general": {
+      "1": {
+        "text": "What is three plus three?",
+        "answers": [
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "type": "open4",
+        "difficulty": "medium"
+      },
+      "01": {
+        "text": "What is two plus two?",
+        "answers": [
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "type": "open4",
+        "difficulty": "medium"
+      },
+      "question-alpha": {
+        "text": "What is four plus four?",
+        "answers": [
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "type": "open4",
+        "difficulty": "medium"
+      }
+    }
+  },
+  "answer_keys": {
+    "general": {
+      "1": {
+        "correctAnswers": [
+          "6"
+        ]
+      },
+      "01": {
+        "correctAnswers": [
+          "4"
+        ]
+      },
+      "question-alpha": {
+        "correctAnswers": [
+          "8"
+        ]
+      }
+    }
+  }
+}

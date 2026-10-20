@@ -80,8 +80,7 @@ class _PrivateLobbyScreenState extends State<PrivateLobbyScreen> {
 
       await _sessionRepository.joinSession(
         sessionId: sessionId,
-        uid: user.uid,
-        username: user.displayName ?? user.email ?? 'Gracz',
+        entryCode: widget.code,
       );
 
       if (!mounted) return;

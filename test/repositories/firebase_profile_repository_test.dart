@@ -23,7 +23,7 @@ void main() {
     'ratingPoints': 100,
     'rankedGamesPlayed': 5,
     'rankedGamesWon': 2,
-    'user_options': {'soundVolume': 80, 'musicVolume': 60},
+    'user_options': {'soundVolume': 80, 'musicVolume': 60, 'sfxVolume': 50},
     'ui_options': 'default',
     'profilePicture': 'assets/avatars/avatar2.png',
   };
@@ -134,6 +134,16 @@ void main() {
   // ── updateProfileData ───────────────────────────────────────────────────────
 
   group('updateProfileData', () {
+    test('preserves server statistics when an old client profile is saved', () async {
+      await fakeFirestore.collection('users').doc(uid).set({
+        ...tDocData, 'ratingPoints': 900, 'correctAnswers': 100,
+      });
+      await repo.updateProfileData(ProfileData(uid: uid, username: 'Changed', ratingPoints: 0));
+      final data = (await fakeFirestore.collection('users').doc(uid).get()).data()!;
+      expect(data['ratingPoints'], 900);
+      expect(data['correctAnswers'], 100);
+      expect(data['username'], 'Changed');
+    });
     // ← ZMIANA: ProfileData budowany z uid pobranym z mockAuth
     late ProfileData tProfile;
 
@@ -159,11 +169,11 @@ void main() {
       expect(doc.data()!['username'], 'TestUser');
     });
 
-    test('writes ratingPoints correctly', () async {
+    test('initializes ratingPoints to zero instead of trusting the client', () async {
       await repo.updateProfileData(tProfile);
 
       final doc = await fakeFirestore.collection('users').doc(uid).get();
-      expect(doc.data()!['ratingPoints'], 50);
+      expect(doc.data()!['ratingPoints'], 0);
     });
 
     test('writes ui_options preset string correctly', () async {

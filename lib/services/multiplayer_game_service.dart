@@ -4,6 +4,7 @@ import 'package:triviaapp/interfaces/i_multiplayer_game_service.dart';
 import 'package:triviaapp/models/live_game_state.dart';
 import 'package:triviaapp/models/multiplayer_session_data.dart';
 import 'package:triviaapp/models/question.dart';
+import 'package:triviaapp/models/game_answer.dart';
 import 'package:triviaapp/models/session_status.dart';
 import 'package:triviaapp/repositories/firebase_question_repository.dart';
 import 'package:triviaapp/repositories/firebase_session_repository.dart';
@@ -128,7 +129,7 @@ class MultiplayerGameService implements IMultiplayerGameService {
   }
 
   @override
-  Future<void> submitAnswer({
+  Future<GameAnswer> submitAnswer({
     required int roundIndex,
     required String questionId,
     required String answer,

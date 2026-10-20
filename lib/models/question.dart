@@ -4,53 +4,22 @@ import 'package:triviaapp/models/question_type.dart';
 
 @immutable
 class Question {
-  final String _id;
-  final String _text;
-  final Set<String> _correctAnswers;
-  final Set<String>? _wrongAnswers;
-  final QuestionType _type;
-  final Difficulty _difficulty;
+  final String id;
+  final String text;
+  final Set<String> answers;
+  final QuestionType type;
+  final Difficulty difficulty;
 
-  const Question({
-    required String id,
-    required String text,
-    required Set<String> correctAnswers,
-    Set<String>? wrongAnswers,
-    required QuestionType type,
-    required Difficulty difficulty,
-  })  : _difficulty = difficulty,
-        _type = type,
-        _id = id,
-        _text = text,
-        _correctAnswers = correctAnswers,
-        _wrongAnswers = wrongAnswers;
+  const Question({required this.id, required this.text, required this.answers,
+    required this.type, required this.difficulty});
 
-  factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
-      id: json['id'] as String,
-      text: json['text'] as String,
-      correctAnswers: Set<String>.from(json['correctAnswers'] as List),
-      wrongAnswers: Set<String>.from(json['wrongAnswers'] as List),
-      type: QuestionType.fromJson(json['type'] as String?),
-      difficulty: Difficulty.fromJson(json['difficulty'] as String?),
-    );
-  }
+  factory Question.fromJson(Map<String, dynamic> json) => Question(
+    id: json['id'] as String, text: json['text'] as String,
+    answers: Set<String>.from(json['answers'] as List),
+    type: QuestionType.fromJson(json['type'] as String?),
+    difficulty: Difficulty.fromJson(json['difficulty'] as String?),
+  );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'text': text,
-      'correctAnswers': correctAnswers.toList(),
-      'wrongAnswers': wrongAnswers?.toList(),
-      'type': type.name,
-      'difficulty': difficulty.name,
-    };
-  }
-
-  String get id => _id;
-  String get text => _text;
-  Set<String> get correctAnswers => _correctAnswers;
-  Set<String>? get wrongAnswers => _wrongAnswers;
-  Difficulty get difficulty => _difficulty;
-  QuestionType get type => _type;
+  Map<String, dynamic> toJson() => {'id': id, 'text': text, 'answers': answers.toList(),
+    'type': type.name, 'difficulty': difficulty.name};
 }

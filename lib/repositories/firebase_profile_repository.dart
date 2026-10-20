@@ -27,10 +27,19 @@ class FirebaseProfileRepository {
   }
 
   Future<void> updateProfileData(ProfileData profileData) async {
-    await _firestore
-        .collection('users')
-        .doc(profileData.uid)
-        .set(profileData.toJson(), SetOptions(merge: true));
+    final ref = _firestore.collection('users').doc(profileData.uid);
+    final editable = {
+      'username': profileData.username, 'profilePicture': profileData.profilePicture,
+      'user_options': profileData.userOptions.toJson(), 'ui_options': profileData.uiPreset,
+    };
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (snap.exists) {
+        tx.update(ref, editable);
+      } else {
+        tx.set(ref, {...const ProfileData(uid: '', username: '').toJson(), ...editable});
+      }
+    });
   }
 
   Future<String> getUIPreset() async {

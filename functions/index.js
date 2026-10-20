@@ -6,6 +6,8 @@ const { setGlobalOptions }                      = require('firebase-functions/v2
 const admin                                     = require('firebase-admin');
 const { getFunctions }                          = require('firebase-admin/functions');
 const { validateRoundAnswer }                    = require('./question_contract');
+const { onCall, HttpsError }                     = require('firebase-functions/v2/https');
+const { createGameCommands, CommandError }        = require('./game_commands');
 
 setGlobalOptions({ region: 'europe-central2' });
 
@@ -14,6 +16,21 @@ admin.initializeApp();
 const db   = admin.firestore();
 const rtdb = admin.database();
 const FV   = admin.firestore.FieldValue;
+
+const commands = createGameCommands({ db, rtdb });
+for (const [name, command] of Object.entries(commands)) {
+  exports[name] = onCall(async request => {
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in first');
+    if (!request.data || typeof request.data !== 'object' || Array.isArray(request.data)) {
+      throw new HttpsError('invalid-argument', 'Expected an object');
+    }
+    try { return await command(request.auth.uid, request.data); }
+    catch (error) {
+      if (error instanceof CommandError) throw new HttpsError(error.code, error.message);
+      throw error;
+    }
+  });
+}
 
 const RESOLVE_DISPLAY_MS = 5_000;
 const ROUND_TIMEOUT_MS   = 30_000;
@@ -537,6 +554,7 @@ async function buildArchive(sessionId, session, lastRoundEnrichment) {
 
   await db.collection('sessions_archive').doc(sessionId).set({
     sessionId,
+    participantUids: session.participantUids || Object.keys(playersMap),
     categoryId:       session.categoryId  || '',
     gameMode:         session.mode        || 'casual',
     sessionStartTime: session.createdAt?.toDate?.()?.toISOString()     || now,

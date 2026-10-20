@@ -42,9 +42,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   List<String> _shuffledAnswers = [];
   String? _selectedAnswer;
 
-  // Computed locally from Question.correctAnswers — no server round-trip.
+  // Filled only after the server locks and validates this player's answer.
   // null = not answered yet, true = correct, false = wrong.
   bool? _isAnswerCorrect;
+  List<String> _revealedAnswers = [];
 
   // True after the first successful submitAnswer call (locks button grid).
   bool _hasAnsweredThisRound = false;
@@ -90,6 +91,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       _displayedQuestionIndex = qIndex;
       _selectedAnswer = null;
       _isAnswerCorrect = null;
+      _revealedAnswers = [];
       _hasAnsweredThisRound = false;
 
       if (qIndex < gameService.questions.length) {
@@ -174,53 +176,52 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   }
 
   List<String> _buildShuffledAnswers(Question q) {
-    final opts = [...q.correctAnswers, ...?q.wrongAnswers];
+    final opts = q.answers.toList();
     opts.shuffle();
     return opts;
   }
 
   // ── Answer submission ────────────────────────────────────────────────────
 
-  Future<void> _onAnswerTapped(String answer) async {
+  Future<void> _onAnswerTapped(String answer, {int? retryRoundIndex}) async {
     // Guards — prevent double-tap and wrong phase.
-    if (_hasAnsweredThisRound) return;
-    if (_uiPhase != _UIPhase.answering) return;
+    if (_hasAnsweredThisRound && retryRoundIndex == null) return;
+    if (_uiPhase != _UIPhase.answering &&
+        !(retryRoundIndex != null && _uiPhase == _UIPhase.waiting)) return;
     final state = _liveState;
     if (state == null) return;
     final qi = state.currentQuestionIndex;
+    if (retryRoundIndex != null && qi != retryRoundIndex) return;
     if (qi >= gameService.questions.length) return;
 
     final question = gameService.questions[qi];
 
-    // Validate locally — Question is already in memory from lobby load.
-    // This gives immediate UI feedback without waiting for CF.
-    final isCorrect = question.correctAnswers.contains(answer);
-
     // Lock UI immediately (optimistic) before the async write.
     setState(() {
       _selectedAnswer = answer;
-      _isAnswerCorrect = isCorrect;
+      _isAnswerCorrect = null;
       _hasAnsweredThisRound = true;
       _uiPhase = _UIPhase.waiting;
     });
 
     try {
-      await gameService.submitAnswer(
+      final result = await gameService.submitAnswer(
         roundIndex: qi,
         questionId: question.id,
         answer: answer,
       );
-    } catch (e) {
-      // Revert optimistic state on failure so player can try again.
-      if (!mounted) return;
+      if (!mounted || _displayedQuestionIndex != qi) return;
       setState(() {
-        _selectedAnswer = null;
-        _isAnswerCorrect = null;
-        _hasAnsweredThisRound = false;
-        _uiPhase = _resolveUIPhase(state);
+        _isAnswerCorrect = result.isCorrect;
+        _revealedAnswers = result.correctAnswers;
       });
+    } catch (e) {
+      // A lost response may hide a committed answer; retry the same choice only.
+      if (!mounted || _displayedQuestionIndex != qi) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Błąd wysyłania odpowiedzi: $e')),
+        SnackBar(content: Text('Błąd wysyłania odpowiedzi: $e'),
+          action: SnackBarAction(label: 'Ponów',
+            onPressed: () => _onAnswerTapped(answer, retryRoundIndex: qi))),
       );
     }
   }
@@ -459,7 +460,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     //   • Correct (not selected, revealed when wrong) → green outline
     //   • Everything else    → dimmed
     final isSelected = option == _selectedAnswer;
-    final isCorrectOption = question.correctAnswers.contains(option);
+    final isCorrectOption = _revealedAnswers.contains(option);
 
     Color bgColor;
     Color borderColor;
@@ -478,11 +479,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         borderColor = Colors.green;
         textColor = Colors.green.shade200;
         trailingIcon = const Icon(Icons.check_circle, color: Colors.green, size: 20);
-      } else {
+      } else if (_isAnswerCorrect == false) {
         bgColor = Colors.red.withOpacity(0.2);
         borderColor = Colors.red.shade400;
         textColor = Colors.red.shade200;
         trailingIcon = const Icon(Icons.cancel, color: Colors.redAccent, size: 20);
+      } else {
+        bgColor = options.secondaryColor.withOpacity(0.25);
+        borderColor = options.mainButtonColor;
+        textColor = options.textColor;
       }
     } else if (isCorrectOption && _isAnswerCorrect == false) {
       // Reveal correct answer when player was wrong.

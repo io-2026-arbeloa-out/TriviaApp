@@ -16,7 +16,7 @@ class FirebaseQuestionRepository {
     required List<QuestionType> questionTypes,
     required Difficulty difficulty,
   }) async {
-    final ref = _database.ref('questions/$category');
+    final ref = _database.ref('public_questions/$category');
     final snapshot = await ref.get();
 
     if (!snapshot.exists || snapshot.value == null) return [];
@@ -62,7 +62,7 @@ class FirebaseQuestionRepository {
   }) async {
     if (ids.isEmpty) return [];
 
-    final ref = _database.ref('questions/$category');
+    final ref = _database.ref('public_questions/$category');
     final snapshot = await ref.get();
 
     if (!snapshot.exists || snapshot.value == null) {
