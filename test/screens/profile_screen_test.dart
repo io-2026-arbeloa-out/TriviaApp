@@ -264,7 +264,10 @@ void main() {
       await tester.pumpWidget(buildScreen(isLoggedIn: true, service: fakeService));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(GestureDetector).first);
+      await tester.tap(find.ancestor(
+        of: find.byIcon(Icons.edit),
+        matching: find.byType(GestureDetector),
+      ).first);
       await tester.pumpAndSettle();
 
       expect(find.text('Wybierz zdjęcie profilowe'), findsOneWidget);
@@ -276,7 +279,10 @@ void main() {
       await tester.pumpWidget(buildScreen(isLoggedIn: true, service: fakeService));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(GestureDetector).first);
+      await tester.tap(find.ancestor(
+        of: find.byIcon(Icons.edit),
+        matching: find.byType(GestureDetector),
+      ).first);
       await tester.pumpAndSettle();
 
       expect(find.text('Anuluj'), findsOneWidget);
@@ -289,7 +295,10 @@ void main() {
       await tester.pumpWidget(buildScreen(isLoggedIn: true, service: fakeService));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(GestureDetector).first);
+      await tester.tap(find.ancestor(
+        of: find.byIcon(Icons.edit),
+        matching: find.byType(GestureDetector),
+      ).first);
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Anuluj'));
@@ -305,11 +314,17 @@ void main() {
       await tester.pumpWidget(buildScreen(isLoggedIn: true, service: fakeService));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(GestureDetector).first);
+      await tester.tap(find.ancestor(
+        of: find.byIcon(Icons.edit),
+        matching: find.byType(GestureDetector),
+      ).first);
       await tester.pumpAndSettle();
 
       // Tap the first avatar CircleAvatar in the grid
-      await tester.tap(find.byType(CircleAvatar).first);
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(CircleAvatar),
+      ).first);
       await tester.pumpAndSettle();
 
       expect(fakeService.updateCalled, isTrue);
@@ -322,15 +337,21 @@ void main() {
       await tester.pumpWidget(buildScreen(isLoggedIn: true, service: fakeService));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(GestureDetector).first);
+      await tester.tap(find.ancestor(
+        of: find.byIcon(Icons.edit),
+        matching: find.byType(GestureDetector),
+      ).first);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(CircleAvatar).first);
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(CircleAvatar),
+      ).first);
       await tester.pumpAndSettle();
 
       expect(
         fakeService.lastUpdatedProfile?.profilePicture,
-        startsWith('assets/avatars/'),
+        'assets/images/profile_pictures/test.png',
       );
     });
 
@@ -342,10 +363,16 @@ void main() {
       await tester.pumpWidget(buildScreen(isLoggedIn: true, service: fakeService));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(GestureDetector).first);
+      await tester.tap(find.ancestor(
+        of: find.byIcon(Icons.edit),
+        matching: find.byType(GestureDetector),
+      ).first);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(CircleAvatar).first);
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(CircleAvatar),
+      ).first);
       await tester.pumpAndSettle();
 
       expect(

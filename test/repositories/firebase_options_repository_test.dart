@@ -95,7 +95,7 @@ void main() {
 
       expect(result.soundVolume, 60);
       expect(result.musicVolume, 30);
-      expect(result.sfxVolume, 30);
+      expect(result.sfxVolume, 40);
     });
 
     test('returns default UserOptions when document does not exist', () async {

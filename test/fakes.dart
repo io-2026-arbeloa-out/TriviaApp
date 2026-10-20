@@ -89,10 +89,12 @@ class FakeFirebaseProfileRepository extends Fake
 class FakeLoginAuthService extends Fake implements ILoginAuthService {
   ProfileData? signInResult;
   Exception? signInError;
+  int signInCallCount = 0;
   bool signOutCalled = false;
 
   @override
   Future<ProfileData> signInWithEmail(String email, String password) async {
+    signInCallCount++;
     if (signInError != null) throw signInError!;
     return signInResult!;
   }
@@ -109,10 +111,12 @@ class FakeLoginAuthService extends Fake implements ILoginAuthService {
 class FakeRegisterAuthService extends Fake implements IRegisterAuthService {
   ProfileData? registerResult;
   Exception? registerError;
+  int registerCallCount = 0;
 
   @override
   Future<ProfileData> register(
       String email, String password, String username) async {
+    registerCallCount++;
     if (registerError != null) throw registerError!;
     return registerResult!;
   }

@@ -141,13 +141,15 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
         child: SingleChildScrollView(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
             child: Column(
               children: [
                 _buildHeader(),
                 _animated(child: _buildErrorBanner()),
-                Expanded(child: _animated(child: _buildForm())),
+                _animated(child: _buildForm()),
               ],
             ),
           ),

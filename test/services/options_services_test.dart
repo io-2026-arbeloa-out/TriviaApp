@@ -46,7 +46,7 @@ void main() {
 
     final service = UIOptionsService(repo, profileRepo);
 
-    final options = UIOptions();
+    final options = UIOptions().copyWith(mainColor: UIOptions().secondaryColor);
 
     when(() => repo.saveUIOptions(any()))
         .thenAnswer((_) async {});
@@ -54,14 +54,25 @@ void main() {
         .thenAnswer((_) async => options);
 
     when(() => profileRepo.getUIPreset())
-        .thenAnswer((_) async => 'default');
+        .thenAnswer((_) async => 'pr1');
 
-    await service.saveUIOptions('default');
+    await service.saveUIOptions('pr1');
     final result = await service.getUIOptions();
 
-    verify(() => repo.saveUIOptions(any())).called(1);
-    verify(() => repo.getUIOptions(any())).called(1);
+    verify(() => repo.saveUIOptions('pr1')).called(1);
+    verify(() => repo.getUIOptions('pr1')).called(1);
 
     expect(result, same(options));
+  });
+
+  test('UIOptionsService używa lokalnych opcji dla domyślnego presetu', () async {
+    final repo = MockFirebaseOptionsRepository();
+    final profileRepo = MockFirebaseProfileRepository();
+    when(() => profileRepo.getUIPreset()).thenAnswer((_) async => 'default');
+
+    final result = await UIOptionsService(repo, profileRepo).getUIOptions();
+
+    expect(result, UIOptions());
+    verifyNever(() => repo.getUIOptions(any()));
   });
 }
